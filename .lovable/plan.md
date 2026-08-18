@@ -1,28 +1,30 @@
-# Plano de Evolução: Coutseg Gestão - Etapa 2 (Segurança e Cargos)
+# Plano de Evolução: Coutseg Gestão - Etapa 2 (Segurança e Permissões)
 
-Implementação do sistema de permissões robusto conforme a especificação.
+Foco em transformar o sistema em uma ferramenta segura e multi-nível, isolando dados e definindo acessos.
 
 ## Alterações Técnicas
 
-### 1. Banco de Dados (Supabase)
-- **Cargos:** Criar `app_role` enum (admin, corretor, administrativo, financeiro, gerente).
-- **Tabela `user_roles`:** Vincular usuários aos cargos.
-- **Função `has_role`:** Criar função `security definer` para evitar recursão em RLS.
-- **RLS:** Atualizar políticas de `clients`, `policies`, `brokers` e `insurers` para restringir acesso baseado no cargo e no vínculo (ex: Corretor só vê seus clientes).
-- **Auditoria:** Criar tabela `audit_logs` e triggers para capturar mudanças.
+### 1. Banco de Dados (Supabase Migration)
+- **Cargos:** Criar `CREATE TYPE public.app_role AS ENUM ('admin', 'corretor', 'administrativo', 'financeiro', 'gerente')`.
+- **Tabela `user_roles`:** Criar conforme diretrizes de segurança (bypassing RLS via function).
+- **Função `has_role`:** Implementar `SECURITY DEFINER` para checagem de permissões.
+- **Políticas RLS:** 
+  - Restringir `clients`, `policies` e `claims`: 
+    - `admin` e `gerente`: Acesso total.
+    - `corretor`: Acesso apenas aos registros vinculados ao seu `user_id` (através da tabela `brokers`).
+    - `administrativo` e `financeiro`: Acesso conforme necessidade operacional.
+- **Auditoria:** Criar tabela `audit_logs` para rastrear quem alterou o quê.
 
-### 2. Frontend
-- **Auth Hook:** Refatorar `useAuth` para carregar o cargo do usuário a partir da nova tabela.
-- **Sidebar:** Ajustar visibilidade dos módulos baseada no cargo.
-- **Proteção de Rotas:** Garantir que usuários sem permissão não acessem módulos restritos.
+### 2. Frontend (React)
+- **Hooks:** Atualizar `useAuth` para retornar o cargo (role) do usuário.
+- **Sidebar:** Ocultar módulos financeiros ou administrativos para o cargo `corretor`.
+- **Proteção Visual:** Botões de exclusão ou edição restritos a cargos superiores.
 
-### 3. Migração de Dados
-- Migrar o `role` atual da tabela `profiles` para a nova tabela `user_roles`.
+### 3. Migração Inicial
+- Definir o primeiro usuário (você) como `admin` para manter o controle.
 
-## Ordem de Execução
-1. Migração SQL (Schema + RLS).
-2. Atualização do `useAuth`.
-3. Ajustes de UI na Sidebar.
+## Próximos Passos
+- Após aprovação, iniciarei a migração SQL e a refatoração do hook de autenticação.
 
 ---
-Este plano estabelece a base de confiança necessária para operar um sistema real com múltiplos níveis de acesso.
+Este plano garante que "o usuário somente consiga consultar os dados que sua função permite", conforme a regra mais importante.
