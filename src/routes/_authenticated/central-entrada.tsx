@@ -32,9 +32,12 @@ function CentralEntradaPage() {
         reader.readAsDataURL(file);
       });
 
+      const imageBase64 = base64.split(',')[1];
+      if (!imageBase64) throw new Error("Falha ao converter arquivo");
+
       const result = await processDocumentWithIA({
         data: {
-          image: base64.split(',')[1],
+          image: imageBase64,
           mimeType: file.type || 'application/octet-stream',
           documentType: docType
         }
