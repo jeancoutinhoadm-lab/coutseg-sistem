@@ -3,6 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import type { User } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
+import { logAudit } from "@/utils/audit";
 
 export type AppRole = Database["public"]["Enums"]["app_role"];
 
@@ -65,6 +66,7 @@ export function useAuth() {
   }, []);
 
   const signOut = async () => {
+    await logAudit('LOGOUT', 'USER');
     await supabase.auth.signOut();
     navigate({ to: "/auth/login" });
   };

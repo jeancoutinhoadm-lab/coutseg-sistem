@@ -13,6 +13,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { toast } from "sonner";
 import { Shield, Loader2 } from "lucide-react";
+import { logAudit } from "@/utils/audit";
 
 const loginSchema = z.object({
   email: z.string().email("Digite um e-mail válido"),
@@ -55,6 +56,7 @@ function LoginPage() {
       toast.error("Erro ao entrar", { description: error.message });
       return;
     }
+    await logAudit('LOGIN', 'USER');
     window.location.href = "/dashboard";
   };
 
