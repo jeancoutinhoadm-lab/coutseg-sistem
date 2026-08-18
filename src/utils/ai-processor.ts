@@ -35,13 +35,12 @@ export async function extractPolicyData(file: File): Promise<ExtractedPolicyData
     const data = await analyzeDocument({ 
       data: {
         image: base64.split(',')[1],
-        mimeType: file.type,
+        mimeType: file.type || 'application/octet-stream',
         prompt 
       }
     });
     
-    // Parse result if it's a string, or use as is if it's already an object
-    const resultText = typeof data.text === 'string' ? data.text : (data as any).text;
+    const resultText = data.text || "";
     const result = JSON.parse(resultText.replace(/```json|```/g, ''));
     return result;
   } catch (err) {
@@ -49,4 +48,5 @@ export async function extractPolicyData(file: File): Promise<ExtractedPolicyData
     throw new Error("Não foi possível processar o documento com IA.");
   }
 }
+
 
