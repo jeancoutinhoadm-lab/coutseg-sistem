@@ -22,6 +22,7 @@ import { Plus, Search, Pencil, Trash2, Loader2, AlertTriangle } from "lucide-rea
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { Database } from "@/integrations/supabase/types";
+import { logAudit } from "@/utils/audit";
 
 export const Route = createFileRoute("/_authenticated/claims")({
   component: ClaimsPage,
@@ -56,9 +57,11 @@ function ClaimsPage() {
       if (editing) {
         const { error } = await supabase.from("claims").update(values).eq("id", editing.id);
         if (error) throw error;
+        await logAudit('UPDATE', 'CLAIM', editing.id, editing, values);
       } else {
-        const { error } = await supabase.from("claims").insert(values);
+        const { data, error } = await supabase.from("claims").insert(values).select().single();
         if (error) throw error;
+        await logAudit('CREATE', 'CLAIM', data.id, null, values);
       }
     },
     onSuccess: () => {
@@ -76,6 +79,7 @@ function ClaimsPage() {
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("claims").delete().eq("id", id);
       if (error) throw error;
+      await logAudit('DELETE', 'CLAIM', id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["claims"] });
