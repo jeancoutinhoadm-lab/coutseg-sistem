@@ -264,6 +264,15 @@ function PolicyDialog({
     },
   });
 
+  const { data: products } = useQuery({
+    queryKey: ["products-select"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("products").select("id, name").eq("active", true).order("name");
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const { data: brokers } = useQuery({
     queryKey: ["brokers-select"],
     queryFn: async () => {
@@ -286,18 +295,17 @@ function PolicyDialog({
               <Input id="policyNumber" value={policyNumber} onChange={(e) => setPolicyNumber(e.target.value)} />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="type">Tipo</Label>
-              <Select value={type} onValueChange={(v) => setType(v as Database["public"]["Enums"]["policy_type"])}>
+              <Label htmlFor="type">Tipo / Produto *</Label>
+              <Select value={type} onValueChange={(v) => setType(v as any)}>
                 <SelectTrigger id="type">
-                  <SelectValue />
+                  <SelectValue placeholder="Selecione o produto" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="auto">Auto</SelectItem>
-                  <SelectItem value="home">Residencial</SelectItem>
-                  <SelectItem value="life">Vida</SelectItem>
-                  <SelectItem value="health">Saúde</SelectItem>
-                  <SelectItem value="business">Empresarial</SelectItem>
-                  <SelectItem value="other">Outro</SelectItem>
+                  {products?.map((p) => (
+                    <SelectItem key={p.id} value={p.name.toLowerCase()}>
+                      {p.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

@@ -17,6 +17,7 @@ import { Route as AuthenticatedClaimsRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedClientsRouteImport } from './routes/_authenticated/clients'
 import { Route as AuthenticatedInsurersRouteImport } from './routes/_authenticated/insurers'
 import { Route as AuthenticatedPoliciesRouteImport } from './routes/_authenticated/policies'
+import { Route as AuthenticatedProductsRouteImport } from './routes/_authenticated/products'
 import { Route as AuthenticatedRenewalsRouteImport } from './routes/_authenticated/renewals'
 import { Route as AuthLoginRouteImport } from './routes/auth/login'
 import { Route as AuthRegisterRouteImport } from './routes/auth/register'
@@ -60,6 +61,11 @@ const AuthenticatedPoliciesRoute = AuthenticatedPoliciesRouteImport.update({
   path: '/policies',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedProductsRoute = AuthenticatedProductsRouteImport.update({
+  id: '/products',
+  path: '/products',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedRenewalsRoute = AuthenticatedRenewalsRouteImport.update({
   id: '/renewals',
   path: '/renewals',
@@ -84,6 +90,7 @@ export interface FileRoutesByFullPath {
   '/clients': typeof AuthenticatedClientsRoute
   '/insurers': typeof AuthenticatedInsurersRoute
   '/policies': typeof AuthenticatedPoliciesRoute
+  '/products': typeof AuthenticatedProductsRoute
   '/renewals': typeof AuthenticatedRenewalsRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
@@ -95,6 +102,7 @@ export interface FileRoutesByTo {
   '/clients': typeof AuthenticatedClientsRoute
   '/insurers': typeof AuthenticatedInsurersRoute
   '/policies': typeof AuthenticatedPoliciesRoute
+  '/products': typeof AuthenticatedProductsRoute
   '/renewals': typeof AuthenticatedRenewalsRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
@@ -109,6 +117,7 @@ export interface FileRoutesById {
   '/_authenticated/clients': typeof AuthenticatedClientsRoute
   '/_authenticated/insurers': typeof AuthenticatedInsurersRoute
   '/_authenticated/policies': typeof AuthenticatedPoliciesRoute
+  '/_authenticated/products': typeof AuthenticatedProductsRoute
   '/_authenticated/renewals': typeof AuthenticatedRenewalsRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
@@ -124,6 +133,7 @@ export interface FileRouteTypes {
     | '/clients'
     | '/insurers'
     | '/policies'
+    | '/products'
     | '/renewals'
     | '/auth/login'
     | '/auth/register'
@@ -135,6 +145,7 @@ export interface FileRouteTypes {
     | '/clients'
     | '/insurers'
     | '/policies'
+    | '/products'
     | '/renewals'
     | '/auth/login'
     | '/auth/register'
@@ -148,6 +159,7 @@ export interface FileRouteTypes {
     | '/_authenticated/clients'
     | '/_authenticated/insurers'
     | '/_authenticated/policies'
+    | '/_authenticated/products'
     | '/_authenticated/renewals'
     | '/auth/login'
     | '/auth/register'
@@ -219,6 +231,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPoliciesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/products': {
+      id: '/_authenticated/products'
+      path: '/products'
+      fullPath: '/products'
+      preLoaderRoute: typeof AuthenticatedProductsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/renewals': {
       id: '/_authenticated/renewals'
       path: '/renewals'
@@ -249,6 +268,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedClientsRoute: typeof AuthenticatedClientsRoute
   AuthenticatedInsurersRoute: typeof AuthenticatedInsurersRoute
   AuthenticatedPoliciesRoute: typeof AuthenticatedPoliciesRoute
+  AuthenticatedProductsRoute: typeof AuthenticatedProductsRoute
   AuthenticatedRenewalsRoute: typeof AuthenticatedRenewalsRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
 }
@@ -259,6 +279,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedClientsRoute: AuthenticatedClientsRoute,
   AuthenticatedInsurersRoute: AuthenticatedInsurersRoute,
   AuthenticatedPoliciesRoute: AuthenticatedPoliciesRoute,
+  AuthenticatedProductsRoute: AuthenticatedProductsRoute,
   AuthenticatedRenewalsRoute: AuthenticatedRenewalsRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
 }

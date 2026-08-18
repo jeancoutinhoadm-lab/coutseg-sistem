@@ -28,11 +28,13 @@ import {
   CalendarClock,
   LogOut,
   Shield,
+  Package,
 } from "lucide-react";
 
 const navItems = [
   { title: "Dashboard", to: "/", icon: LayoutDashboard, roles: ["admin", "corretor", "administrativo", "financeiro", "gerente"] },
   { title: "Clientes", to: "/clients", icon: Users, roles: ["admin", "corretor", "administrativo", "gerente"] },
+  { title: "Produtos", to: "/products", icon: Package, roles: ["admin", "corretor", "administrativo", "gerente"] },
   { title: "Apólices", to: "/policies", icon: FileText, roles: ["admin", "corretor", "administrativo", "gerente"] },
   { title: "Seguradoras", to: "/insurers", icon: Building2, roles: ["admin", "administrativo", "gerente", "corretor"] },
   { title: "Corretores", to: "/brokers", icon: UserCog, roles: ["admin", "gerente"] },
