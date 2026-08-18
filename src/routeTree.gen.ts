@@ -15,6 +15,7 @@ import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedBrokersRouteImport } from './routes/_authenticated/brokers'
 import { Route as AuthenticatedClaimsRouteImport } from './routes/_authenticated/claims'
 import { Route as AuthenticatedClientsRouteImport } from './routes/_authenticated/clients'
+import { Route as AuthenticatedDocumentsRouteImport } from './routes/_authenticated/documents'
 import { Route as AuthenticatedInsurersRouteImport } from './routes/_authenticated/insurers'
 import { Route as AuthenticatedPoliciesRouteImport } from './routes/_authenticated/policies'
 import { Route as AuthenticatedProductsRouteImport } from './routes/_authenticated/products'
@@ -49,6 +50,11 @@ const AuthenticatedClaimsRoute = AuthenticatedClaimsRouteImport.update({
 const AuthenticatedClientsRoute = AuthenticatedClientsRouteImport.update({
   id: '/clients',
   path: '/clients',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedDocumentsRoute = AuthenticatedDocumentsRouteImport.update({
+  id: '/documents',
+  path: '/documents',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedInsurersRoute = AuthenticatedInsurersRouteImport.update({
@@ -88,6 +94,7 @@ export interface FileRoutesByFullPath {
   '/brokers': typeof AuthenticatedBrokersRoute
   '/claims': typeof AuthenticatedClaimsRoute
   '/clients': typeof AuthenticatedClientsRoute
+  '/documents': typeof AuthenticatedDocumentsRoute
   '/insurers': typeof AuthenticatedInsurersRoute
   '/policies': typeof AuthenticatedPoliciesRoute
   '/products': typeof AuthenticatedProductsRoute
@@ -100,6 +107,7 @@ export interface FileRoutesByTo {
   '/brokers': typeof AuthenticatedBrokersRoute
   '/claims': typeof AuthenticatedClaimsRoute
   '/clients': typeof AuthenticatedClientsRoute
+  '/documents': typeof AuthenticatedDocumentsRoute
   '/insurers': typeof AuthenticatedInsurersRoute
   '/policies': typeof AuthenticatedPoliciesRoute
   '/products': typeof AuthenticatedProductsRoute
@@ -115,6 +123,7 @@ export interface FileRoutesById {
   '/_authenticated/brokers': typeof AuthenticatedBrokersRoute
   '/_authenticated/claims': typeof AuthenticatedClaimsRoute
   '/_authenticated/clients': typeof AuthenticatedClientsRoute
+  '/_authenticated/documents': typeof AuthenticatedDocumentsRoute
   '/_authenticated/insurers': typeof AuthenticatedInsurersRoute
   '/_authenticated/policies': typeof AuthenticatedPoliciesRoute
   '/_authenticated/products': typeof AuthenticatedProductsRoute
@@ -131,6 +140,7 @@ export interface FileRouteTypes {
     | '/brokers'
     | '/claims'
     | '/clients'
+    | '/documents'
     | '/insurers'
     | '/policies'
     | '/products'
@@ -143,6 +153,7 @@ export interface FileRouteTypes {
     | '/brokers'
     | '/claims'
     | '/clients'
+    | '/documents'
     | '/insurers'
     | '/policies'
     | '/products'
@@ -157,6 +168,7 @@ export interface FileRouteTypes {
     | '/_authenticated/brokers'
     | '/_authenticated/claims'
     | '/_authenticated/clients'
+    | '/_authenticated/documents'
     | '/_authenticated/insurers'
     | '/_authenticated/policies'
     | '/_authenticated/products'
@@ -217,6 +229,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedClientsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/documents': {
+      id: '/_authenticated/documents'
+      path: '/documents'
+      fullPath: '/documents'
+      preLoaderRoute: typeof AuthenticatedDocumentsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/insurers': {
       id: '/_authenticated/insurers'
       path: '/insurers'
@@ -266,6 +285,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedBrokersRoute: typeof AuthenticatedBrokersRoute
   AuthenticatedClaimsRoute: typeof AuthenticatedClaimsRoute
   AuthenticatedClientsRoute: typeof AuthenticatedClientsRoute
+  AuthenticatedDocumentsRoute: typeof AuthenticatedDocumentsRoute
   AuthenticatedInsurersRoute: typeof AuthenticatedInsurersRoute
   AuthenticatedPoliciesRoute: typeof AuthenticatedPoliciesRoute
   AuthenticatedProductsRoute: typeof AuthenticatedProductsRoute
@@ -277,6 +297,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedBrokersRoute: AuthenticatedBrokersRoute,
   AuthenticatedClaimsRoute: AuthenticatedClaimsRoute,
   AuthenticatedClientsRoute: AuthenticatedClientsRoute,
+  AuthenticatedDocumentsRoute: AuthenticatedDocumentsRoute,
   AuthenticatedInsurersRoute: AuthenticatedInsurersRoute,
   AuthenticatedPoliciesRoute: AuthenticatedPoliciesRoute,
   AuthenticatedProductsRoute: AuthenticatedProductsRoute,
