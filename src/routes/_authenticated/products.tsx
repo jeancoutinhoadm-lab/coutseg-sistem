@@ -231,7 +231,7 @@ function ProductDialog({
   const [description, setDescription] = useState(editing?.description ?? "");
   const [active, setActive] = useState(editing?.active ?? true);
 
-  useState(() => {
+  useEffect(() => {
     if (editing) {
       setName(editing.name);
       setDescription(editing.description ?? "");
