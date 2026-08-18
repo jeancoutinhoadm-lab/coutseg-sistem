@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { toast } from "sonner";
 import { Shield, Loader2 } from "lucide-react";
+import { logAudit } from "@/utils/audit";
 
 const registerSchema = z.object({
   fullName: z.string().min(2, "Digite seu nome completo"),
@@ -57,6 +58,7 @@ function RegisterPage() {
       toast.error("Erro ao criar conta", { description: error.message });
       return;
     }
+    await logAudit('CREATE', 'USER', undefined, null, { email: values.email, fullName: values.fullName });
     toast.success("Conta criada", {
       description: "Verifique seu e-mail para confirmar o cadastro.",
     });
