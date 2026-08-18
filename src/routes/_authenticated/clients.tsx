@@ -303,6 +303,9 @@ function ClientDialog({
               <Input id="zipCode" value={zipCode} onChange={(e) => setZipCode(e.target.value)} />
             </div>
           </div>
+          <div className="grid gap-2">
+            <Label htmlFor="notes">Observações</Label>
+            <Input id="notes" value={notes} onChange={(e) => setNotes(e.target.value)} />
           </div>
           {role === "admin" && (
             <div className="grid gap-2">
