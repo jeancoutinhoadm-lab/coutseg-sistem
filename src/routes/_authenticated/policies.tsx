@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Plus, Search, Pencil, Trash2, Loader2, FileText } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, Loader2, FileText, Upload, Paperclip } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { Database } from "@/integrations/supabase/types";
@@ -245,6 +245,135 @@ function PolicyDialog({
   const [endDate, setEndDate] = useState(editing?.end_date ?? "");
   const [renewalDate, setRenewalDate] = useState(editing?.renewal_date ?? "");
   const [coverageAmount, setCoverageAmount] = useState(editing?.coverage_amount ?? 0);
+  
+  // States for file upload
+  const [uploading, setUploading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const queryClient = useQueryClient();
+
+  // Reset form when editing changes
+  useEffect(() => {
+    if (editing) {
+      setPolicyNumber(editing.policy_number);
+      setClientId(editing.client_id);
+      setInsurerId(editing.insurer_id);
+      setBrokerId(editing.broker_id ?? "");
+      setType(editing.type);
+      setStatus(editing.status ?? "active");
+      setPremium(editing.premium);
+      setCommissionAmount(editing.commission_amount ?? 0);
+      setStartDate(editing.start_date);
+      setEndDate(editing.end_date);
+      setRenewalDate(editing.renewal_date ?? "");
+      setCoverageAmount(editing.coverage_amount ?? 0);
+    } else {
+      setPolicyNumber("");
+      setClientId("");
+      setInsurerId("");
+      setBrokerId("");
+      setType("auto");
+      setStatus("active");
+      setPremium(0);
+      setCommissionAmount(0);
+      setStartDate("");
+      setEndDate("");
+      setRenewalDate("");
+      setCoverageAmount(0);
+    }
+    setSelectedFile(null);
+  }, [editing, open]);
+
+  const { data: documents } = useQuery({
+    queryKey: ["policy-documents", editing?.id],
+    enabled: !!editing?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("documents")
+        .select("*")
+        .eq("policy_id", editing!.id);
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const handleFileUpload = async (policyId: string) => {
+    if (!selectedFile) return;
+
+    setUploading(true);
+    try {
+      const fileExt = selectedFile.name.split(".").pop();
+      const fileName = `${Math.random()}.${fileExt}`;
+      const filePath = `${policyId}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("policy_documents")
+        .upload(filePath, selectedFile);
+
+      if (uploadError) throw uploadError;
+
+      const { error: dbError } = await supabase.from("documents").insert({
+        name: selectedFile.name,
+        file_path: filePath,
+        file_type: selectedFile.type,
+        size: selectedFile.size,
+        policy_id: policyId,
+        client_id: clientId,
+      });
+
+      if (dbError) throw dbError;
+      
+      await logAudit('UPLOAD', 'DOCUMENT', policyId);
+      toast.success("Documento enviado com sucesso");
+      queryClient.invalidateQueries({ queryKey: ["policy-documents", editing?.id] });
+      setSelectedFile(null);
+    } catch (error: any) {
+      toast.error("Erro no upload", { description: error.message });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    const values = {
+      policy_number: policyNumber,
+      client_id: clientId,
+      insurer_id: insurerId,
+      broker_id: brokerId || null,
+      type,
+      status,
+      premium,
+      commission_amount: commissionAmount,
+      coverage_amount: coverageAmount,
+      start_date: startDate,
+      end_date: endDate,
+      renewal_date: renewalDate || null,
+    };
+
+    if (editing) {
+      onSubmit(values);
+      if (selectedFile) {
+        await handleFileUpload(editing.id);
+      }
+    } else {
+      // For new policy, we need the ID first
+      const { data, error } = await supabase.from("policies").insert(values).select().single();
+      if (error) {
+        toast.error("Erro ao criar apólice", { description: error.message });
+        return;
+      }
+      
+      await logAudit('CREATE', 'POLICY', data.id, null, values);
+      
+      if (selectedFile) {
+        await handleFileUpload(data.id);
+      }
+      
+      queryClient.invalidateQueries({ queryKey: ["policies"] });
+      onOpenChange(false);
+      toast.success("Apólice criada com sucesso");
+    }
+  };
+
 
   const { data: clients } = useQuery({
     queryKey: ["clients-select"],
@@ -417,31 +546,71 @@ function PolicyDialog({
               </SelectContent>
             </Select>
           </div>
+
+          <div className="grid gap-2 border-t pt-4">
+            <Label className="flex items-center gap-2">
+              <Paperclip className="h-4 w-4" />
+              Documento da Apólice (PDF/Imagens)
+            </Label>
+            
+            {editing && documents && documents.length > 0 && (
+              <div className="mb-2 space-y-2">
+                {documents.map((doc) => (
+                  <div key={doc.id} className="flex items-center justify-between rounded-md bg-muted p-2 text-sm">
+                    <span className="truncate">{doc.name}</span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-destructive"
+                      onClick={async () => {
+                        if (confirm("Excluir este documento?")) {
+                          await supabase.storage.from("policy_documents").remove([doc.file_path]);
+                          await supabase.from("documents").delete().eq("id", doc.id);
+                          queryClient.invalidateQueries({ queryKey: ["policy-documents", editing.id] });
+                          toast.success("Documento removido");
+                        }
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="flex items-center gap-4">
+              <Input
+                type="file"
+                className="cursor-pointer"
+                onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                accept=".pdf,image/*"
+              />
+              {selectedFile && editing && (
+                <Button 
+                  type="button" 
+                  size="sm" 
+                  onClick={() => handleFileUpload(editing.id)}
+                  disabled={uploading}
+                >
+                  {uploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+                  Enviar
+                </Button>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Tipos permitidos: PDF, JPG, PNG. Tamanho máx: 10MB.
+            </p>
+          </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
           <Button
-            disabled={isPending || !policyNumber.trim() || !clientId || !insurerId || !startDate || !endDate}
-            onClick={() =>
-              onSubmit({
-                policy_number: policyNumber,
-                client_id: clientId,
-                insurer_id: insurerId,
-                broker_id: brokerId || null,
-                type,
-                status,
-                premium,
-                commission_amount: commissionAmount,
-                coverage_amount: coverageAmount,
-                start_date: startDate,
-                end_date: endDate,
-                renewal_date: renewalDate || null,
-              })
-            }
+            disabled={isPending || uploading || !policyNumber.trim() || !clientId || !insurerId || !startDate || !endDate}
+            onClick={handleSave}
           >
-            {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            {(isPending || uploading) ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
             Salvar
           </Button>
         </DialogFooter>

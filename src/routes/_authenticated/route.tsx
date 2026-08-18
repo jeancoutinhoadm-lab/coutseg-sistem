@@ -29,6 +29,7 @@ import {
   LogOut,
   Shield,
   Package,
+  Files,
 } from "lucide-react";
 
 const navItems = [
@@ -40,6 +41,7 @@ const navItems = [
   { title: "Corretores", to: "/brokers", icon: UserCog, roles: ["admin", "gerente"] },
   { title: "Sinistros", to: "/claims", icon: AlertTriangle, roles: ["admin", "corretor", "administrativo", "gerente"] },
   { title: "Renovações", to: "/renewals", icon: CalendarClock, roles: ["admin", "corretor", "administrativo", "gerente"] },
+  { title: "Documentos", to: "/documents", icon: Files, roles: ["admin", "corretor", "administrativo", "gerente"] },
 ];
 
 export const Route = createFileRoute("/_authenticated")({
