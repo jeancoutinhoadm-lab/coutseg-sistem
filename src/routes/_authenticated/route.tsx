@@ -31,13 +31,13 @@ import {
 } from "lucide-react";
 
 const navItems = [
-  { title: "Dashboard", to: "/", icon: LayoutDashboard },
-  { title: "Clientes", to: "/clients", icon: Users },
-  { title: "Apólices", to: "/policies", icon: FileText },
-  { title: "Seguradoras", to: "/insurers", icon: Building2 },
-  { title: "Corretores", to: "/brokers", icon: UserCog },
-  { title: "Sinistros", to: "/claims", icon: AlertTriangle },
-  { title: "Renovações", to: "/renewals", icon: CalendarClock },
+  { title: "Dashboard", to: "/", icon: LayoutDashboard, roles: ["admin", "corretor", "administrativo", "financeiro", "gerente"] },
+  { title: "Clientes", to: "/clients", icon: Users, roles: ["admin", "corretor", "administrativo", "gerente"] },
+  { title: "Apólices", to: "/policies", icon: FileText, roles: ["admin", "corretor", "administrativo", "gerente"] },
+  { title: "Seguradoras", to: "/insurers", icon: Building2, roles: ["admin", "administrativo", "gerente", "corretor"] },
+  { title: "Corretores", to: "/brokers", icon: UserCog, roles: ["admin", "gerente"] },
+  { title: "Sinistros", to: "/claims", icon: AlertTriangle, roles: ["admin", "corretor", "administrativo", "gerente"] },
+  { title: "Renovações", to: "/renewals", icon: CalendarClock, roles: ["admin", "corretor", "administrativo", "gerente"] },
 ];
 
 export const Route = createFileRoute("/_authenticated")({
@@ -51,7 +51,7 @@ export const Route = createFileRoute("/_authenticated")({
 });
 
 function AuthenticatedLayout() {
-  const { user, loading, signOut } = useAuth();
+  const { user, role, loading, signOut, hasRole } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -95,16 +95,24 @@ function AuthenticatedLayout() {
               <SidebarGroupLabel>Menu</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
-                  {navItems.map((item) => (
-                    <SidebarMenuItem key={item.to}>
-                      <SidebarMenuButton asChild>
-                        <Link to={item.to} activeOptions={{ exact: item.to === "/" }} activeProps={{ className: "bg-sidebar-accent text-sidebar-accent-foreground" }}>
-                          <item.icon className="h-4 w-4" />
-                          <span>{item.title}</span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
+                  {navItems
+                    .filter((item) => !item.roles || (role && item.roles.includes(role as any)))
+                    .map((item) => (
+                      <SidebarMenuItem key={item.to}>
+                        <SidebarMenuButton asChild>
+                          <Link
+                            to={item.to}
+                            activeOptions={{ exact: item.to === "/" }}
+                            activeProps={{
+                              className: "bg-sidebar-accent text-sidebar-accent-foreground",
+                            }}
+                          >
+                            <item.icon className="h-4 w-4" />
+                            <span>{item.title}</span>
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    ))}
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
