@@ -76,7 +76,7 @@ function DocumentsPage() {
       link.remove();
       window.URL.revokeObjectURL(url);
       
-      await logAudit('VIEW', 'DOCUMENT_DOWNLOAD', { filePath });
+      await logAudit('VIEW', 'DOCUMENT_DOWNLOAD', filePath);
     } catch (error: any) {
       toast.error("Erro ao baixar arquivo", { description: error.message });
     }
