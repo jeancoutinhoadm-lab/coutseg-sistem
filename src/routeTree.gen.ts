@@ -13,6 +13,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedBrokersRouteImport } from './routes/_authenticated/brokers'
+import { Route as AuthenticatedCentralEntradaRouteImport } from './routes/_authenticated/central-entrada'
 import { Route as AuthenticatedClaimsRouteImport } from './routes/_authenticated/claims'
 import { Route as AuthenticatedClientsRouteImport } from './routes/_authenticated/clients'
 import { Route as AuthenticatedDocumentsRouteImport } from './routes/_authenticated/documents'
@@ -42,6 +43,12 @@ const AuthenticatedBrokersRoute = AuthenticatedBrokersRouteImport.update({
   path: '/brokers',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedCentralEntradaRoute =
+  AuthenticatedCentralEntradaRouteImport.update({
+    id: '/central-entrada',
+    path: '/central-entrada',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedClaimsRoute = AuthenticatedClaimsRouteImport.update({
   id: '/claims',
   path: '/claims',
@@ -92,6 +99,7 @@ export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/dashboard': typeof DashboardRoute
   '/brokers': typeof AuthenticatedBrokersRoute
+  '/central-entrada': typeof AuthenticatedCentralEntradaRoute
   '/claims': typeof AuthenticatedClaimsRoute
   '/clients': typeof AuthenticatedClientsRoute
   '/documents': typeof AuthenticatedDocumentsRoute
@@ -105,6 +113,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/dashboard': typeof DashboardRoute
   '/brokers': typeof AuthenticatedBrokersRoute
+  '/central-entrada': typeof AuthenticatedCentralEntradaRoute
   '/claims': typeof AuthenticatedClaimsRoute
   '/clients': typeof AuthenticatedClientsRoute
   '/documents': typeof AuthenticatedDocumentsRoute
@@ -121,6 +130,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/dashboard': typeof DashboardRoute
   '/_authenticated/brokers': typeof AuthenticatedBrokersRoute
+  '/_authenticated/central-entrada': typeof AuthenticatedCentralEntradaRoute
   '/_authenticated/claims': typeof AuthenticatedClaimsRoute
   '/_authenticated/clients': typeof AuthenticatedClientsRoute
   '/_authenticated/documents': typeof AuthenticatedDocumentsRoute
@@ -138,6 +148,7 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/brokers'
+    | '/central-entrada'
     | '/claims'
     | '/clients'
     | '/documents'
@@ -151,6 +162,7 @@ export interface FileRouteTypes {
   to:
     | '/dashboard'
     | '/brokers'
+    | '/central-entrada'
     | '/claims'
     | '/clients'
     | '/documents'
@@ -166,6 +178,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/dashboard'
     | '/_authenticated/brokers'
+    | '/_authenticated/central-entrada'
     | '/_authenticated/claims'
     | '/_authenticated/clients'
     | '/_authenticated/documents'
@@ -213,6 +226,13 @@ declare module '@tanstack/react-router' {
       path: '/brokers'
       fullPath: '/brokers'
       preLoaderRoute: typeof AuthenticatedBrokersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/central-entrada': {
+      id: '/_authenticated/central-entrada'
+      path: '/central-entrada'
+      fullPath: '/central-entrada'
+      preLoaderRoute: typeof AuthenticatedCentralEntradaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/claims': {
@@ -283,6 +303,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedBrokersRoute: typeof AuthenticatedBrokersRoute
+  AuthenticatedCentralEntradaRoute: typeof AuthenticatedCentralEntradaRoute
   AuthenticatedClaimsRoute: typeof AuthenticatedClaimsRoute
   AuthenticatedClientsRoute: typeof AuthenticatedClientsRoute
   AuthenticatedDocumentsRoute: typeof AuthenticatedDocumentsRoute
@@ -295,6 +316,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedBrokersRoute: AuthenticatedBrokersRoute,
+  AuthenticatedCentralEntradaRoute: AuthenticatedCentralEntradaRoute,
   AuthenticatedClaimsRoute: AuthenticatedClaimsRoute,
   AuthenticatedClientsRoute: AuthenticatedClientsRoute,
   AuthenticatedDocumentsRoute: AuthenticatedDocumentsRoute,
