@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_logs: {
+        Row: {
+          action: string
+          created_at: string | null
+          entity: string
+          id: string
+          new_data: Json | null
+          old_data: Json | null
+          record_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          entity: string
+          id?: string
+          new_data?: Json | null
+          old_data?: Json | null
+          record_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          entity?: string
+          id?: string
+          new_data?: Json | null
+          old_data?: Json | null
+          record_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       brokers: {
         Row: {
           active: boolean | null
@@ -310,14 +343,44 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
+      app_role:
+        | "admin"
+        | "corretor"
+        | "administrativo"
+        | "financeiro"
+        | "gerente"
       claim_status: "open" | "in_progress" | "resolved" | "closed" | "denied"
       policy_status: "active" | "pending" | "expired" | "cancelled"
       policy_type: "auto" | "home" | "life" | "health" | "business" | "other"
@@ -448,6 +511,13 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: [
+        "admin",
+        "corretor",
+        "administrativo",
+        "financeiro",
+        "gerente",
+      ],
       claim_status: ["open", "in_progress", "resolved", "closed", "denied"],
       policy_status: ["active", "pending", "expired", "cancelled"],
       policy_type: ["auto", "home", "life", "health", "business", "other"],
