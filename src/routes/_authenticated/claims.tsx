@@ -367,7 +367,8 @@ function claimStatusVariant(status: string | null) {
   }
 }
 
-function formatCurrency(value?: number) {
+function formatCurrency(value?: number | null) {
   if (value === undefined || value === null) return "—";
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
 }
+
