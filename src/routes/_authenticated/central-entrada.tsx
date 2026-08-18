@@ -165,7 +165,7 @@ function CentralEntradaPage() {
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex flex-col gap-1">
         <h1 className="text-3xl font-bold tracking-tight">Central de Entrada</h1>
-        <p className="text-muted-foreground">fui fazer upload da apoolice deu esse erro "Erro ao processar: Falha ao processar com IA."</p>
+        <p className="text-muted-foreground">quais os loguins e senhas de acesso cadastrados?</p>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
