@@ -96,7 +96,7 @@ function AuthenticatedLayout() {
               <SidebarGroupContent>
                 <SidebarMenu>
                   {navItems
-                    .filter((item) => !item.roles || (role && item.roles.includes(role as any)))
+                    .filter((item) => !item.roles || (!role || item.roles.includes(role as any)))
                     .map((item) => (
                       <SidebarMenuItem key={item.to}>
                         <SidebarMenuButton asChild>
