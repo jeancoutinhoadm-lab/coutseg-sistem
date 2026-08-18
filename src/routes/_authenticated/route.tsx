@@ -44,6 +44,8 @@ const navItems = [
   { title: "Sinistros", to: "/claims", icon: AlertTriangle, roles: ["admin", "corretor", "administrativo", "gerente"] },
   { title: "Renovações", to: "/renewals", icon: CalendarClock, roles: ["admin", "corretor", "administrativo", "gerente"] },
   { title: "Documentos", to: "/documents", icon: Files, roles: ["admin", "corretor", "administrativo", "gerente"] },
+  { title: "Comissões", to: "/commissions", icon: DollarSign, roles: ["admin", "financeiro", "administrativo"] },
+  { title: "Financeiro", to: "/financial", icon: TrendingUp, roles: ["admin", "financeiro"] },
 ];
 
 export const Route = createFileRoute("/_authenticated")({
