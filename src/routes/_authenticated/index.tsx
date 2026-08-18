@@ -45,7 +45,7 @@ function DashboardPage() {
         { count: pendingDocs },
         { data: urgentRenewals },
         { data: divergentCommissions },
-        { data: taskCount },
+        { count: taskCount },
         { data: activePolicies },
       ] = await Promise.all([
         supabase.from("document_processing").select("*", { count: "exact", head: true }).eq("status", "pending"),
@@ -62,7 +62,7 @@ function DashboardPage() {
         pendingDocs: pendingDocs ?? 0,
         urgentRenewals: urgentRenewals ?? [],
         divergentCommissions: divergentCommissions ?? [],
-        pendingTasks: taskCount ?? 0,
+        pendingTasks: Number(taskCount) ?? 0,
         totalPremium,
         totalCommission
       };
