@@ -35,6 +35,7 @@ import {
 
 const navItems = [
   { title: "Dashboard", to: "/", icon: LayoutDashboard, roles: ["admin", "corretor", "administrativo", "financeiro", "gerente"] },
+  { title: "Central de Entrada", to: "/central-entrada", icon: Inbox, roles: ["admin", "administrativo", "corretor"] },
   { title: "Clientes", to: "/clients", icon: Users, roles: ["admin", "corretor", "administrativo", "gerente"] },
   { title: "Produtos", to: "/products", icon: Package, roles: ["admin", "corretor", "administrativo", "gerente"] },
   { title: "Apólices", to: "/policies", icon: FileText, roles: ["admin", "corretor", "administrativo", "gerente"] },
