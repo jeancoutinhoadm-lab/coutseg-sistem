@@ -48,7 +48,7 @@ function DocumentsPage() {
       }
       const { error } = await supabase.from("documents").delete().eq("id", id);
       if (error) throw error;
-      await logAudit('DELETE', 'DOCUMENT', { id });
+      await logAudit('DELETE', 'DOCUMENT', id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["documents"] });
