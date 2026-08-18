@@ -18,11 +18,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Plus, Search, Pencil, Trash2, Loader2, FileText, Upload, Paperclip } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, Loader2, FileText, Upload, Paperclip, Wand2 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { Database } from "@/integrations/supabase/types";
 import { logAudit } from "@/utils/audit";
+import { extractPolicyData } from "@/utils/ai-processor";
 
 export const Route = createFileRoute("/_authenticated/policies")({
   component: PoliciesPage,
@@ -248,6 +249,7 @@ function PolicyDialog({
   
   // States for file upload
   const [uploading, setUploading] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const queryClient = useQueryClient();
 
@@ -330,6 +332,45 @@ function PolicyDialog({
       toast.error("Erro no upload", { description: error.message });
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleAIAnalysis = async () => {
+    if (!selectedFile) return;
+
+    setAnalyzing(true);
+    try {
+      const data = await extractPolicyData(selectedFile);
+      
+      if (data.policy_number) setPolicyNumber(data.policy_number);
+      if (data.premium) setPremium(data.premium);
+      if (data.start_date) setStartDate(data.start_date);
+      if (data.end_date) setEndDate(data.end_date);
+      if (data.type) setType(data.type as any);
+      
+      // Try to match client or insurer if possible (names would need lookup)
+      if (data.client_name) {
+        const matchedClient = clients?.find(c => 
+          c.full_name.toLowerCase().includes(data.client_name!.toLowerCase()) ||
+          data.client_name!.toLowerCase().includes(c.full_name.toLowerCase())
+        );
+        if (matchedClient) setClientId(matchedClient.id);
+      }
+
+      if (data.insurer_name) {
+        const matchedInsurer = insurers?.find(i => 
+          i.name.toLowerCase().includes(data.insurer_name!.toLowerCase()) ||
+          data.insurer_name!.toLowerCase().includes(i.name.toLowerCase())
+        );
+        if (matchedInsurer) setInsurerId(matchedInsurer.id);
+      }
+
+      toast.success("Informações extraídas com sucesso! Por favor, confira os dados.");
+      await logAudit('CONFIRM_IA', 'POLICY_EXTRACTION', undefined, null, data);
+    } catch (error: any) {
+      toast.error("Erro na análise por IA", { description: error.message });
+    } finally {
+      setAnalyzing(false);
     }
   };
 
@@ -585,16 +626,32 @@ function PolicyDialog({
                 onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
                 accept=".pdf,image/*"
               />
-              {selectedFile && editing && (
-                <Button 
-                  type="button" 
-                  size="sm" 
-                  onClick={() => handleFileUpload(editing.id)}
-                  disabled={uploading}
-                >
-                  {uploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
-                  Enviar
-                </Button>
+              {selectedFile && (
+                <div className="flex gap-2">
+                  {!editing && (
+                    <Button 
+                      type="button" 
+                      variant="secondary"
+                      size="sm" 
+                      onClick={handleAIAnalysis}
+                      disabled={analyzing || uploading}
+                    >
+                      {analyzing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
+                      Analisar com IA
+                    </Button>
+                  )}
+                  {editing && (
+                    <Button 
+                      type="button" 
+                      size="sm" 
+                      onClick={() => handleFileUpload(editing.id)}
+                      disabled={uploading || analyzing}
+                    >
+                      {uploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+                      Enviar
+                    </Button>
+                  )}
+                </div>
               )}
             </div>
             <p className="text-xs text-muted-foreground">

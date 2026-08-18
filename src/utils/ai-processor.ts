@@ -1,0 +1,52 @@
+import { supabase } from "@/integrations/supabase/client";
+
+export interface ExtractedPolicyData {
+  policy_number?: string;
+  client_name?: string;
+  insurer_name?: string;
+  start_date?: string;
+  end_date?: string;
+  premium?: number;
+  type?: string;
+}
+
+export async function extractPolicyData(file: File): Promise<ExtractedPolicyData> {
+  // Convert file to base64
+  const base64 = await new Promise<string>((resolve) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result as string);
+    reader.readAsDataURL(file);
+  });
+
+  const prompt = `
+    Analise esta imagem ou PDF de apólice de seguro e extraia as seguintes informações no formato JSON:
+    - policy_number (número da apólice)
+    - client_name (nome completo do segurado)
+    - insurer_name (nome da seguradora)
+    - start_date (data de início da vigência, formato YYYY-MM-DD)
+    - end_date (data de término da vigência, formato YYYY-MM-DD)
+    - premium (valor do prêmio líquido ou total, apenas números)
+    - type (tipo de seguro: auto, life, home, health, business, other)
+
+    Responda APENAS o JSON puro, sem explicações.
+  `;
+
+  try {
+    const { data, error } = await supabase.functions.invoke("analyze-document", {
+      body: { 
+        image: base64.split(',')[1],
+        mimeType: file.type,
+        prompt 
+      },
+    });
+
+    if (error) throw error;
+    
+    // Parse result if it's a string, or use as is if it's already an object
+    const result = typeof data.text === 'string' ? JSON.parse(data.text.replace(/```json|```/g, '')) : data.text;
+    return result;
+  } catch (err) {
+    console.error("Erro na extração via IA:", err);
+    throw new Error("Não foi possível processar o documento com IA.");
+  }
+}
