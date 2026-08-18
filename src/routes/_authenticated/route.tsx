@@ -48,6 +48,8 @@ const navItems = [
   { title: "Documentos", to: "/documents", icon: Files, roles: ["admin", "corretor", "administrativo", "gerente"] },
   { title: "Comissões", to: "/commissions", icon: DollarSign, roles: ["admin", "financeiro", "administrativo"] },
   { title: "Financeiro", to: "/financial", icon: TrendingUp, roles: ["admin", "financeiro"] },
+  { label: "Tarefas", path: "/tasks", icon: CheckSquare },
+  { label: "Renovações", path: "/renewals", icon: Calendar },
 ];
 
 export const Route = createFileRoute("/_authenticated")({
