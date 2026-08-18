@@ -1,5 +1,4 @@
 import { supabase } from "@/integrations/supabase/client";
-import type { Database } from "@/integrations/supabase/types";
 
 export type AuditAction = 
   | 'LOGIN' 
@@ -27,9 +26,9 @@ export async function logAudit(
       user_id: user.id,
       action,
       entity,
-      record_id: recordId,
-      old_data: oldData,
-      new_data: newData
+      record_id: recordId ?? null,
+      old_data: oldData ?? null,
+      new_data: newData ?? null
     });
   } catch (error) {
     console.error('Error logging audit:', error);
