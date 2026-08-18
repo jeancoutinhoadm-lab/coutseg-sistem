@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { Upload, FileText, Loader2, CheckCircle2, AlertCircle, Save } from "lucide-react";
 import { processDocumentWithIA } from "@/lib/ai-extraction.functions";
+import { logAudit } from "@/utils/audit";
 
 export const Route = createFileRoute("/_authenticated/central-entrada")({
   component: CentralEntradaPage,
@@ -20,6 +21,99 @@ function CentralEntradaPage() {
   const [docType, setDocType] = useState<any>("policy");
   const [isProcessing, setIsProcessing] = useState(false);
   const [extractedData, setExtractedData] = useState<any>(null);
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+
+  const { data: insurers } = useQuery({
+    queryKey: ["insurers"],
+    queryFn: async () => {
+      const { data } = await supabase.from("insurers").select("*");
+      return data || [];
+    },
+  });
+
+  const { data: clients } = useQuery({
+    queryKey: ["clients"],
+    queryFn: async () => {
+      const { data } = await supabase.from("clients").select("*");
+      return data || [];
+    },
+  });
+
+  const { data: brokers } = useQuery({
+    queryKey: ["brokers"],
+    queryFn: async () => {
+      const { data } = await supabase.from("brokers").select("*");
+      return data || [];
+    },
+  });
+
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      if (!extractedData || !file) return;
+
+      // 1. Upload do arquivo
+      const fileExt = file.name.split(".").pop();
+      const filePath = `${crypto.randomUUID()}.${fileExt}`;
+      const { error: uploadError } = await supabase.storage
+        .from("policy_documents")
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      // 2. Registro do Documento
+      const { data: doc, error: docError } = await supabase
+        .from("documents")
+        .insert({
+          name: file.name,
+          file_path: filePath,
+          file_type: file.type,
+          size: file.size,
+        })
+        .select()
+        .single();
+
+      if (docError) throw docError;
+
+      // 3. Ação específica por tipo
+      if (docType === 'policy') {
+        // Encontrar ou criar cliente e seguradora (simplificado)
+        const insurer = insurers?.find(i => i.name.toLowerCase().includes(extractedData.insurer_name?.toLowerCase()));
+        const client = clients?.find(c => c.full_name.toLowerCase().includes(extractedData.client_name?.toLowerCase()));
+
+        const { error: policyError } = await supabase.from("policies").insert({
+          policy_number: extractedData.policy_number || "PENDENTE",
+          client_id: client?.id || clients?.[0]?.id, // fallback ou criar novo
+          insurer_id: insurer?.id || insurers?.[0]?.id,
+          type: 'auto', // extraído da IA
+          premium: extractedData.premium || 0,
+          start_date: extractedData.start_date || new Date().toISOString(),
+          end_date: extractedData.end_date || new Date().toISOString(),
+          status: 'active'
+        });
+        if (policyError) throw policyError;
+      } else if (docType === 'bill') {
+        const category = await supabase.from("expense_categories").select("id").ilike("name", `%${extractedData.category_suggestion}%`).single();
+        await supabase.from("expenses").insert({
+          description: extractedData.provider_name || file.name,
+          amount: extractedData.amount || 0,
+          date: extractedData.due_date || new Date().toISOString(),
+          category_id: category.data?.id,
+          status: 'pending',
+          document_id: doc.id
+        });
+      }
+
+      await logAudit('CREATE', 'IA_IMPORT', doc.id);
+    },
+    onSuccess: () => {
+      toast.success("Dados salvos e vinculados com sucesso!");
+      navigate({ to: "/" });
+    },
+    onError: (error: any) => {
+      toast.error("Erro ao salvar: " + error.message);
+    }
+  });
 
   const processMutation = useMutation({
     mutationFn: async () => {
