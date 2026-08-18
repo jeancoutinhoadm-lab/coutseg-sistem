@@ -106,7 +106,7 @@ function DashboardPage() {
         },
         {
           label: `${stats?.pendingTasks} tarefas para hoje`,
-          to: "/",
+          to: "/tasks",
           active: (stats?.pendingTasks ?? 0) > 0
         }
       ]
