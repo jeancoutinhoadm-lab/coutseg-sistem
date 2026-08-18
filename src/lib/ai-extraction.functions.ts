@@ -10,7 +10,10 @@ export const processDocumentWithIA = createServerFn({ method: "POST" })
     }).parse(data)
   )
   .handler(async ({ data }) => {
+    // Note: LOVABLE_API_KEY is managed internally by the Lovable AI Gateway.
+    // Ensure the gateway is configured in the project settings if manual overrides are needed.
     const apiKey = process.env['LOVABLE_API_KEY'];
+
     if (!apiKey) throw new Error("Configuração de IA ausente.");
 
     const prompts = {
