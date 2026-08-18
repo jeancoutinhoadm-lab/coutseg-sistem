@@ -30,6 +30,7 @@ import {
   Shield,
   Package,
   Files,
+  Inbox,
 } from "lucide-react";
 
 const navItems = [
