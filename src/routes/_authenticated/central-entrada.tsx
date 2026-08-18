@@ -35,7 +35,7 @@ function CentralEntradaPage() {
       const result = await processDocumentWithIA({
         data: {
           image: base64.split(',')[1],
-          mimeType: file.type,
+          mimeType: file.type || 'application/octet-stream',
           documentType: docType
         }
       });
