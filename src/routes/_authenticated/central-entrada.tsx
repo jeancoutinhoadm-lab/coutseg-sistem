@@ -52,7 +52,6 @@ function CentralEntradaPage() {
     mutationFn: async () => {
       if (!extractedData || !file) return;
 
-      // 1. Upload do arquivo
       const fileExt = file.name.split(".").pop();
       const filePath = `${crypto.randomUUID()}.${fileExt}`;
       const { error: uploadError } = await supabase.storage
@@ -61,7 +60,6 @@ function CentralEntradaPage() {
 
       if (uploadError) throw uploadError;
 
-      // 2. Registro do Documento
       const { data: doc, error: docError } = await supabase
         .from("documents")
         .insert({
@@ -75,11 +73,12 @@ function CentralEntradaPage() {
 
       if (docError) throw docError;
 
-      // 3. Ação específica por tipo
       if (docType === 'policy') {
-        // Encontrar ou criar cliente e seguradora (simplificado)
-        const insurer = insurers?.find(i => i.name.toLowerCase().includes(extractedData.insurer_name?.toLowerCase()));
-        const client = clients?.find(c => c.full_name.toLowerCase().includes(extractedData.client_name?.toLowerCase()));
+        const insurerName = extractedData.insurer_name?.toLowerCase() || "";
+        const clientName = extractedData.client_name?.toLowerCase() || "";
+        
+        const insurer = insurers?.find(i => i.name.toLowerCase().includes(insurerName));
+        const client = clients?.find(c => c.full_name.toLowerCase().includes(clientName));
 
         const { error: policyError } = await supabase.from("policies").insert({
           policy_number: extractedData.policy_number || "PENDENTE",
@@ -93,7 +92,13 @@ function CentralEntradaPage() {
         });
         if (policyError) throw policyError;
       } else if (docType === 'bill') {
-        const { data: categoryData } = await supabase.from("expense_categories").select("id").ilike("name", `%${extractedData.category_suggestion}%`).maybeSingle();
+        const categoryName = extractedData.category_suggestion || "";
+        const { data: categoryData } = await supabase
+          .from("expense_categories")
+          .select("id")
+          .ilike("name", `%${categoryName}%`)
+          .maybeSingle();
+
         await supabase.from("expenses").insert({
           description: extractedData.provider_name || file.name,
           amount: Number(extractedData.amount) || 0,
@@ -108,6 +113,7 @@ function CentralEntradaPage() {
     },
     onSuccess: () => {
       toast.success("Dados salvos e vinculados com sucesso!");
+      queryClient.invalidateQueries();
       navigate({ to: "/" });
     },
     onError: (error: any) => {
