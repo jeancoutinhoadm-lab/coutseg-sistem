@@ -28,6 +28,7 @@ import {
   CalendarClock,
   LogOut,
   Shield,
+  Package,
 } from "lucide-react";
 
 const navItems = [
