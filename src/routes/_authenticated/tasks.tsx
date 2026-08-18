@@ -80,7 +80,7 @@ function TasksPage() {
                     {task.client && (
                       <Badge variant="outline">{task.client.full_name}</Badge>
                     )}
-                    <Badge className={getPriorityColor(task.priority || 'normal')}>
+                    <Badge className={getPriorityColor(task.priority)}>
                       {task.priority === 'urgent' ? 'Urgente' : 
                        task.priority === 'high' ? 'Alta' : 'Normal'}
                     </Badge>
