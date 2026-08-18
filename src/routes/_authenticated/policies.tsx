@@ -546,31 +546,71 @@ function PolicyDialog({
               </SelectContent>
             </Select>
           </div>
+
+          <div className="grid gap-2 border-t pt-4">
+            <Label className="flex items-center gap-2">
+              <Paperclip className="h-4 w-4" />
+              Documento da Apólice (PDF/Imagens)
+            </Label>
+            
+            {editing && documents && documents.length > 0 && (
+              <div className="mb-2 space-y-2">
+                {documents.map((doc) => (
+                  <div key={doc.id} className="flex items-center justify-between rounded-md bg-muted p-2 text-sm">
+                    <span className="truncate">{doc.name}</span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-destructive"
+                      onClick={async () => {
+                        if (confirm("Excluir este documento?")) {
+                          await supabase.storage.from("policy_documents").remove([doc.file_path]);
+                          await supabase.from("documents").delete().eq("id", doc.id);
+                          queryClient.invalidateQueries({ queryKey: ["policy-documents", editing.id] });
+                          toast.success("Documento removido");
+                        }
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="flex items-center gap-4">
+              <Input
+                type="file"
+                className="cursor-pointer"
+                onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                accept=".pdf,image/*"
+              />
+              {selectedFile && editing && (
+                <Button 
+                  type="button" 
+                  size="sm" 
+                  onClick={() => handleFileUpload(editing.id)}
+                  disabled={uploading}
+                >
+                  {uploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+                  Enviar
+                </Button>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Tipos permitidos: PDF, JPG, PNG. Tamanho máx: 10MB.
+            </p>
+          </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
           <Button
-            disabled={isPending || !policyNumber.trim() || !clientId || !insurerId || !startDate || !endDate}
-            onClick={() =>
-              onSubmit({
-                policy_number: policyNumber,
-                client_id: clientId,
-                insurer_id: insurerId,
-                broker_id: brokerId || null,
-                type,
-                status,
-                premium,
-                commission_amount: commissionAmount,
-                coverage_amount: coverageAmount,
-                start_date: startDate,
-                end_date: endDate,
-                renewal_date: renewalDate || null,
-              })
-            }
+            disabled={isPending || uploading || !policyNumber.trim() || !clientId || !insurerId || !startDate || !endDate}
+            onClick={handleSave}
           >
-            {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            {(isPending || uploading) ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
             Salvar
           </Button>
         </DialogFooter>
