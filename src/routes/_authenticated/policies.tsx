@@ -339,6 +339,12 @@ function PolicyDialog({
     if (!selectedFile) return;
 
     setAnalyzing(true);
+    // Limpar campos antes da análise para feedback visual
+    setPolicyNumber("");
+    setPremium(0);
+    setStartDate("");
+    setEndDate("");
+
     try {
       const data = await extractPolicyData(selectedFile);
       
@@ -346,19 +352,31 @@ function PolicyDialog({
       if (data.premium) setPremium(data.premium);
       if (data.start_date) setStartDate(data.start_date);
       if (data.end_date) setEndDate(data.end_date);
-      if (data.type) setType(data.type as any);
       
-      // Try to match client or insurer if possible (names would need lookup)
-      if (data.client_name) {
-        const matchedClient = clients?.find(c => 
+      if (data.type) {
+        const typeLower = data.type.toLowerCase();
+        const validTypes = ["auto", "home", "life", "health", "business", "other"];
+        if (validTypes.includes(typeLower)) {
+          setType(typeLower as any);
+        } else if (products) {
+          const matchedProduct = products.find(p => 
+            p.name.toLowerCase().includes(typeLower) || 
+            typeLower.includes(p.name.toLowerCase())
+          );
+          if (matchedProduct) setType(matchedProduct.name.toLowerCase() as any);
+        }
+      }
+      
+      if (data.client_name && clients) {
+        const matchedClient = clients.find(c => 
           c.full_name.toLowerCase().includes(data.client_name!.toLowerCase()) ||
           data.client_name!.toLowerCase().includes(c.full_name.toLowerCase())
         );
         if (matchedClient) setClientId(matchedClient.id);
       }
 
-      if (data.insurer_name) {
-        const matchedInsurer = insurers?.find(i => 
+      if (data.insurer_name && insurers) {
+        const matchedInsurer = insurers.find(i => 
           i.name.toLowerCase().includes(data.insurer_name!.toLowerCase()) ||
           data.insurer_name!.toLowerCase().includes(i.name.toLowerCase())
         );
