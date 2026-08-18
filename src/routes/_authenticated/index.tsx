@@ -117,7 +117,7 @@ function DashboardPage() {
       color: "text-blue-600",
       items: [
         {
-          label: `${stats?.divergentCommissions.length} comissões com divergência`,
+          label: `${stats?.divergentCommissions?.length ?? 0} comissões com divergência`,
           to: "/commissions",
           active: (stats?.divergentCommissions?.length ?? 0) > 0
         }
