@@ -13,13 +13,17 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedBrokersRouteImport } from './routes/_authenticated/brokers'
+import { Route as AuthenticatedCentralEntradaRouteImport } from './routes/_authenticated/central-entrada'
 import { Route as AuthenticatedClaimsRouteImport } from './routes/_authenticated/claims'
 import { Route as AuthenticatedClientsRouteImport } from './routes/_authenticated/clients'
+import { Route as AuthenticatedCommissionsRouteImport } from './routes/_authenticated/commissions'
 import { Route as AuthenticatedDocumentsRouteImport } from './routes/_authenticated/documents'
+import { Route as AuthenticatedFinancialRouteImport } from './routes/_authenticated/financial'
 import { Route as AuthenticatedInsurersRouteImport } from './routes/_authenticated/insurers'
 import { Route as AuthenticatedPoliciesRouteImport } from './routes/_authenticated/policies'
 import { Route as AuthenticatedProductsRouteImport } from './routes/_authenticated/products'
 import { Route as AuthenticatedRenewalsRouteImport } from './routes/_authenticated/renewals'
+import { Route as AuthenticatedTasksRouteImport } from './routes/_authenticated/tasks'
 import { Route as AuthLoginRouteImport } from './routes/auth/login'
 import { Route as AuthRegisterRouteImport } from './routes/auth/register'
 
@@ -42,6 +46,12 @@ const AuthenticatedBrokersRoute = AuthenticatedBrokersRouteImport.update({
   path: '/brokers',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedCentralEntradaRoute =
+  AuthenticatedCentralEntradaRouteImport.update({
+    id: '/central-entrada',
+    path: '/central-entrada',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedClaimsRoute = AuthenticatedClaimsRouteImport.update({
   id: '/claims',
   path: '/claims',
@@ -52,9 +62,20 @@ const AuthenticatedClientsRoute = AuthenticatedClientsRouteImport.update({
   path: '/clients',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedCommissionsRoute =
+  AuthenticatedCommissionsRouteImport.update({
+    id: '/commissions',
+    path: '/commissions',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedDocumentsRoute = AuthenticatedDocumentsRouteImport.update({
   id: '/documents',
   path: '/documents',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedFinancialRoute = AuthenticatedFinancialRouteImport.update({
+  id: '/financial',
+  path: '/financial',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedInsurersRoute = AuthenticatedInsurersRouteImport.update({
@@ -77,6 +98,11 @@ const AuthenticatedRenewalsRoute = AuthenticatedRenewalsRouteImport.update({
   path: '/renewals',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedTasksRoute = AuthenticatedTasksRouteImport.update({
+  id: '/tasks',
+  path: '/tasks',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthLoginRoute = AuthLoginRouteImport.update({
   id: '/auth/login',
   path: '/auth/login',
@@ -92,26 +118,34 @@ export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/dashboard': typeof DashboardRoute
   '/brokers': typeof AuthenticatedBrokersRoute
+  '/central-entrada': typeof AuthenticatedCentralEntradaRoute
   '/claims': typeof AuthenticatedClaimsRoute
   '/clients': typeof AuthenticatedClientsRoute
+  '/commissions': typeof AuthenticatedCommissionsRoute
   '/documents': typeof AuthenticatedDocumentsRoute
+  '/financial': typeof AuthenticatedFinancialRoute
   '/insurers': typeof AuthenticatedInsurersRoute
   '/policies': typeof AuthenticatedPoliciesRoute
   '/products': typeof AuthenticatedProductsRoute
   '/renewals': typeof AuthenticatedRenewalsRoute
+  '/tasks': typeof AuthenticatedTasksRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
 }
 export interface FileRoutesByTo {
   '/dashboard': typeof DashboardRoute
   '/brokers': typeof AuthenticatedBrokersRoute
+  '/central-entrada': typeof AuthenticatedCentralEntradaRoute
   '/claims': typeof AuthenticatedClaimsRoute
   '/clients': typeof AuthenticatedClientsRoute
+  '/commissions': typeof AuthenticatedCommissionsRoute
   '/documents': typeof AuthenticatedDocumentsRoute
+  '/financial': typeof AuthenticatedFinancialRoute
   '/insurers': typeof AuthenticatedInsurersRoute
   '/policies': typeof AuthenticatedPoliciesRoute
   '/products': typeof AuthenticatedProductsRoute
   '/renewals': typeof AuthenticatedRenewalsRoute
+  '/tasks': typeof AuthenticatedTasksRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
   '/': typeof AuthenticatedIndexRoute
@@ -121,13 +155,17 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/dashboard': typeof DashboardRoute
   '/_authenticated/brokers': typeof AuthenticatedBrokersRoute
+  '/_authenticated/central-entrada': typeof AuthenticatedCentralEntradaRoute
   '/_authenticated/claims': typeof AuthenticatedClaimsRoute
   '/_authenticated/clients': typeof AuthenticatedClientsRoute
+  '/_authenticated/commissions': typeof AuthenticatedCommissionsRoute
   '/_authenticated/documents': typeof AuthenticatedDocumentsRoute
+  '/_authenticated/financial': typeof AuthenticatedFinancialRoute
   '/_authenticated/insurers': typeof AuthenticatedInsurersRoute
   '/_authenticated/policies': typeof AuthenticatedPoliciesRoute
   '/_authenticated/products': typeof AuthenticatedProductsRoute
   '/_authenticated/renewals': typeof AuthenticatedRenewalsRoute
+  '/_authenticated/tasks': typeof AuthenticatedTasksRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
@@ -138,26 +176,34 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/brokers'
+    | '/central-entrada'
     | '/claims'
     | '/clients'
+    | '/commissions'
     | '/documents'
+    | '/financial'
     | '/insurers'
     | '/policies'
     | '/products'
     | '/renewals'
+    | '/tasks'
     | '/auth/login'
     | '/auth/register'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/dashboard'
     | '/brokers'
+    | '/central-entrada'
     | '/claims'
     | '/clients'
+    | '/commissions'
     | '/documents'
+    | '/financial'
     | '/insurers'
     | '/policies'
     | '/products'
     | '/renewals'
+    | '/tasks'
     | '/auth/login'
     | '/auth/register'
     | '/'
@@ -166,13 +212,17 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/dashboard'
     | '/_authenticated/brokers'
+    | '/_authenticated/central-entrada'
     | '/_authenticated/claims'
     | '/_authenticated/clients'
+    | '/_authenticated/commissions'
     | '/_authenticated/documents'
+    | '/_authenticated/financial'
     | '/_authenticated/insurers'
     | '/_authenticated/policies'
     | '/_authenticated/products'
     | '/_authenticated/renewals'
+    | '/_authenticated/tasks'
     | '/auth/login'
     | '/auth/register'
     | '/_authenticated/'
@@ -215,6 +265,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBrokersRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/central-entrada': {
+      id: '/_authenticated/central-entrada'
+      path: '/central-entrada'
+      fullPath: '/central-entrada'
+      preLoaderRoute: typeof AuthenticatedCentralEntradaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/claims': {
       id: '/_authenticated/claims'
       path: '/claims'
@@ -229,11 +286,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedClientsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/commissions': {
+      id: '/_authenticated/commissions'
+      path: '/commissions'
+      fullPath: '/commissions'
+      preLoaderRoute: typeof AuthenticatedCommissionsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/documents': {
       id: '/_authenticated/documents'
       path: '/documents'
       fullPath: '/documents'
       preLoaderRoute: typeof AuthenticatedDocumentsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/financial': {
+      id: '/_authenticated/financial'
+      path: '/financial'
+      fullPath: '/financial'
+      preLoaderRoute: typeof AuthenticatedFinancialRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/insurers': {
@@ -264,6 +335,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRenewalsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/tasks': {
+      id: '/_authenticated/tasks'
+      path: '/tasks'
+      fullPath: '/tasks'
+      preLoaderRoute: typeof AuthenticatedTasksRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/auth/login': {
       id: '/auth/login'
       path: '/auth/login'
@@ -283,25 +361,33 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedBrokersRoute: typeof AuthenticatedBrokersRoute
+  AuthenticatedCentralEntradaRoute: typeof AuthenticatedCentralEntradaRoute
   AuthenticatedClaimsRoute: typeof AuthenticatedClaimsRoute
   AuthenticatedClientsRoute: typeof AuthenticatedClientsRoute
+  AuthenticatedCommissionsRoute: typeof AuthenticatedCommissionsRoute
   AuthenticatedDocumentsRoute: typeof AuthenticatedDocumentsRoute
+  AuthenticatedFinancialRoute: typeof AuthenticatedFinancialRoute
   AuthenticatedInsurersRoute: typeof AuthenticatedInsurersRoute
   AuthenticatedPoliciesRoute: typeof AuthenticatedPoliciesRoute
   AuthenticatedProductsRoute: typeof AuthenticatedProductsRoute
   AuthenticatedRenewalsRoute: typeof AuthenticatedRenewalsRoute
+  AuthenticatedTasksRoute: typeof AuthenticatedTasksRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedBrokersRoute: AuthenticatedBrokersRoute,
+  AuthenticatedCentralEntradaRoute: AuthenticatedCentralEntradaRoute,
   AuthenticatedClaimsRoute: AuthenticatedClaimsRoute,
   AuthenticatedClientsRoute: AuthenticatedClientsRoute,
+  AuthenticatedCommissionsRoute: AuthenticatedCommissionsRoute,
   AuthenticatedDocumentsRoute: AuthenticatedDocumentsRoute,
+  AuthenticatedFinancialRoute: AuthenticatedFinancialRoute,
   AuthenticatedInsurersRoute: AuthenticatedInsurersRoute,
   AuthenticatedPoliciesRoute: AuthenticatedPoliciesRoute,
   AuthenticatedProductsRoute: AuthenticatedProductsRoute,
   AuthenticatedRenewalsRoute: AuthenticatedRenewalsRoute,
+  AuthenticatedTasksRoute: AuthenticatedTasksRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
 }
 

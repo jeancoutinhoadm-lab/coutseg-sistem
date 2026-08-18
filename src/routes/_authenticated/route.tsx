@@ -30,10 +30,16 @@ import {
   Shield,
   Package,
   Files,
+  Inbox,
+  DollarSign,
+  TrendingUp,
+  CheckSquare,
+  Calendar,
 } from "lucide-react";
 
 const navItems = [
   { title: "Dashboard", to: "/", icon: LayoutDashboard, roles: ["admin", "corretor", "administrativo", "financeiro", "gerente"] },
+  { title: "Central de Entrada", to: "/central-entrada", icon: Inbox, roles: ["admin", "administrativo", "corretor"] },
   { title: "Clientes", to: "/clients", icon: Users, roles: ["admin", "corretor", "administrativo", "gerente"] },
   { title: "Produtos", to: "/products", icon: Package, roles: ["admin", "corretor", "administrativo", "gerente"] },
   { title: "Apólices", to: "/policies", icon: FileText, roles: ["admin", "corretor", "administrativo", "gerente"] },
@@ -42,6 +48,9 @@ const navItems = [
   { title: "Sinistros", to: "/claims", icon: AlertTriangle, roles: ["admin", "corretor", "administrativo", "gerente"] },
   { title: "Renovações", to: "/renewals", icon: CalendarClock, roles: ["admin", "corretor", "administrativo", "gerente"] },
   { title: "Documentos", to: "/documents", icon: Files, roles: ["admin", "corretor", "administrativo", "gerente"] },
+  { title: "Comissões", to: "/commissions", icon: DollarSign, roles: ["admin", "financeiro", "administrativo"] },
+  { title: "Financeiro", to: "/financial", icon: TrendingUp, roles: ["admin", "financeiro"] },
+  { title: "Tarefas", to: "/tasks", icon: CheckSquare, roles: ["admin", "corretor", "administrativo", "gerente"] },
 ];
 
 export const Route = createFileRoute("/_authenticated")({
