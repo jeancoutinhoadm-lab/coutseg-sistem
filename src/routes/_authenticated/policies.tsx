@@ -245,6 +245,135 @@ function PolicyDialog({
   const [endDate, setEndDate] = useState(editing?.end_date ?? "");
   const [renewalDate, setRenewalDate] = useState(editing?.renewal_date ?? "");
   const [coverageAmount, setCoverageAmount] = useState(editing?.coverage_amount ?? 0);
+  
+  // States for file upload
+  const [uploading, setUploading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const queryClient = useQueryClient();
+
+  // Reset form when editing changes
+  useEffect(() => {
+    if (editing) {
+      setPolicyNumber(editing.policy_number);
+      setClientId(editing.client_id);
+      setInsurerId(editing.insurer_id);
+      setBrokerId(editing.broker_id ?? "");
+      setType(editing.type);
+      setStatus(editing.status ?? "active");
+      setPremium(editing.premium);
+      setCommissionAmount(editing.commission_amount ?? 0);
+      setStartDate(editing.start_date);
+      setEndDate(editing.end_date);
+      setRenewalDate(editing.renewal_date ?? "");
+      setCoverageAmount(editing.coverage_amount ?? 0);
+    } else {
+      setPolicyNumber("");
+      setClientId("");
+      setInsurerId("");
+      setBrokerId("");
+      setType("auto");
+      setStatus("active");
+      setPremium(0);
+      setCommissionAmount(0);
+      setStartDate("");
+      setEndDate("");
+      setRenewalDate("");
+      setCoverageAmount(0);
+    }
+    setSelectedFile(null);
+  }, [editing, open]);
+
+  const { data: documents } = useQuery({
+    queryKey: ["policy-documents", editing?.id],
+    enabled: !!editing?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("documents")
+        .select("*")
+        .eq("policy_id", editing!.id);
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const handleFileUpload = async (policyId: string) => {
+    if (!selectedFile) return;
+
+    setUploading(true);
+    try {
+      const fileExt = selectedFile.name.split(".").pop();
+      const fileName = `${Math.random()}.${fileExt}`;
+      const filePath = `${policyId}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("policy_documents")
+        .upload(filePath, selectedFile);
+
+      if (uploadError) throw uploadError;
+
+      const { error: dbError } = await supabase.from("documents").insert({
+        name: selectedFile.name,
+        file_path: filePath,
+        file_type: selectedFile.type,
+        size: selectedFile.size,
+        policy_id: policyId,
+        client_id: clientId,
+      });
+
+      if (dbError) throw dbError;
+      
+      await logAudit('UPLOAD', 'DOCUMENT', policyId);
+      toast.success("Documento enviado com sucesso");
+      queryClient.invalidateQueries({ queryKey: ["policy-documents", editing?.id] });
+      setSelectedFile(null);
+    } catch (error: any) {
+      toast.error("Erro no upload", { description: error.message });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    const values = {
+      policy_number: policyNumber,
+      client_id: clientId,
+      insurer_id: insurerId,
+      broker_id: brokerId || null,
+      type,
+      status,
+      premium,
+      commission_amount: commissionAmount,
+      coverage_amount: coverageAmount,
+      start_date: startDate,
+      end_date: endDate,
+      renewal_date: renewalDate || null,
+    };
+
+    if (editing) {
+      onSubmit(values);
+      if (selectedFile) {
+        await handleFileUpload(editing.id);
+      }
+    } else {
+      // For new policy, we need the ID first
+      const { data, error } = await supabase.from("policies").insert(values).select().single();
+      if (error) {
+        toast.error("Erro ao criar apólice", { description: error.message });
+        return;
+      }
+      
+      await logAudit('CREATE', 'POLICY', data.id, null, values);
+      
+      if (selectedFile) {
+        await handleFileUpload(data.id);
+      }
+      
+      queryClient.invalidateQueries({ queryKey: ["policies"] });
+      onOpenChange(false);
+      toast.success("Apólice criada com sucesso");
+    }
+  };
+
 
   const { data: clients } = useQuery({
     queryKey: ["clients-select"],
