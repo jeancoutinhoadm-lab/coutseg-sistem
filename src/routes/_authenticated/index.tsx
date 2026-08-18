@@ -30,12 +30,15 @@ export const Route = createFileRoute("/_authenticated/")({
 });
 
 import { useAuth } from "@/hooks/use-auth";
+import { logAudit } from "@/utils/audit";
 
 function DashboardPage() {
   const { user, role } = useAuth();
   const { data: stats, isLoading } = useQuery({
     queryKey: ["dashboard-stats"],
+    staleTime: Infinity,
     queryFn: async () => {
+      await logAudit('VIEW', 'DASHBOARD');
       const [
         { count: clientsCount, error: clientsError },
         { count: policiesCount, error: policiesError },

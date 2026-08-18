@@ -13,6 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { Plus, Search, Pencil, Trash2, Loader2, Building2 } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
+import { logAudit } from "@/utils/audit";
 
 export const Route = createFileRoute("/_authenticated/insurers")({
   component: InsurersPage,
@@ -44,9 +45,11 @@ function InsurersPage() {
       if (editing) {
         const { error } = await supabase.from("insurers").update(values).eq("id", editing.id);
         if (error) throw error;
+        await logAudit('UPDATE', 'INSURER', editing.id, editing, values);
       } else {
-        const { error } = await supabase.from("insurers").insert(values);
+        const { data, error } = await supabase.from("insurers").insert(values).select().single();
         if (error) throw error;
+        await logAudit('CREATE', 'INSURER', data.id, null, values);
       }
     },
     onSuccess: () => {
@@ -64,6 +67,7 @@ function InsurersPage() {
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("insurers").delete().eq("id", id);
       if (error) throw error;
+      await logAudit('DELETE', 'INSURER', id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["insurers"] });

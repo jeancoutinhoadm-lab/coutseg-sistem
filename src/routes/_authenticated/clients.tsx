@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { Plus, Search, Pencil, Trash2, Loader2 } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
+import { logAudit } from "@/utils/audit";
 
 export const Route = createFileRoute("/_authenticated/clients")({
   component: ClientsPage,
@@ -48,9 +49,11 @@ function ClientsPage() {
       if (editing) {
         const { error } = await supabase.from("clients").update(values).eq("id", editing.id);
         if (error) throw error;
+        await logAudit('UPDATE', 'CLIENT', editing.id, editing, values);
       } else {
-        const { error } = await supabase.from("clients").insert(values);
+        const { data, error } = await supabase.from("clients").insert(values).select().single();
         if (error) throw error;
+        await logAudit('CREATE', 'CLIENT', data.id, null, values);
       }
     },
     onSuccess: () => {
@@ -68,6 +71,7 @@ function ClientsPage() {
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("clients").delete().eq("id", id);
       if (error) throw error;
+      await logAudit('DELETE', 'CLIENT', id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["clients"] });

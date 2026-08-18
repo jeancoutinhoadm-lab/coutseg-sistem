@@ -11,6 +11,7 @@ import { Search, CalendarClock } from "lucide-react";
 import { format, addDays, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { Database } from "@/integrations/supabase/types";
+import { logAudit } from "@/utils/audit";
 
 export const Route = createFileRoute("/_authenticated/renewals")({
   component: RenewalsPage,
@@ -32,6 +33,7 @@ function RenewalsPage() {
   const { data: renewals, isLoading } = useQuery({
     queryKey: ["renewals", days],
     queryFn: async () => {
+      await logAudit('VIEW', 'RENEWALS', undefined, null, { days });
       const { data, error } = await supabase
         .from("policies")
         .select("*, clients(full_name), insurers(name), brokers(full_name)")
