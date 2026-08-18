@@ -136,11 +136,9 @@ function CentralEntradaPage() {
       if (!imageBase64) throw new Error("Falha ao converter arquivo");
 
       const result = await processDocumentWithIA({
-        data: {
-          image: imageBase64,
-          mimeType: file.type || 'application/octet-stream',
-          documentType: docType
-        }
+        image: imageBase64,
+        mimeType: file.type || 'application/octet-stream',
+        documentType: docType
       });
       return result;
     },
@@ -148,7 +146,7 @@ function CentralEntradaPage() {
       setExtractedData(data);
       toast.success("Documento analisado com sucesso!");
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast.error("Erro ao processar: " + error.message);
     },
     onSettled: () => setIsProcessing(false)
