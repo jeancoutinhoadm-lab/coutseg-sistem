@@ -1,32 +1,33 @@
 # Auditoria do Projeto Coutseg Gestão
 
 ## 1. O que já existe
-- **Tecnologia:** React + TypeScript + TanStack Start v1 + Supabase (Lovable Cloud).
-- **Autenticação:** Login/Registro funcional com e-mail e Google. Middleware `_authenticated` protegendo as rotas internas.
-- **Banco de Dados:** Tabelas iniciais (`profiles`, `insurers`, `brokers`, `clients`, `policies`, `claims`) com RLS básico.
-- **Frontend:** Sidebar navegável, formulários de cadastro para clientes, apólices, seguradoras, corretores e sinistros. Dashboard com métricas totais e renovações próximas.
+- **Base Tecnológica:** React 19, TypeScript, TanStack Start v1, Tailwind CSS v4, Lucide React, Shadcn UI.
+- **Backend:** Supabase (Lovable Cloud) com tabelas iniciais e RLS básico.
+- **Estrutura de Rotas:** 
+  - `/auth/login` e `/auth/register`.
+  - Layout Protegido `_authenticated`.
+  - Telas iniciais: Dashboard, Clientes, Apólices, Seguradoras, Corretores, Sinistros e Renovações.
+- **Funcionalidades:** CRUD básico funcional para as entidades principais.
 
 ## 2. O que funciona
-- Acesso autenticado e persistência de sessão.
-- Operações de CRUD em todos os módulos básicos.
-- Redirecionamento automático de usuários não logados.
-- Notificações de sucesso/erro nas ações do usuário.
+- Fluxo de autenticação completo.
+- Sidebar com navegação funcional.
+- Listagem e criação de registros (Clientes, Apólices, etc.).
+- Dashboard com resumo de métricas e lista de renovações próximas (30 dias).
 
 ## 3. O que está incompleto / Precisa ser melhorado
-- **Cargos e Permissões:** Atualmente usa uma coluna simples `role` na tabela `profiles`. Precisa migrar para a arquitetura solicitada: `app_role` (admin, corretor, administrativo, financeiro, gerente), tabela `user_roles` e função `has_role` com RLS granular.
-- **RLS:** As políticas atuais permitem que qualquer usuário autenticado veja todos os dados. O Corretor deve ver apenas seus próprios clientes/apólices.
-- **Schema:** Faltam campos essenciais como `whatsapp`, tipo de cliente (PF/PJ), detalhes de pagamento nas apólices e o módulo de `products` gerenciável.
-- **Financeiro:** Módulos de comissões, conciliação e contas a pagar/receber ainda não existem.
-- **Inteligência:** Central de Entrada (Upload + IA) e Central de Operações (Alertas) não implementadas.
+- **Cargos (Roles):** Atualmente usa uma coluna `role` na tabela `profiles`. Precisa migrar para a arquitetura de cargos granulares (`admin`, `corretor`, `administrativo`, `financeiro`, `gerente`) com a tabela `user_roles` e função `has_role`.
+- **Isolamento de Dados (RLS):** As políticas atuais são globais para usuários autenticados. O cargo `corretor` deve visualizar apenas seus próprios clientes e apólices.
+- **Schema de Dados:** Faltam campos detalhados na especificação (WhatsApp, endereço completo com bairro/número, tipo PF/PJ, financeiro da apólice).
+- **Entidades Faltantes:** Módulo de `produtos` (tabela), `documentos` (Storage), `comissões`, `tarefas`, `oportunidades` e `contas a pagar`.
+- **Inteligência:** Central de Entrada (OCR/IA) e Central de Operações (Alertas baseados em cargo).
 
 ## 4. O que precisa ser corrigido
-- **Privacidade:** Isolar dados entre corretores.
-- **Integridade:** Validar CPF/CNPJ para evitar duplicidade de clientes no frontend e backend.
+- **Segurança:** Refinar RLS para evitar que um corretor veja dados de outro.
+- **Frontend:** Adicionar validação de CPF/CNPJ único para clientes.
 
-## 5. Próximas Etapas (Conforme Etapas Solicitadas)
-- **ETAPA 2:** Refatorar Segurança (Cargos, `user_roles`, `has_role`, RLS restrito).
-- **ETAPA 3:** Cadastro de Produtos (tabela) e expansão dos campos de Clientes e Seguradoras.
-- **ETAPA 4/5:** Central de Entrada e Documentos (Storage).
+## 5. Próximo Passo Sugerido
+- **ETAPA 2:** Refatoração da Segurança (Cargos e RLS Granular).
 
 ---
-Auditoria concluída. O projeto possui uma base sólida, mas precisa de refinamento imediato na camada de segurança e expansão do modelo de dados para atender aos requisitos de um sistema operacional interno real.
+Diagnóstico concluído. A fundação está pronta, mas o sistema precisa agora de "musculatura" e inteligência para ser uma ferramenta operacional real.
