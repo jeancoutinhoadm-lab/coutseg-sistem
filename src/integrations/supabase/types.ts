@@ -207,6 +207,98 @@ export type Database = {
           },
         ]
       }
+      commissions: {
+        Row: {
+          created_at: string | null
+          due_date: string | null
+          expected_amount: number
+          id: string
+          policy_id: string | null
+          received_amount: number | null
+          received_date: string | null
+          statement_document_id: string | null
+          status: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          due_date?: string | null
+          expected_amount: number
+          id?: string
+          policy_id?: string | null
+          received_amount?: number | null
+          received_date?: string | null
+          statement_document_id?: string | null
+          status?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          due_date?: string | null
+          expected_amount?: number
+          id?: string
+          policy_id?: string | null
+          received_amount?: number | null
+          received_date?: string | null
+          statement_document_id?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commissions_policy_id_fkey"
+            columns: ["policy_id"]
+            isOneToOne: false
+            referencedRelation: "policies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commissions_statement_document_id_fkey"
+            columns: ["statement_document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_processing: {
+        Row: {
+          created_at: string | null
+          document_id: string | null
+          error_message: string | null
+          extracted_data: Json | null
+          id: string
+          processed_at: string | null
+          status: string | null
+          type: Database["public"]["Enums"]["document_type"] | null
+        }
+        Insert: {
+          created_at?: string | null
+          document_id?: string | null
+          error_message?: string | null
+          extracted_data?: Json | null
+          id?: string
+          processed_at?: string | null
+          status?: string | null
+          type?: Database["public"]["Enums"]["document_type"] | null
+        }
+        Update: {
+          created_at?: string | null
+          document_id?: string | null
+          error_message?: string | null
+          extracted_data?: Json | null
+          id?: string
+          processed_at?: string | null
+          status?: string | null
+          type?: Database["public"]["Enums"]["document_type"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_processing_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       documents: {
         Row: {
           client_id: string | null
@@ -261,6 +353,102 @@ export type Database = {
           },
         ]
       }
+      employees: {
+        Row: {
+          active: boolean | null
+          created_at: string | null
+          full_name: string
+          hire_date: string | null
+          id: string
+          role: string | null
+          salary: number | null
+        }
+        Insert: {
+          active?: boolean | null
+          created_at?: string | null
+          full_name: string
+          hire_date?: string | null
+          id?: string
+          role?: string | null
+          salary?: number | null
+        }
+        Update: {
+          active?: boolean | null
+          created_at?: string | null
+          full_name?: string
+          hire_date?: string | null
+          id?: string
+          role?: string | null
+          salary?: number | null
+        }
+        Relationships: []
+      }
+      expense_categories: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      expenses: {
+        Row: {
+          amount: number
+          category_id: string | null
+          created_at: string | null
+          date: string
+          description: string
+          document_id: string | null
+          id: string
+          status: string | null
+        }
+        Insert: {
+          amount: number
+          category_id?: string | null
+          created_at?: string | null
+          date: string
+          description: string
+          document_id?: string | null
+          id?: string
+          status?: string | null
+        }
+        Update: {
+          amount?: number
+          category_id?: string | null
+          created_at?: string | null
+          date?: string
+          description?: string
+          document_id?: string | null
+          id?: string
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expenses_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "expense_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       insurers: {
         Row: {
           active: boolean | null
@@ -299,6 +487,67 @@ export type Database = {
           website?: string | null
         }
         Relationships: []
+      }
+      opportunities: {
+        Row: {
+          broker_id: string | null
+          client_id: string | null
+          created_at: string | null
+          id: string
+          notes: string | null
+          priority: string | null
+          product_id: string | null
+          score: number | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          broker_id?: string | null
+          client_id?: string | null
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          priority?: string | null
+          product_id?: string | null
+          score?: number | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          broker_id?: string | null
+          client_id?: string | null
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          priority?: string | null
+          product_id?: string | null
+          score?: number | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opportunities_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
+            referencedRelation: "brokers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunities_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunities_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       policies: {
         Row: {
@@ -439,6 +688,141 @@ export type Database = {
         }
         Relationships: []
       }
+      revenue: {
+        Row: {
+          amount: number
+          category: string | null
+          created_at: string | null
+          date: string
+          description: string
+          id: string
+          notes: string | null
+        }
+        Insert: {
+          amount: number
+          category?: string | null
+          created_at?: string | null
+          date: string
+          description: string
+          id?: string
+          notes?: string | null
+        }
+        Update: {
+          amount?: number
+          category?: string | null
+          created_at?: string | null
+          date?: string
+          description?: string
+          id?: string
+          notes?: string | null
+        }
+        Relationships: []
+      }
+      salary_payments: {
+        Row: {
+          amount: number
+          created_at: string | null
+          employee_id: string | null
+          id: string
+          payment_date: string
+          status: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          employee_id?: string | null
+          id?: string
+          payment_date: string
+          status?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          employee_id?: string | null
+          id?: string
+          payment_date?: string
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "salary_payments_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tasks: {
+        Row: {
+          client_id: string | null
+          completed_at: string | null
+          created_at: string | null
+          description: string | null
+          due_date: string | null
+          id: string
+          opportunity_id: string | null
+          origin: string | null
+          policy_id: string | null
+          priority: string | null
+          status: string | null
+          title: string
+          user_id: string | null
+        }
+        Insert: {
+          client_id?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          opportunity_id?: string | null
+          origin?: string | null
+          policy_id?: string | null
+          priority?: string | null
+          status?: string | null
+          title: string
+          user_id?: string | null
+        }
+        Update: {
+          client_id?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          opportunity_id?: string | null
+          origin?: string | null
+          policy_id?: string | null
+          priority?: string | null
+          status?: string | null
+          title?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "opportunities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_policy_id_fkey"
+            columns: ["policy_id"]
+            isOneToOne: false
+            referencedRelation: "policies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           id: string
@@ -478,6 +862,13 @@ export type Database = {
         | "financeiro"
         | "gerente"
       claim_status: "open" | "in_progress" | "resolved" | "closed" | "denied"
+      document_type:
+        | "policy"
+        | "bill"
+        | "commission_report"
+        | "proposal"
+        | "endorsement"
+        | "other"
       policy_status: "active" | "pending" | "expired" | "cancelled"
       policy_type: "auto" | "home" | "life" | "health" | "business" | "other"
     }
@@ -615,6 +1006,14 @@ export const Constants = {
         "gerente",
       ],
       claim_status: ["open", "in_progress", "resolved", "closed", "denied"],
+      document_type: [
+        "policy",
+        "bill",
+        "commission_report",
+        "proposal",
+        "endorsement",
+        "other",
+      ],
       policy_status: ["active", "pending", "expired", "cancelled"],
       policy_type: ["auto", "home", "life", "health", "business", "other"],
     },
