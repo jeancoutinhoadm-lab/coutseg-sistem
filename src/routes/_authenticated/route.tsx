@@ -31,13 +31,13 @@ import {
 } from "lucide-react";
 
 const navItems = [
-  { title: "Dashboard", to: "/", icon: LayoutDashboard },
-  { title: "Clientes", to: "/clients", icon: Users },
-  { title: "Apólices", to: "/policies", icon: FileText },
-  { title: "Seguradoras", to: "/insurers", icon: Building2 },
-  { title: "Corretores", to: "/brokers", icon: UserCog },
-  { title: "Sinistros", to: "/claims", icon: AlertTriangle },
-  { title: "Renovações", to: "/renewals", icon: CalendarClock },
+  { title: "Dashboard", to: "/", icon: LayoutDashboard, roles: ["admin", "corretor", "administrativo", "financeiro", "gerente"] },
+  { title: "Clientes", to: "/clients", icon: Users, roles: ["admin", "corretor", "administrativo", "gerente"] },
+  { title: "Apólices", to: "/policies", icon: FileText, roles: ["admin", "corretor", "administrativo", "gerente"] },
+  { title: "Seguradoras", to: "/insurers", icon: Building2, roles: ["admin", "administrativo", "gerente", "corretor"] },
+  { title: "Corretores", to: "/brokers", icon: UserCog, roles: ["admin", "gerente"] },
+  { title: "Sinistros", to: "/claims", icon: AlertTriangle, roles: ["admin", "corretor", "administrativo", "gerente"] },
+  { title: "Renovações", to: "/renewals", icon: CalendarClock, roles: ["admin", "corretor", "administrativo", "gerente"] },
 ];
 
 export const Route = createFileRoute("/_authenticated")({
