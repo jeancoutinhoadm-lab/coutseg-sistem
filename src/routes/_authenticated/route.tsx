@@ -29,6 +29,7 @@ import {
   LogOut,
   Shield,
   Package,
+  Files,
 } from "lucide-react";
 
 const navItems = [
