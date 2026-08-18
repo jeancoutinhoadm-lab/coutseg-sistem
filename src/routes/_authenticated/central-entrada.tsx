@@ -221,7 +221,14 @@ function CentralEntradaPage() {
                 {JSON.stringify(extractedData, null, 2)}
               </pre>
               <div className="mt-6 flex gap-2">
-                <Button className="flex-1">Confirmar e Salvar</Button>
+                <Button 
+                  className="flex-1" 
+                  onClick={() => saveMutation.mutate()}
+                  disabled={saveMutation.isPending}
+                >
+                  {saveMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                  Confirmar e Salvar
+                </Button>
                 <Button variant="secondary" className="flex-1">Editar Dados</Button>
               </div>
             </CardContent>
