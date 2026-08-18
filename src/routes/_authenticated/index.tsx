@@ -119,7 +119,7 @@ function DashboardPage() {
         {
           label: `${stats?.divergentCommissions.length} comissões com divergência`,
           to: "/commissions",
-          active: (stats?.divergentCommissions.length ?? 0) > 0
+          active: (stats?.divergentCommissions?.length ?? 0) > 0
         }
       ]
     }
