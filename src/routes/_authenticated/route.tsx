@@ -31,6 +31,8 @@ import {
   Package,
   Files,
   Inbox,
+  DollarSign,
+  TrendingUp,
 } from "lucide-react";
 
 const navItems = [
