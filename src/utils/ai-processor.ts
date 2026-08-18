@@ -32,13 +32,13 @@ export async function extractPolicyData(file: File): Promise<ExtractedPolicyData
   `;
 
   try {
-    const data = await analyzeDocument({ 
-      data: {
-        image: base64.split(',')[1],
-        mimeType: file.type || 'application/octet-stream',
-        prompt 
-      }
-    });
+    const input = {
+      image: base64.split(',')[1],
+      mimeType: file.type || 'application/octet-stream',
+      prompt 
+    };
+    
+    const data = await analyzeDocument({ data: input });
     
     const resultText = data.text || "";
     const result = JSON.parse(resultText.replace(/```json|```/g, ''));
