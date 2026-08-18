@@ -29,7 +29,10 @@ export const Route = createFileRoute("/_authenticated/")({
   }),
 });
 
+import { useAuth } from "@/hooks/use-auth";
+
 function DashboardPage() {
+  const { user, role } = useAuth();
   const { data: stats, isLoading } = useQuery({
     queryKey: ["dashboard-stats"],
     queryFn: async () => {
@@ -85,28 +88,43 @@ function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground">Visão geral da Coutseg</p>
+      <div className="flex flex-col gap-1">
+        <h1 className="text-3xl font-bold tracking-tight">
+          {role === "admin"
+            ? "Visão Geral da Corretora"
+            : role === "corretor"
+              ? "Minha Produção"
+              : "Dashboard"}
+        </h1>
+        <p className="text-muted-foreground">
+          {role === "admin"
+            ? "Métricas globais da Coutseg"
+            : "Acompanhe seus resultados e renovações"}
+        </p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {isLoading
-          ? Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} className="h-32" />
-            ))
-          : cards.map((card) => (
-              <Card key={card.title}>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">{card.title}</CardTitle>
-                  <card.icon className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{card.value ?? 0}</div>
-                  <p className="text-xs text-muted-foreground">{card.description}</p>
-                </CardContent>
-              </Card>
-            ))}
+          ? Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-32" />)
+          : cards
+              .filter((card) => {
+                if (role === "corretor") {
+                  return !["Seguradoras", "Sinistros"].includes(card.title);
+                }
+                return true;
+              })
+              .map((card) => (
+                <Card key={card.title}>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">{card.title}</CardTitle>
+                    <card.icon className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{card.value ?? 0}</div>
+                    <p className="text-xs text-muted-foreground">{card.description}</p>
+                  </CardContent>
+                </Card>
+              ))}
       </div>
 
       <Card>
@@ -123,10 +141,7 @@ function DashboardPage() {
           ) : stats?.renewals && stats.renewals.length > 0 ? (
             <div className="space-y-3">
               {stats.renewals.map((renewal: any) => (
-                <div
-                  key={renewal.id}
-                  className="flex items-center justify-between rounded-lg border p-3"
-                >
+                <div key={renewal.id} className="flex items-center justify-between rounded-lg border p-3">
                   <div>
                     <p className="font-medium">{renewal.policy_number}</p>
                     <p className="text-sm text-muted-foreground">
