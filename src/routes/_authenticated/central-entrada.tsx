@@ -136,9 +136,11 @@ function CentralEntradaPage() {
       if (!imageBase64) throw new Error("Falha ao converter arquivo");
 
       const result = await processDocumentWithIA({
-        image: imageBase64,
-        mimeType: file.type || 'application/octet-stream',
-        documentType: docType
+        data: {
+          image: imageBase64,
+          mimeType: file.type || 'application/octet-stream',
+          documentType: docType
+        }
       });
       return result;
     },
