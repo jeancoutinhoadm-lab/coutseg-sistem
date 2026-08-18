@@ -139,15 +139,20 @@ export type Database = {
           birth_date: string | null
           broker_id: string | null
           city: string | null
+          complement: string | null
           cpf_cnpj: string | null
           created_at: string | null
           email: string | null
           full_name: string
           id: string
+          neighborhood: string | null
           notes: string | null
           phone: string | null
           state: string | null
+          status: string | null
+          type: string | null
           updated_at: string | null
+          whatsapp: string | null
           zip_code: string | null
         }
         Insert: {
@@ -155,15 +160,20 @@ export type Database = {
           birth_date?: string | null
           broker_id?: string | null
           city?: string | null
+          complement?: string | null
           cpf_cnpj?: string | null
           created_at?: string | null
           email?: string | null
           full_name: string
           id?: string
+          neighborhood?: string | null
           notes?: string | null
           phone?: string | null
           state?: string | null
+          status?: string | null
+          type?: string | null
           updated_at?: string | null
+          whatsapp?: string | null
           zip_code?: string | null
         }
         Update: {
@@ -171,15 +181,20 @@ export type Database = {
           birth_date?: string | null
           broker_id?: string | null
           city?: string | null
+          complement?: string | null
           cpf_cnpj?: string | null
           created_at?: string | null
           email?: string | null
           full_name?: string
           id?: string
+          neighborhood?: string | null
           notes?: string | null
           phone?: string | null
           state?: string | null
+          status?: string | null
+          type?: string | null
           updated_at?: string | null
+          whatsapp?: string | null
           zip_code?: string | null
         }
         Relationships: [
@@ -315,6 +330,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      products: {
+        Row: {
+          active: boolean | null
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
