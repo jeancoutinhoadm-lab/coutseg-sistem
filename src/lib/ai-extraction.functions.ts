@@ -10,7 +10,10 @@ export const processDocumentWithIA = createServerFn({ method: "POST" })
     }).parse(data)
   )
   .handler(async ({ data }) => {
+    // Note: LOVABLE_API_KEY is managed internally by the Lovable AI Gateway.
+    // Ensure the gateway is configured in the project settings if manual overrides are needed.
     const apiKey = process.env['LOVABLE_API_KEY'];
+
     if (!apiKey) throw new Error("Configuração de IA ausente.");
 
     const prompts = {
@@ -45,11 +48,28 @@ export const processDocumentWithIA = createServerFn({ method: "POST" })
         }),
       });
 
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Erro na API da IA:", response.status, errorText);
+        throw new Error(`Erro na API da IA (${response.status}): ${errorText.substring(0, 100)}`);
+      }
+
       const result = await response.json();
+      
+      if (!result.choices?.[0]?.message?.content) {
+        console.error("Resposta da IA inválida:", result);
+        throw new Error("Resposta da IA inválida ou vazia.");
+      }
+
       const content = result.choices[0].message.content;
-      return JSON.parse(content.replace(/```json|```/g, ''));
-    } catch (error) {
-      console.error("Erro na IA:", error);
-      throw new Error("Falha ao processar com IA.");
+      try {
+        return JSON.parse(content.replace(/```json|```/g, '').trim());
+      } catch (e) {
+        console.error("Falha ao parsear JSON da IA:", content);
+        throw new Error("A IA retornou um formato de dados inválido.");
+      }
+    } catch (error: any) {
+      console.error("Erro no processamento da IA:", error);
+      throw new Error(error.message || "Falha ao processar com IA.");
     }
   });
