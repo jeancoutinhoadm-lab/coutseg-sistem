@@ -16,7 +16,9 @@ import { Route as AuthenticatedBrokersRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedCentralEntradaRouteImport } from './routes/_authenticated/central-entrada'
 import { Route as AuthenticatedClaimsRouteImport } from './routes/_authenticated/claims'
 import { Route as AuthenticatedClientsRouteImport } from './routes/_authenticated/clients'
+import { Route as AuthenticatedCommissionsRouteImport } from './routes/_authenticated/commissions'
 import { Route as AuthenticatedDocumentsRouteImport } from './routes/_authenticated/documents'
+import { Route as AuthenticatedFinancialRouteImport } from './routes/_authenticated/financial'
 import { Route as AuthenticatedInsurersRouteImport } from './routes/_authenticated/insurers'
 import { Route as AuthenticatedPoliciesRouteImport } from './routes/_authenticated/policies'
 import { Route as AuthenticatedProductsRouteImport } from './routes/_authenticated/products'
@@ -59,9 +61,20 @@ const AuthenticatedClientsRoute = AuthenticatedClientsRouteImport.update({
   path: '/clients',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedCommissionsRoute =
+  AuthenticatedCommissionsRouteImport.update({
+    id: '/commissions',
+    path: '/commissions',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedDocumentsRoute = AuthenticatedDocumentsRouteImport.update({
   id: '/documents',
   path: '/documents',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedFinancialRoute = AuthenticatedFinancialRouteImport.update({
+  id: '/financial',
+  path: '/financial',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedInsurersRoute = AuthenticatedInsurersRouteImport.update({
@@ -102,7 +115,9 @@ export interface FileRoutesByFullPath {
   '/central-entrada': typeof AuthenticatedCentralEntradaRoute
   '/claims': typeof AuthenticatedClaimsRoute
   '/clients': typeof AuthenticatedClientsRoute
+  '/commissions': typeof AuthenticatedCommissionsRoute
   '/documents': typeof AuthenticatedDocumentsRoute
+  '/financial': typeof AuthenticatedFinancialRoute
   '/insurers': typeof AuthenticatedInsurersRoute
   '/policies': typeof AuthenticatedPoliciesRoute
   '/products': typeof AuthenticatedProductsRoute
@@ -116,7 +131,9 @@ export interface FileRoutesByTo {
   '/central-entrada': typeof AuthenticatedCentralEntradaRoute
   '/claims': typeof AuthenticatedClaimsRoute
   '/clients': typeof AuthenticatedClientsRoute
+  '/commissions': typeof AuthenticatedCommissionsRoute
   '/documents': typeof AuthenticatedDocumentsRoute
+  '/financial': typeof AuthenticatedFinancialRoute
   '/insurers': typeof AuthenticatedInsurersRoute
   '/policies': typeof AuthenticatedPoliciesRoute
   '/products': typeof AuthenticatedProductsRoute
@@ -133,7 +150,9 @@ export interface FileRoutesById {
   '/_authenticated/central-entrada': typeof AuthenticatedCentralEntradaRoute
   '/_authenticated/claims': typeof AuthenticatedClaimsRoute
   '/_authenticated/clients': typeof AuthenticatedClientsRoute
+  '/_authenticated/commissions': typeof AuthenticatedCommissionsRoute
   '/_authenticated/documents': typeof AuthenticatedDocumentsRoute
+  '/_authenticated/financial': typeof AuthenticatedFinancialRoute
   '/_authenticated/insurers': typeof AuthenticatedInsurersRoute
   '/_authenticated/policies': typeof AuthenticatedPoliciesRoute
   '/_authenticated/products': typeof AuthenticatedProductsRoute
@@ -151,7 +170,9 @@ export interface FileRouteTypes {
     | '/central-entrada'
     | '/claims'
     | '/clients'
+    | '/commissions'
     | '/documents'
+    | '/financial'
     | '/insurers'
     | '/policies'
     | '/products'
@@ -165,7 +186,9 @@ export interface FileRouteTypes {
     | '/central-entrada'
     | '/claims'
     | '/clients'
+    | '/commissions'
     | '/documents'
+    | '/financial'
     | '/insurers'
     | '/policies'
     | '/products'
@@ -181,7 +204,9 @@ export interface FileRouteTypes {
     | '/_authenticated/central-entrada'
     | '/_authenticated/claims'
     | '/_authenticated/clients'
+    | '/_authenticated/commissions'
     | '/_authenticated/documents'
+    | '/_authenticated/financial'
     | '/_authenticated/insurers'
     | '/_authenticated/policies'
     | '/_authenticated/products'
@@ -249,11 +274,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedClientsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/commissions': {
+      id: '/_authenticated/commissions'
+      path: '/commissions'
+      fullPath: '/commissions'
+      preLoaderRoute: typeof AuthenticatedCommissionsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/documents': {
       id: '/_authenticated/documents'
       path: '/documents'
       fullPath: '/documents'
       preLoaderRoute: typeof AuthenticatedDocumentsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/financial': {
+      id: '/_authenticated/financial'
+      path: '/financial'
+      fullPath: '/financial'
+      preLoaderRoute: typeof AuthenticatedFinancialRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/insurers': {
@@ -306,7 +345,9 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCentralEntradaRoute: typeof AuthenticatedCentralEntradaRoute
   AuthenticatedClaimsRoute: typeof AuthenticatedClaimsRoute
   AuthenticatedClientsRoute: typeof AuthenticatedClientsRoute
+  AuthenticatedCommissionsRoute: typeof AuthenticatedCommissionsRoute
   AuthenticatedDocumentsRoute: typeof AuthenticatedDocumentsRoute
+  AuthenticatedFinancialRoute: typeof AuthenticatedFinancialRoute
   AuthenticatedInsurersRoute: typeof AuthenticatedInsurersRoute
   AuthenticatedPoliciesRoute: typeof AuthenticatedPoliciesRoute
   AuthenticatedProductsRoute: typeof AuthenticatedProductsRoute
@@ -319,7 +360,9 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCentralEntradaRoute: AuthenticatedCentralEntradaRoute,
   AuthenticatedClaimsRoute: AuthenticatedClaimsRoute,
   AuthenticatedClientsRoute: AuthenticatedClientsRoute,
+  AuthenticatedCommissionsRoute: AuthenticatedCommissionsRoute,
   AuthenticatedDocumentsRoute: AuthenticatedDocumentsRoute,
+  AuthenticatedFinancialRoute: AuthenticatedFinancialRoute,
   AuthenticatedInsurersRoute: AuthenticatedInsurersRoute,
   AuthenticatedPoliciesRoute: AuthenticatedPoliciesRoute,
   AuthenticatedProductsRoute: AuthenticatedProductsRoute,
