@@ -17,7 +17,7 @@
 - Responsividade básica (Sidebar retrátil).
 
 ## 3. O que está incompleto / Precisa ser melhorado
-- **Cargos e Permissões:** Existe uma coluna `role` em `profiles`, mas não há a tabela `user_roles` nem a função `has_role` conforme as melhores práticas de segurança solicitadas. O RLS atual é permissivo para usuários autenticados.
+- **Cargos e Permissões:** Existe uma coluna `role` em `profiles` (admin/broker), mas não segue o modelo de segurança solicitado (tabela `user_roles`, função `has_role`, cargos granulares).
 - **Financeiro:** Totalmente ausente (Contas a pagar/receber, comissões detalhadas, conciliação).
 - **Central de Entrada:** Ausente (Upload e processamento de documentos).
 - **IA:** Sem integração para OCR ou processamento de apólices.
@@ -26,16 +26,15 @@
 - **Cross-sell:** Lógica de oportunidades automáticas não implementada.
 
 ## 4. O que precisa ser corrigido
-- **Segurança (RLS):** Precisa ser refinado para respeitar os novos cargos (Administrador, Corretor, etc.).
-- **Schema de Clientes:** Adicionar campos faltantes como `whatsapp`, `number`, `complement`, `neighborhood`, `type` (PF/PJ).
-- **Schema de Apólices:** Expandir campos (forma de pagamento, parcelas, comissão prevista, etc.).
+- **Segurança (RLS):** As políticas atuais são genéricas (`USING (true)` para authenticated), permitindo que qualquer usuário veja dados de outros corretores.
+- **Schema de Clientes:** Faltam campos (`whatsapp`, `neighborhood`, `type` PF/PJ, etc.).
+- **Schema de Apólices:** Faltam campos de pagamento e conciliação.
 
 ## 5. Próximas Etapas (Plano de Evolução)
-1. **Refatoração de Segurança:** Criar enums de cargos, tabela `user_roles`, função `has_role` e atualizar políticas RLS.
-2. **Expansão do Schema:** Atualizar tabelas de `clients` e `policies` para suportar todos os campos da especificação.
-3. **Módulo de Produtos:** Transformar o enum de produtos em uma tabela gerenciável.
-4. **Financeiro Base:** Criar tabelas para Comissões e Contas a Pagar/Receber.
-5. **Central de Entrada Inteligente:** Implementar UI de upload e estrutura de Storage.
+1. **Refatoração de Segurança (Etapa 2):** Implementar `app_role` enum, `user_roles` table, `has_role` function e atualizar RLS.
+2. **Expansão do Schema (Etapa 3):** Criar tabela `products`, expandir `clients` e `insurers`.
+3. **Módulo de Documentos e Central de Entrada (Etapa 4/5):** Configurar Supabase Storage e UI de Upload.
+4. **Financeiro e Comissões (Etapa 8/9):** Implementar lógica de conciliação.
 
 ---
 Diagnóstico concluído. Pronto para iniciar a **ETAPA 2: Banco + Autenticação + Cargos + Permissões + RLS**.

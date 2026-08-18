@@ -1,31 +1,28 @@
-# Plano de Evolução: Coutseg Gestão - Etapa 2
+# Plano de Evolução: Coutseg Gestão - Etapa 2 (Segurança e Cargos)
 
-Implementação da base de segurança, cargos e permissões conforme a especificação mestra.
+Implementação do sistema de permissões robusto conforme a especificação.
 
 ## Alterações Técnicas
 
-### Banco de Dados (Supabase)
-- **Enums:** Criar `app_role` (admin, corretor, administrativo, financeiro, gerente).
-- **Tabela `user_roles`:** Gerenciar cargos vinculados a `auth.users`.
-- **Função `has_role`:** Security definer para verificação de permissões em RLS.
-- **Políticas RLS:** Atualizar todas as tabelas existentes para restringir acesso conforme o cargo (ex: Corretor só vê seus clientes).
-- **Tabela `audit_logs`:** Estrutura básica para rastreabilidade de ações.
+### 1. Banco de Dados (Supabase)
+- **Cargos:** Criar `app_role` enum (admin, corretor, administrativo, financeiro, gerente).
+- **Tabela `user_roles`:** Vincular usuários aos cargos.
+- **Função `has_role`:** Criar função `security definer` para evitar recursão em RLS.
+- **RLS:** Atualizar políticas de `clients`, `policies`, `brokers` e `insurers` para restringir acesso baseado no cargo e no vínculo (ex: Corretor só vê seus clientes).
+- **Auditoria:** Criar tabela `audit_logs` e triggers para capturar mudanças.
 
-### Frontend
-- **Auth Hook:** Atualizar `useAuth` para carregar e expor o cargo do usuário.
-- **Componentes de UI:** Adicionar proteção visual (esconder menus/botões) baseada no cargo.
-- **Sidebar:** Ajustar visibilidade de itens conforme permissão.
+### 2. Frontend
+- **Auth Hook:** Refatorar `useAuth` para carregar o cargo do usuário a partir da nova tabela.
+- **Sidebar:** Ajustar visibilidade dos módulos baseada no cargo.
+- **Proteção de Rotas:** Garantir que usuários sem permissão não acessem módulos restritos.
 
-### Segurança
-- Garantir que `service_role` tenha acesso total para operações de sistema.
-- Implementar `GRANT` explícitos em todas as novas tabelas.
+### 3. Migração de Dados
+- Migrar o `role` atual da tabela `profiles` para a nova tabela `user_roles`.
 
 ## Ordem de Execução
-1. Executar migração SQL para cargos e funções.
-2. Atualizar políticas RLS das tabelas atuais (`clients`, `policies`, etc.).
-3. Criar tabela de Auditoria.
-4. Refatorar `use-auth.ts`.
-5. Ajustar layout da Sidebar.
+1. Migração SQL (Schema + RLS).
+2. Atualização do `useAuth`.
+3. Ajustes de UI na Sidebar.
 
 ---
-Este plano foca na **Etapa 2** da especificação, garantindo que o sistema seja "seguro e preparado para crescer".
+Este plano estabelece a base de confiança necessária para operar um sistema real com múltiplos níveis de acesso.
