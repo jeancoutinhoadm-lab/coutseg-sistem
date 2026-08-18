@@ -22,6 +22,7 @@ import { Plus, Search, Pencil, Trash2, Loader2, FileText } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { Database } from "@/integrations/supabase/types";
+import { logAudit } from "@/utils/audit";
 
 export const Route = createFileRoute("/_authenticated/policies")({
   component: PoliciesPage,
@@ -56,9 +57,11 @@ function PoliciesPage() {
       if (editing) {
         const { error } = await supabase.from("policies").update(values).eq("id", editing.id);
         if (error) throw error;
+        await logAudit('UPDATE', 'POLICY', editing.id, editing, values);
       } else {
-        const { error } = await supabase.from("policies").insert(values);
+        const { data, error } = await supabase.from("policies").insert(values).select().single();
         if (error) throw error;
+        await logAudit('CREATE', 'POLICY', data.id, null, values);
       }
     },
     onSuccess: () => {
@@ -76,6 +79,7 @@ function PoliciesPage() {
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("policies").delete().eq("id", id);
       if (error) throw error;
+      await logAudit('DELETE', 'POLICY', id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["policies"] });
