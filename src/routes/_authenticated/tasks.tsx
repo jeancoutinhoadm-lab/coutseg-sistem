@@ -87,7 +87,7 @@ function TasksPage() {
                     {task.due_date && (
                       <span className="text-xs text-muted-foreground flex items-center gap-1">
                         <Clock className="h-3 w-3" />
-                        {task.due_date && format(new Date(task.due_date + "T00:00:00"), "dd/MM/yyyy", { locale: ptBR })}
+                        {format(new Date(task.due_date + "T00:00:00"), "dd/MM/yyyy", { locale: ptBR })}
                       </span>
                     )}
                   </div>
