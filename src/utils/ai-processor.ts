@@ -32,8 +32,11 @@ export async function extractPolicyData(file: File): Promise<ExtractedPolicyData
   `;
 
   try {
+    const imageBase64 = base64.split(',')[1];
+    if (!imageBase64) throw new Error("Falha ao processar arquivo");
+
     const input = {
-      image: base64.split(',')[1],
+      image: imageBase64,
       mimeType: file.type || 'application/octet-stream',
       prompt 
     };
