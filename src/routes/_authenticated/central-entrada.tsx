@@ -83,22 +83,22 @@ function CentralEntradaPage() {
 
         const { error: policyError } = await supabase.from("policies").insert({
           policy_number: extractedData.policy_number || "PENDENTE",
-          client_id: client?.id || clients?.[0]?.id, // fallback ou criar novo
-          insurer_id: insurer?.id || insurers?.[0]?.id,
-          type: 'auto', // extraído da IA
-          premium: extractedData.premium || 0,
-          start_date: extractedData.start_date || new Date().toISOString(),
-          end_date: extractedData.end_date || new Date().toISOString(),
+          client_id: client?.id || clients?.[0]?.id || "", 
+          insurer_id: insurer?.id || insurers?.[0]?.id || "",
+          type: 'auto', 
+          premium: Number(extractedData.premium) || 0,
+          start_date: extractedData.start_date || new Date().toISOString().split('T')[0],
+          end_date: extractedData.end_date || new Date().toISOString().split('T')[0],
           status: 'active'
         });
         if (policyError) throw policyError;
       } else if (docType === 'bill') {
-        const category = await supabase.from("expense_categories").select("id").ilike("name", `%${extractedData.category_suggestion}%`).single();
+        const { data: categoryData } = await supabase.from("expense_categories").select("id").ilike("name", `%${extractedData.category_suggestion}%`).maybeSingle();
         await supabase.from("expenses").insert({
           description: extractedData.provider_name || file.name,
-          amount: extractedData.amount || 0,
-          date: extractedData.due_date || new Date().toISOString(),
-          category_id: category.data?.id,
+          amount: Number(extractedData.amount) || 0,
+          date: extractedData.due_date || new Date().toISOString().split('T')[0],
+          category_id: categoryData?.id || null,
           status: 'pending',
           document_id: doc.id
         });
