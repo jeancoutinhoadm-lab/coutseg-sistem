@@ -264,6 +264,15 @@ function PolicyDialog({
     },
   });
 
+  const { data: products } = useQuery({
+    queryKey: ["products-select"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("products").select("id, name").eq("active", true).order("name");
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const { data: brokers } = useQuery({
     queryKey: ["brokers-select"],
     queryFn: async () => {
