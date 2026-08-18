@@ -33,6 +33,8 @@ import {
   Inbox,
   DollarSign,
   TrendingUp,
+  CheckSquare,
+  Calendar,
 } from "lucide-react";
 
 const navItems = [
