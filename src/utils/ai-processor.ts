@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
+import { analyzeDocument } from "@/lib/ai.functions";
 
 export interface ExtractedPolicyData {
   policy_number?: string;
@@ -28,25 +28,25 @@ export async function extractPolicyData(file: File): Promise<ExtractedPolicyData
     - premium (valor do prêmio líquido ou total, apenas números)
     - type (tipo de seguro: auto, life, home, health, business, other)
 
-    Responda APENAS o JSON puro, sem explicações.
+    Responda APENAS o JSON puro, sem explicações. Se não encontrar um campo, omita-o.
   `;
 
   try {
-    const { data, error } = await supabase.functions.invoke("analyze-document", {
-      body: { 
+    const data = await analyzeDocument({ 
+      data: {
         image: base64.split(',')[1],
         mimeType: file.type,
         prompt 
-      },
+      }
     });
-
-    if (error) throw error;
     
     // Parse result if it's a string, or use as is if it's already an object
-    const result = typeof data.text === 'string' ? JSON.parse(data.text.replace(/```json|```/g, '')) : data.text;
+    const resultText = typeof data.text === 'string' ? data.text : (data as any).text;
+    const result = JSON.parse(resultText.replace(/```json|```/g, ''));
     return result;
   } catch (err) {
     console.error("Erro na extração via IA:", err);
     throw new Error("Não foi possível processar o documento com IA.");
   }
 }
+
