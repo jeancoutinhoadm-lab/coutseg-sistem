@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useAuth } from "@/hooks/use-auth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -29,6 +30,7 @@ function ClientsPage() {
   const [editing, setEditing] = useState<Database["public"]["Tables"]["clients"]["Row"] | null>(null);
   const queryClient = useQueryClient();
 
+  const { role } = useAuth();
   const { data: clients, isLoading } = useQuery({
     queryKey: ["clients"],
     queryFn: async () => {
@@ -211,6 +213,46 @@ function ClientDialog({
   const [state, setState] = useState(editing?.state ?? "");
   const [zipCode, setZipCode] = useState(editing?.zip_code ?? "");
   const [notes, setNotes] = useState(editing?.notes ?? "");
+  const [brokerId, setBrokerId] = useState(editing?.broker_id ?? "");
+
+  const { data: brokers } = useQuery({
+    queryKey: ["brokers"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("brokers").select("*").order("full_name");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { role } = useAuth();
+
+  useEffect(() => {
+    if (editing) {
+      setFullName(editing.full_name);
+      setEmail(editing.email ?? "");
+      setPhone(editing.phone ?? "");
+      setCpfCnpj(editing.cpf_cnpj ?? "");
+      setBirthDate(editing.birth_date ?? "");
+      setAddress(editing.address ?? "");
+      setCity(editing.city ?? "");
+      setState(editing.state ?? "");
+      setZipCode(editing.zip_code ?? "");
+      setNotes(editing.notes ?? "");
+      setBrokerId(editing.broker_id ?? "");
+    } else {
+      setFullName("");
+      setEmail("");
+      setPhone("");
+      setCpfCnpj("");
+      setBirthDate("");
+      setAddress("");
+      setCity("");
+      setState("");
+      setZipCode("");
+      setNotes("");
+      setBrokerId("");
+    }
+  }, [editing, open]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -261,10 +303,25 @@ function ClientDialog({
               <Input id="zipCode" value={zipCode} onChange={(e) => setZipCode(e.target.value)} />
             </div>
           </div>
-          <div className="grid gap-2">
-            <Label htmlFor="notes">Observações</Label>
-            <Input id="notes" value={notes} onChange={(e) => setNotes(e.target.value)} />
           </div>
+          {role === "admin" && (
+            <div className="grid gap-2">
+              <Label htmlFor="brokerId">Corretor Responsável</Label>
+              <select
+                id="brokerId"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                value={brokerId}
+                onChange={(e) => setBrokerId(e.target.value)}
+              >
+                <option value="">Selecione um corretor</option>
+                {brokers?.map((broker) => (
+                  <option key={broker.id} value={broker.id}>
+                    {broker.full_name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
@@ -284,6 +341,7 @@ function ClientDialog({
                 state: state || null,
                 zip_code: zipCode || null,
                 notes: notes || null,
+                broker_id: brokerId || null,
               })
             }
           >
