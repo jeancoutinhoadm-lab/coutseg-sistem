@@ -41,7 +41,7 @@ function TasksPage() {
     },
   });
 
-  const getPriorityColor = (priority: string) => {
+  const getPriorityColor = (priority: string | null) => {
     switch (priority) {
       case 'urgent': return 'text-red-600 bg-red-50';
       case 'high': return 'text-orange-600 bg-orange-50';
