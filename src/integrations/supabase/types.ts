@@ -207,6 +207,60 @@ export type Database = {
           },
         ]
       }
+      documents: {
+        Row: {
+          client_id: string | null
+          created_at: string | null
+          file_path: string
+          file_type: string | null
+          id: string
+          name: string
+          policy_id: string | null
+          size: number | null
+          updated_at: string | null
+          uploaded_by: string | null
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string | null
+          file_path: string
+          file_type?: string | null
+          id?: string
+          name: string
+          policy_id?: string | null
+          size?: number | null
+          updated_at?: string | null
+          uploaded_by?: string | null
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string | null
+          file_path?: string
+          file_type?: string | null
+          id?: string
+          name?: string
+          policy_id?: string | null
+          size?: number | null
+          updated_at?: string | null
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_policy_id_fkey"
+            columns: ["policy_id"]
+            isOneToOne: false
+            referencedRelation: "policies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       insurers: {
         Row: {
           active: boolean | null
