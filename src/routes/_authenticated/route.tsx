@@ -51,7 +51,7 @@ export const Route = createFileRoute("/_authenticated")({
 });
 
 function AuthenticatedLayout() {
-  const { user, loading, signOut } = useAuth();
+  const { user, role, loading, signOut, hasRole } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -95,16 +95,24 @@ function AuthenticatedLayout() {
               <SidebarGroupLabel>Menu</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
-                  {navItems.map((item) => (
-                    <SidebarMenuItem key={item.to}>
-                      <SidebarMenuButton asChild>
-                        <Link to={item.to} activeOptions={{ exact: item.to === "/" }} activeProps={{ className: "bg-sidebar-accent text-sidebar-accent-foreground" }}>
-                          <item.icon className="h-4 w-4" />
-                          <span>{item.title}</span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
+                  {navItems
+                    .filter((item) => !item.roles || (role && item.roles.includes(role as any)))
+                    .map((item) => (
+                      <SidebarMenuItem key={item.to}>
+                        <SidebarMenuButton asChild>
+                          <Link
+                            to={item.to}
+                            activeOptions={{ exact: item.to === "/" }}
+                            activeProps={{
+                              className: "bg-sidebar-accent text-sidebar-accent-foreground",
+                            }}
+                          >
+                            <item.icon className="h-4 w-4" />
+                            <span>{item.title}</span>
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    ))}
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
