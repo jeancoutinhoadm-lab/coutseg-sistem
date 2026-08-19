@@ -113,13 +113,13 @@ function DashboardPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">CoutSeg Gestão</h1>
           <div className="mt-2 p-4 bg-primary/10 border border-primary/20 rounded-lg">
-            <h2 className="text-sm font-bold text-primary uppercase tracking-wider"># ETAPA 27 — PREPARAÇÃO DA MIGRAÇÃO DA CARTEIRA REAL</h2>
+            <h2 className="text-sm font-bold text-primary uppercase tracking-wider"># ETAPA 28 — CENTRAL DE OPERAÇÕES DA COUTSEG</h2>
             <p className="text-sm text-muted-foreground mt-1">
-              A CoutSeg Gestão foi homologada e está: <strong className="text-green-600">GO-LIVE READY COM RESSALVAS</strong>.
+              A estratégia da CoutSeg agora é a <strong className="text-green-600">MIGRAÇÃO ORGÂNICA</strong>.
             </p>
             <p className="text-xs text-muted-foreground mt-2 max-w-2xl">
-              O sistema está preparado para a gestão interna centralizada. Multicálculos e portais das seguradoras continuam sendo usados externamente. 
-              Foco em configuração mestre, fluxo piloto e preparação para migração de dados reais.
+              Toda nova venda, renovação ou endosso deve ser iniciada pela <strong>Central de Operações</strong>. 
+              O sistema orquestra os módulos existentes para digitalizar a carteira de forma natural.
             </p>
           </div>
         </div>
@@ -175,7 +175,7 @@ function DashboardPage() {
           </Card>
         </Link>
 
-        <Link to="/central-entrada" className="block">
+        <Link to="/operations" className="block">
           <Card className="border-l-4 border-l-amber-500 hover:shadow-md transition-all cursor-pointer group h-full">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-bold tracking-widest text-amber-600">IA: CONFERÊNCIA</CardTitle>
