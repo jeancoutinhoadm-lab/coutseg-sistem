@@ -41,13 +41,15 @@ export function CreatePayableForm({ onSuccess }: { onSuccess?: () => void }) {
     queryFn: () => getFinancialCategories(),
   });
 
+  const today = new Date().toISOString().split("T")[0];
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       description: "",
       amount: 0,
-      due_date: new Date().toISOString().split("T")[0],
-      competence_date: new Date().toISOString().split("T")[0],
+      due_date: today,
+      competence_date: today,
       category_id: "",
       notes: "",
     },
@@ -66,14 +68,13 @@ export function CreatePayableForm({ onSuccess }: { onSuccess?: () => void }) {
     },
   });
 
-  // Use any for handleSubmit to bypass strict type check on TFieldValues vs FormValues
   const onSubmit = (values: FormValues) => {
     mutation.mutate(values);
   };
 
   return (
     <Form {...(form as any)}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(onSubmit as any)} className="space-y-4">
         <FormField
           control={form.control as any}
           name="description"
