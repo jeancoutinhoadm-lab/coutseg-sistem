@@ -175,18 +175,50 @@ function CentralEntradaPage() {
           });
         }
 
+        // Validation Logic
+        let validationStatus: 'success' | 'failed' | 'unknown' = 'success';
+        let validationErrors: string[] = [];
+        
+        if (docType === 'commission_report') {
+          const extractedTotal = result.items.reduce((sum: number, item: any) => sum + (Number(item.paid_commission) || 0), 0);
+          const documentTotal = Number(result.document_total) || 0;
+          const extractedCount = result.items.length;
+          const documentCount = Number(result.document_line_count) || 0;
+          
+          if (documentCount > 0 && extractedCount !== documentCount) {
+            validationStatus = 'failed';
+            validationErrors.push(`Divergência na contagem: Documento indica ${documentCount} linhas, mas foram extraídas ${extractedCount}.`);
+          }
+          
+          if (documentTotal > 0 && Math.abs(extractedTotal - documentTotal) > 0.01) {
+            validationStatus = 'failed';
+            validationErrors.push(`Divergência no total: Documento indica R$ ${documentTotal.toFixed(2)}, mas a soma das linhas é R$ ${extractedTotal.toFixed(2)}.`);
+          }
+
+          if (documentCount === 0 && documentTotal === 0) {
+            validationStatus = 'unknown';
+            validationErrors.push("Não foi possível identificar totais ou contagem no documento para validação automática.");
+          }
+        }
+
         await supabase.from('document_processing')
           .update({ 
             status: 'needs_review',
             extracted_data: result,
             ai_model: result.metadata?.ai_model || 'gpt-4o',
-            ai_prompt_version: 'v2.1-step8',
+            ai_prompt_version: 'v2.2-reliability',
             ai_confidence: result.confidence || {},
             input_tokens: result.metadata?.input_tokens,
             output_tokens: result.metadata?.output_tokens,
             estimated_cost: result.metadata?.estimated_cost,
             execution_duration_ms: result.metadata?.execution_duration_ms,
-            processed_at: new Date().toISOString()
+            processed_at: new Date().toISOString(),
+            document_line_count: result.document_line_count,
+            extracted_line_count: result.items?.length,
+            document_total: result.document_total,
+            extracted_total: result.items?.reduce((sum: number, item: any) => sum + (Number(item.paid_commission) || 0), 0),
+            validation_status: validationStatus,
+            validation_errors: validationErrors
           } as any)
           .eq('document_id', lastSavedDoc.id);
 
