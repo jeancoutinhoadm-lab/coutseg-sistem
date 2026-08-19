@@ -6,12 +6,12 @@ export const createPilotData = async () => {
     const { data: client, error: clientErr } = await supabase
       .from("clients")
       .upsert({
-        name: "Cliente Piloto Etapa 26",
-        document_number: "000.000.000-00",
+        full_name: "Cliente Piloto Etapa 26",
+        cpf_cnpj: "000.000.000-00",
         email: "piloto@coutseg.com.br",
         phone: "(11) 99999-9999",
         type: "INDIVIDUAL"
-      }, { onConflict: 'document_number' })
+      }, { onConflict: 'cpf_cnpj' })
       .select()
       .single();
 
@@ -22,8 +22,8 @@ export const createPilotData = async () => {
       .from("leads")
       .insert({
         client_id: client.id,
-        source: "OUTRO",
-        status: "NEW",
+        source: "outros",
+        status: "new",
         description: "Lead Piloto de Teste Operacional"
       })
       .select()
