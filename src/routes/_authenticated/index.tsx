@@ -153,6 +153,7 @@ function DashboardPage() {
               {p === "7days" ? "7 Dias" : p === "30days" ? "30 Dias" : p === "month" ? "Mês" : p === "90days" ? "90 Dias" : "Ano"}
             </Button>
           ))}
+          </div>
         </div>
       </div>
 
