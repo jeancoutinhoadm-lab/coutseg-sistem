@@ -5,7 +5,6 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -33,7 +32,7 @@ export const Route = createFileRoute("/auth/login")({
   beforeLoad: async () => {
     const { data } = await supabase.auth.getUser();
     if (data.user) {
-      throw redirect({ to: "/dashboard" });
+      throw redirect({ to: "/" });
     }
   },
 });
@@ -48,18 +47,26 @@ function LoginPage() {
 
   const onSubmit = async (values: LoginForm) => {
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({
-      email: values.email,
-      password: values.password,
-    });
-    setLoading(false);
-    if (error) {
-      toast.error("Erro ao entrar", { description: error.message });
-      return;
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: values.email,
+        password: values.password,
+      });
+      
+      if (error) {
+        toast.error("Erro ao entrar", { description: error.message || "E-mail ou senha incorretos." });
+        return;
+      }
+      
+      await logAudit('LOGIN', 'USER');
+      toast.success("Login realizado com sucesso");
+      navigate({ to: "/" });
+    } catch (err) {
+      console.error("Login error:", err);
+      toast.error("Erro inesperado", { description: "Ocorreu um erro ao tentar realizar o login." });
+    } finally {
+      setLoading(false);
     }
-    await logAudit('LOGIN', 'USER');
-    toast.success("Login realizado com sucesso");
-    navigate({ to: "/" });
   };
 
   const signInWithGoogle = async () => {
@@ -88,6 +95,7 @@ function LoginPage() {
           <form 
             onSubmit={(e) => {
               e.preventDefault();
+              e.stopPropagation();
               form.handleSubmit(onSubmit)(e);
             }}
           >
