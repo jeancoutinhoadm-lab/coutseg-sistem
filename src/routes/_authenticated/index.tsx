@@ -42,7 +42,9 @@ import {
   Zap,
   Play
 } from "lucide-react";
-import { createPilotData } from "@/lib/test-data.functions";
+import { createPilotData, runHomologationStep29 } from "@/lib/test-data.functions";
+import { useServerFn } from "@tanstack/react-start";
+
 
 export const Route = createFileRoute("/_authenticated/")({
   component: DashboardPage,
@@ -62,6 +64,8 @@ export const Route = createFileRoute("/_authenticated/")({
 function DashboardPage() {
   const { role } = useAuth();
   const [period, setPeriod] = useState<"month" | "7days" | "30days" | "90days" | "year">("month");
+  const runHomologation = useServerFn(runHomologationStep29);
+
 
   const { data: stats, isLoading, error } = useQuery({
     queryKey: ["executive-dashboard", period],
@@ -113,33 +117,51 @@ function DashboardPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">CoutSeg Gestão</h1>
           <div className="mt-2 p-4 bg-primary/10 border border-primary/20 rounded-lg">
-            <h2 className="text-sm font-bold text-primary uppercase tracking-wider"># ETAPA 28 — CENTRAL DE OPERAÇÕES DA COUTSEG</h2>
+            <h2 className="text-sm font-bold text-primary uppercase tracking-wider"># ETAPA 29 — HOMOLOGAÇÃO DA ROTINA REAL DA CORRETORA</h2>
             <p className="text-sm text-muted-foreground mt-1">
-              A estratégia da CoutSeg agora é a <strong className="text-green-600">MIGRAÇÃO ORGÂNICA</strong>.
+              A Central de Operações da Etapa 28 foi concluída e aprovada. Agora o foco é a <strong>Homologação Real</strong>.
             </p>
             <p className="text-xs text-muted-foreground mt-2 max-w-2xl">
-              Toda nova venda, renovação ou endosso deve ser iniciada pela <strong>Central de Operações</strong>. 
-              O sistema orquestra os módulos existentes para digitalizar a carteira de forma natural.
+              Validando cenários de Migração Orgânica: Papel para Digital, Cross-sell, Renovação e Integridade de Dados. 
+              <strong> Regra de Ouro:</strong> Nenhuma informação deve ser redigitada se já existir no sistema.
             </p>
           </div>
         </div>
         <div className="flex gap-2">
           {role === "admin" && (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="gap-2"
-              onClick={async () => {
-                try {
-                  await createPilotData();
-                  toast.success("Dados piloto gerados com sucesso!");
-                } catch (e) {
-                  toast.error("Erro ao gerar dados piloto.");
-                }
-              }}
-            >
-              <Play className="h-4 w-4" /> Gerar Piloto
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="gap-2 border-primary text-primary hover:bg-primary/5"
+                onClick={async () => {
+                  try {
+                    const res = await runHomologation();
+                    console.table(res);
+                    toast.success("Homologação executada! Verifique o console e o relatório.");
+                  } catch (e) {
+                    toast.error("Erro ao iniciar homologação.");
+                  }
+                }}
+              >
+                <Zap className="h-4 w-4" /> Homologação E29
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="gap-2"
+                onClick={async () => {
+                  try {
+                    await createPilotData();
+                    toast.success("Dados piloto gerados com sucesso!");
+                  } catch (e) {
+                    toast.error("Erro ao gerar dados piloto.");
+                  }
+                }}
+              >
+                <Play className="h-4 w-4" /> Gerar Piloto
+              </Button>
+            </div>
           )}
           <div className="flex items-center gap-2 bg-muted p-1 rounded-lg self-start">
           {(["7days", "30days", "month", "90days", "year"] as const).map((p) => (
