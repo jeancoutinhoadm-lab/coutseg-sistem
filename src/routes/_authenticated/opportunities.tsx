@@ -110,10 +110,10 @@ function OpportunitiesPage() {
             // Check if opportunity already exists
             const { data: existing } = await supabase
               .from("opportunities")
-              .select("id")
+              .select("id, status")
               .eq("client_id", client.id)
               .eq("rule_id", rule.id)
-              .single();
+              .maybeSingle();
 
             if (!existing) {
               await supabase.from("opportunities").insert({
