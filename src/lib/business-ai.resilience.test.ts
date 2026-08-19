@@ -30,7 +30,7 @@ describe('askBusinessIA Resilience Tests', () => {
       }),
     });
 
-    const result = await askBusinessIA({ data: { question: 'Teste?' } });
+    const result = await processBusinessIA({ question: 'Teste?' });
     expect(result.answer).toBe('Resposta de teste');
   });
 
@@ -42,7 +42,7 @@ describe('askBusinessIA Resilience Tests', () => {
       text: async () => 'Internal Server Error',
     });
 
-    await expect(askBusinessIA({ data: { question: 'Teste?' } }))
+    await expect(processBusinessIA({ question: 'Teste?' }))
       .rejects.toThrow("O serviço de Inteligência Artificial está temporariamente indisponível");
   });
 
@@ -54,7 +54,7 @@ describe('askBusinessIA Resilience Tests', () => {
       text: async () => '<html>error code: 1016 Origin DNS Error</html>',
     });
 
-    await expect(askBusinessIA({ data: { question: 'Teste?' } }))
+    await expect(processBusinessIA({ question: 'Teste?' }))
       .rejects.toThrow("O serviço de Inteligência Artificial está temporariamente indisponível");
   });
 
@@ -66,7 +66,7 @@ describe('askBusinessIA Resilience Tests', () => {
       text: async () => '<html>Ops</html>',
     });
 
-    await expect(askBusinessIA({ data: { question: 'Teste?' } }))
+    await expect(processBusinessIA({ question: 'Teste?' }))
       .rejects.toThrow("O serviço de IA retornou um formato inesperado.");
   });
 
@@ -77,14 +77,14 @@ describe('askBusinessIA Resilience Tests', () => {
       return Promise.reject(error);
     });
 
-    await expect(askBusinessIA({ data: { question: 'Teste?' } }))
+    await expect(processBusinessIA({ question: 'Teste?' }))
       .rejects.toThrow("A IA demorou muito para responder");
   });
 
   it('deve tratar erro de rede genérico', async () => {
     (global.fetch as any).mockRejectedValue(new Error('Network connection lost'));
 
-    await expect(askBusinessIA({ data: { question: 'Teste?' } }))
+    await expect(processBusinessIA({ question: 'Teste?' }))
       .rejects.toThrow("Falha na análise da IA.");
   });
 });
