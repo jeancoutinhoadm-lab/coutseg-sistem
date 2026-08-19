@@ -25,12 +25,14 @@ export const askBusinessIA = createServerFn({ method: "POST" })
 
     const context = {
       finance_summary: finances.data?.reduce((acc: any, curr) => {
-        acc[curr.type] = (acc[curr.type] || 0) + curr.amount;
+        const type = curr.type || 'unknown';
+        acc[type] = (acc[type] || 0) + curr.amount;
         return acc;
       }, {}),
       production_count: production.data?.length,
       claims_status: claims.data?.reduce((acc: any, curr) => {
-        acc[curr.status] = (acc[curr.status] || 0) + 1;
+        const status = curr.status || 'unknown';
+        acc[status] = (acc[status] || 0) + 1;
         return acc;
       }, {}),
       crm_active: crm.data?.filter(o => o.status === 'open').length,
