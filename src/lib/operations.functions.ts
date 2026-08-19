@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { parseSafeDate, getAuditTimestamp } from "./date-utils";
 
 export type OperationType = 'new_sale' | 'renewal' | 'endorsement' | 'cancellation' | 'update';
+export type OperationStatus = 'draft' | 'in_progress' | 'pending_docs' | 'review' | 'completed' | 'cancelled';
 
 const createOperationSchema = z.object({
   type: z.enum(['new_sale', 'renewal', 'endorsement', 'cancellation', 'update']),
@@ -51,8 +52,8 @@ export const createOperation = createServerFn({ method: "POST" })
         .insert(
           initialChecklist.map(task => ({
             operation_id: operation.id,
-            task_name: task,
-            required: true,
+            task_name: task.name,
+            required: task.required,
             is_completed: false
           }))
         );
@@ -88,43 +89,115 @@ export const searchOperationTarget = createServerFn({ method: "GET" })
   });
 
 /**
- * Define o checklist inicial por tipo de operação
+ * Cria um novo cliente inline durante a operação
  */
-function getInitialChecklist(type: OperationType): string[] {
+export const createInlineClient = createServerFn({ method: "POST" })
+  .validator((data: unknown) => z.object({
+    full_name: z.string().min(1),
+    cpf_cnpj: z.string().optional(),
+    phone: z.string().optional(),
+    email: z.string().email().optional(),
+    address: z.string().optional(),
+    broker_id: z.string().optional(),
+  }).parse(data))
+  .handler(async ({ data }) => {
+    const { data: authData } = await supabase.auth.getUser();
+    if (!authData.user) throw new Error("Unauthorized");
+
+    // Verificar duplicidade
+    if (data.cpf_cnpj) {
+      const { data: existing } = await supabase
+        .from("clients")
+        .select("id, full_name")
+        .eq("cpf_cnpj", data.cpf_cnpj)
+        .maybeSingle();
+      
+      if (existing) throw new Error(`CPF/CNPJ já cadastrado para o cliente: ${existing.full_name}`);
+    }
+
+    const { data: client, error } = await supabase
+      .from("clients")
+      .insert({
+        full_name: data.full_name,
+        cpf_cnpj: data.cpf_cnpj || null,
+        phone: data.phone || null,
+        email: data.email || null,
+        address: data.address || null,
+        broker_id: data.broker_id || null,
+        status: 'active'
+      } as any)
+      .select()
+      .single();
+
+    if (error) throw new Error(error.message);
+    return client;
+  });
+
+/**
+ * Atualiza o checklist dinamicamente e valida pendências
+ */
+export const validateOperationProgress = createServerFn({ method: "GET" })
+  .validator((data: unknown) => z.object({ operationId: z.string() }).parse(data))
+  .handler(async ({ data }) => {
+    const { data: operation, error: opError } = await supabase
+      .from("operations")
+      .select(`
+        *,
+        operation_checklists (*)
+      `)
+      .eq("id", data.operationId)
+      .single();
+
+    if (opError) throw new Error(opError.message);
+
+    const pendingRequired = operation.operation_checklists?.filter(item => item.required && !item.is_completed) || [];
+    const isReady = pendingRequired.length === 0;
+
+    return {
+      operation,
+      isReady,
+      pendingRequired
+    };
+  });
+
+/**
+ * Define o checklist inicial por tipo de operação com obrigatoriedade
+ */
+function getInitialChecklist(type: OperationType): { name: string; required: boolean }[] {
   switch (type) {
     case 'new_sale':
       return [
-        "Cliente confirmado",
-        "Oportunidade registrada",
-        "Cotação apresentada",
-        "Apólice emitida",
-        "Documento anexado",
-        "Comissão configurada"
+        { name: "Cliente confirmado", required: true },
+        { name: "Oportunidade registrada", required: true },
+        { name: "Cotação apresentada", required: true },
+        { name: "Apólice emitida", required: true },
+        { name: "Documento anexado", required: true },
+        { name: "Comissão configurada", required: true }
       ];
     case 'renewal':
       return [
-        "Cliente confirmado",
-        "Apólice anterior localizada",
-        "Nova vigência definida",
-        "Prêmio atualizado",
-        "Nova apólice emitida",
-        "Documento anexado"
+        { name: "Cliente confirmado", required: true },
+        { name: "Apólice anterior localizada", required: true },
+        { name: "Nova vigência definida", required: true },
+        { name: "Prêmio atualizado", required: true },
+        { name: "Nova apólice emitida", required: true },
+        { name: "Documento anexado", required: true }
       ];
     case 'endorsement':
       return [
-        "Apólice original identificada",
-        "Motivo do endosso registrado",
-        "Alterações conferidas",
-        "Documento do endosso anexado"
+        { name: "Apólice original identificada", required: true },
+        { name: "Motivo do endosso registrado", required: true },
+        { name: "Alterações conferidas", required: true },
+        { name: "Documento do endosso anexado", required: true }
       ];
     case 'cancellation':
       return [
-        "Motivo do cancelamento",
-        "Data do distrato",
-        "Confirmação da seguradora",
-        "Ajuste financeiro (se houver)"
+        { name: "Motivo do cancelamento", required: true },
+        { name: "Data do distrato", required: true },
+        { name: "Confirmação da seguradora", required: true },
+        { name: "Ajuste financeiro (se houver)", required: false }
       ];
     default:
-      return ["Conferência de dados"];
+      return [{ name: "Conferência de dados", required: true }];
   }
 }
