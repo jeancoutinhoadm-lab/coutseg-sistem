@@ -330,6 +330,29 @@ function CentralEntradaPage() {
     }
     
     setExtractedData({ ...extractedData, items: newItems });
+    
+    // Re-validate totals after manual correction
+    if (docType === 'commission_report') {
+      const extractedTotal = newItems.reduce((sum: number, item: any) => sum + (Number(item.paid_commission) || 0), 0);
+      const documentTotal = Number(extractedData.document_total) || 0;
+      const documentCount = Number(extractedData.document_line_count) || 0;
+      const extractedCount = newItems.filter((i: any) => i.status !== 'rejected').length;
+      
+      let validationStatus: 'success' | 'failed' | 'unknown' = 'success';
+      let validationErrors: string[] = [];
+      
+      if (documentCount > 0 && extractedCount !== documentCount) {
+        validationStatus = 'failed';
+        validationErrors.push(`Divergência na contagem: Documento indica ${documentCount} linhas, mas há ${extractedCount} itens para aprovação.`);
+      }
+      
+      if (documentTotal > 0 && Math.abs(extractedTotal - documentTotal) > 0.01) {
+        validationStatus = 'failed';
+        validationErrors.push(`Divergência no total: Documento indica R$ ${documentTotal.toFixed(2)}, mas a soma atual é R$ ${extractedTotal.toFixed(2)}.`);
+      }
+
+      setValidationData({ status: validationStatus, errors: validationErrors });
+    }
   };
 
 
