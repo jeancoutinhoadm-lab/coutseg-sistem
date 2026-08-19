@@ -54,7 +54,10 @@ export type Database = {
           bank_name: string | null
           created_at: string | null
           id: string
+          initial_balance: number | null
+          institution: string | null
           name: string
+          status: string | null
         }
         Insert: {
           account_type?: string | null
@@ -62,7 +65,10 @@ export type Database = {
           bank_name?: string | null
           created_at?: string | null
           id?: string
+          initial_balance?: number | null
+          institution?: string | null
           name: string
+          status?: string | null
         }
         Update: {
           account_type?: string | null
@@ -70,7 +76,10 @@ export type Database = {
           bank_name?: string | null
           created_at?: string | null
           id?: string
+          initial_balance?: number | null
+          institution?: string | null
           name?: string
+          status?: string | null
         }
         Relationships: []
       }
@@ -393,6 +402,27 @@ export type Database = {
           },
         ]
       }
+      cost_centers: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       cross_sell_rules: {
         Row: {
           active: boolean | null
@@ -712,6 +742,124 @@ export type Database = {
           },
         ]
       }
+      financial_categories: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          type: Database["public"]["Enums"]["financial_entry_type"]
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          type: Database["public"]["Enums"]["financial_entry_type"]
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          type?: Database["public"]["Enums"]["financial_entry_type"]
+        }
+        Relationships: []
+      }
+      financial_entries: {
+        Row: {
+          amount: number
+          bank_account_id: string | null
+          category_id: string | null
+          commission_receipt_id: string | null
+          cost_center_id: string | null
+          created_at: string | null
+          document_id: string | null
+          entry_date: string
+          id: string
+          notes: string | null
+          payable_id: string | null
+          reference_number: string | null
+          type: Database["public"]["Enums"]["financial_entry_type"]
+          user_id: string | null
+        }
+        Insert: {
+          amount: number
+          bank_account_id?: string | null
+          category_id?: string | null
+          commission_receipt_id?: string | null
+          cost_center_id?: string | null
+          created_at?: string | null
+          document_id?: string | null
+          entry_date: string
+          id?: string
+          notes?: string | null
+          payable_id?: string | null
+          reference_number?: string | null
+          type: Database["public"]["Enums"]["financial_entry_type"]
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number
+          bank_account_id?: string | null
+          category_id?: string | null
+          commission_receipt_id?: string | null
+          cost_center_id?: string | null
+          created_at?: string | null
+          document_id?: string | null
+          entry_date?: string
+          id?: string
+          notes?: string | null
+          payable_id?: string | null
+          reference_number?: string | null
+          type?: Database["public"]["Enums"]["financial_entry_type"]
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financial_entries_bank_account_id_fkey"
+            columns: ["bank_account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_entries_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "financial_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_entries_commission_receipt_id_fkey"
+            columns: ["commission_receipt_id"]
+            isOneToOne: false
+            referencedRelation: "commission_receipts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_entries_cost_center_id_fkey"
+            columns: ["cost_center_id"]
+            isOneToOne: false
+            referencedRelation: "cost_centers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_entries_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_entries_payable_id_fkey"
+            columns: ["payable_id"]
+            isOneToOne: false
+            referencedRelation: "payables"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       insurer_aliases: {
         Row: {
           alias: string
@@ -856,6 +1004,79 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payables: {
+        Row: {
+          amount: number
+          category_id: string | null
+          competence_date: string
+          cost_center_id: string | null
+          created_at: string | null
+          created_by: string | null
+          description: string
+          document_id: string | null
+          due_date: string
+          id: string
+          notes: string | null
+          recurrence_rule: string | null
+          status: Database["public"]["Enums"]["financial_status"] | null
+          updated_at: string | null
+        }
+        Insert: {
+          amount: number
+          category_id?: string | null
+          competence_date: string
+          cost_center_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description: string
+          document_id?: string | null
+          due_date: string
+          id?: string
+          notes?: string | null
+          recurrence_rule?: string | null
+          status?: Database["public"]["Enums"]["financial_status"] | null
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          category_id?: string | null
+          competence_date?: string
+          cost_center_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string
+          document_id?: string | null
+          due_date?: string
+          id?: string
+          notes?: string | null
+          recurrence_rule?: string | null
+          status?: Database["public"]["Enums"]["financial_status"] | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payables_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "financial_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payables_cost_center_id_fkey"
+            columns: ["cost_center_id"]
+            isOneToOne: false
+            referencedRelation: "cost_centers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payables_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
             referencedColumns: ["id"]
           },
         ]
@@ -1359,6 +1580,14 @@ export type Database = {
         | "proposal"
         | "endorsement"
         | "other"
+      financial_entry_type: "income" | "expense" | "transfer" | "adjustment"
+      financial_status:
+        | "pending"
+        | "approved"
+        | "paid"
+        | "received"
+        | "partial"
+        | "cancelled"
       policy_status:
         | "active"
         | "pending"
@@ -1527,6 +1756,15 @@ export const Constants = {
         "proposal",
         "endorsement",
         "other",
+      ],
+      financial_entry_type: ["income", "expense", "transfer", "adjustment"],
+      financial_status: [
+        "pending",
+        "approved",
+        "paid",
+        "received",
+        "partial",
+        "cancelled",
       ],
       policy_status: [
         "active",
