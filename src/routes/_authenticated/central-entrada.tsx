@@ -223,6 +223,7 @@ function CentralEntradaPage() {
           } as any)
           .eq('document_id', lastSavedDoc.id);
 
+        setValidationData({ status: validationStatus, errors: validationErrors });
         return result;
       } catch (err: any) {
         await supabase.from('document_processing')
