@@ -48,7 +48,7 @@ const navItems = [
   { title: "Corretores", to: "/brokers", icon: UserCog, roles: ["admin", "gerente"] },
   { title: "Sinistros", to: "/claims", icon: AlertTriangle, roles: ["admin", "corretor", "administrativo", "gerente"] },
   { title: "Renovações", to: "/renewals", icon: CalendarClock, roles: ["admin", "corretor", "administrativo", "gerente"] },
-  { title: "Oportunidades", to: "/opportunities", icon: TrendingUp, roles: ["admin", "corretor", "gerente"] },
+  { title: "CRM Comercial", to: "/opportunities", icon: TrendingUp, roles: ["admin", "corretor", "gerente", "administrativo"] },
   { title: "Documentos", to: "/documents", icon: Files, roles: ["admin", "corretor", "administrativo", "gerente"] },
   { title: "Comissões", to: "/commissions", icon: DollarSign, roles: ["admin", "financeiro", "gerente"] },
   { title: "Financeiro", to: "/financial", icon: Wallet, roles: ["admin", "financeiro", "gerente"] },

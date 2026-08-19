@@ -426,6 +426,89 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_activities: {
+        Row: {
+          created_at: string | null
+          description: string
+          id: string
+          lead_id: string | null
+          opportunity_id: string | null
+          type: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description: string
+          id?: string
+          lead_id?: string | null
+          opportunity_id?: string | null
+          type: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string
+          id?: string
+          lead_id?: string | null
+          opportunity_id?: string | null
+          type?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_activities_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_activities_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "opportunities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_history: {
+        Row: {
+          changed_by: string | null
+          created_at: string | null
+          field: string
+          id: string
+          new_value: string | null
+          old_value: string | null
+          opportunity_id: string | null
+        }
+        Insert: {
+          changed_by?: string | null
+          created_at?: string | null
+          field: string
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          opportunity_id?: string | null
+        }
+        Update: {
+          changed_by?: string | null
+          created_at?: string | null
+          field?: string
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          opportunity_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_history_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "opportunities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cross_sell_rules: {
         Row: {
           active: boolean | null
@@ -967,13 +1050,76 @@ export type Database = {
         }
         Relationships: []
       }
+      leads: {
+        Row: {
+          broker_id: string | null
+          client_id: string | null
+          cpf_cnpj: string | null
+          created_at: string | null
+          email: string | null
+          full_name: string
+          id: string
+          notes: string | null
+          phone: string | null
+          source: string | null
+          status: Database["public"]["Enums"]["lead_status"] | null
+          updated_at: string | null
+        }
+        Insert: {
+          broker_id?: string | null
+          client_id?: string | null
+          cpf_cnpj?: string | null
+          created_at?: string | null
+          email?: string | null
+          full_name: string
+          id?: string
+          notes?: string | null
+          phone?: string | null
+          source?: string | null
+          status?: Database["public"]["Enums"]["lead_status"] | null
+          updated_at?: string | null
+        }
+        Update: {
+          broker_id?: string | null
+          client_id?: string | null
+          cpf_cnpj?: string | null
+          created_at?: string | null
+          email?: string | null
+          full_name?: string
+          id?: string
+          notes?: string | null
+          phone?: string | null
+          source?: string | null
+          status?: Database["public"]["Enums"]["lead_status"] | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leads_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
+            referencedRelation: "brokers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       opportunities: {
         Row: {
           broker_id: string | null
           client_id: string | null
+          closed_at: string | null
           created_at: string | null
           evidence: string | null
           id: string
+          lead_id: string | null
+          loss_reason: string | null
           notes: string | null
           original_policy_id: string | null
           priority: string | null
@@ -983,13 +1129,18 @@ export type Database = {
           score: number | null
           status: string | null
           updated_at: string | null
+          value_estimated: number | null
+          value_realized: number | null
         }
         Insert: {
           broker_id?: string | null
           client_id?: string | null
+          closed_at?: string | null
           created_at?: string | null
           evidence?: string | null
           id?: string
+          lead_id?: string | null
+          loss_reason?: string | null
           notes?: string | null
           original_policy_id?: string | null
           priority?: string | null
@@ -999,13 +1150,18 @@ export type Database = {
           score?: number | null
           status?: string | null
           updated_at?: string | null
+          value_estimated?: number | null
+          value_realized?: number | null
         }
         Update: {
           broker_id?: string | null
           client_id?: string | null
+          closed_at?: string | null
           created_at?: string | null
           evidence?: string | null
           id?: string
+          lead_id?: string | null
+          loss_reason?: string | null
           notes?: string | null
           original_policy_id?: string | null
           priority?: string | null
@@ -1015,6 +1171,8 @@ export type Database = {
           score?: number | null
           status?: string | null
           updated_at?: string | null
+          value_estimated?: number | null
+          value_realized?: number | null
         }
         Relationships: [
           {
@@ -1029,6 +1187,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunities_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
             referencedColumns: ["id"]
           },
           {
@@ -1325,6 +1490,67 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      quotes: {
+        Row: {
+          commission_estimated: number | null
+          created_at: string | null
+          id: string
+          insurer_id: string | null
+          notes: string | null
+          opportunity_id: string | null
+          pdf_url: string | null
+          premium: number | null
+          product_id: string | null
+          status: string | null
+        }
+        Insert: {
+          commission_estimated?: number | null
+          created_at?: string | null
+          id?: string
+          insurer_id?: string | null
+          notes?: string | null
+          opportunity_id?: string | null
+          pdf_url?: string | null
+          premium?: number | null
+          product_id?: string | null
+          status?: string | null
+        }
+        Update: {
+          commission_estimated?: number | null
+          created_at?: string | null
+          id?: string
+          insurer_id?: string | null
+          notes?: string | null
+          opportunity_id?: string | null
+          pdf_url?: string | null
+          premium?: number | null
+          product_id?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quotes_insurer_id_fkey"
+            columns: ["insurer_id"]
+            isOneToOne: false
+            referencedRelation: "insurers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "opportunities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       renewal_alerts: {
         Row: {
@@ -1628,6 +1854,13 @@ export type Database = {
         | "received"
         | "partial"
         | "cancelled"
+      lead_status:
+        | "new"
+        | "contacted"
+        | "qualified"
+        | "converted"
+        | "lost"
+        | "rejected"
       policy_status:
         | "active"
         | "pending"
@@ -1805,6 +2038,14 @@ export const Constants = {
         "received",
         "partial",
         "cancelled",
+      ],
+      lead_status: [
+        "new",
+        "contacted",
+        "qualified",
+        "converted",
+        "lost",
+        "rejected",
       ],
       policy_status: [
         "active",
