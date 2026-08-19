@@ -528,10 +528,14 @@ export type Database = {
         Row: {
           client_id: string | null
           created_at: string | null
+          deleted_at: string | null
           file_hash: string | null
           file_path: string
           file_type: string | null
           id: string
+          insurer_id: string | null
+          metadata: Json | null
+          mime_type: string | null
           name: string
           policy_id: string | null
           size: number | null
@@ -541,10 +545,14 @@ export type Database = {
         Insert: {
           client_id?: string | null
           created_at?: string | null
+          deleted_at?: string | null
           file_hash?: string | null
           file_path: string
           file_type?: string | null
           id?: string
+          insurer_id?: string | null
+          metadata?: Json | null
+          mime_type?: string | null
           name: string
           policy_id?: string | null
           size?: number | null
@@ -554,10 +562,14 @@ export type Database = {
         Update: {
           client_id?: string | null
           created_at?: string | null
+          deleted_at?: string | null
           file_hash?: string | null
           file_path?: string
           file_type?: string | null
           id?: string
+          insurer_id?: string | null
+          metadata?: Json | null
+          mime_type?: string | null
           name?: string
           policy_id?: string | null
           size?: number | null
@@ -570,6 +582,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_insurer_id_fkey"
+            columns: ["insurer_id"]
+            isOneToOne: false
+            referencedRelation: "insurers"
             referencedColumns: ["id"]
           },
           {
