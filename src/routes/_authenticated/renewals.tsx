@@ -423,6 +423,7 @@ function RenewalsPage() {
               onClick={() => {
                 if (!selectedPolicy?.id) return;
                 const statusLabel = newAction.action.split("para ")[1];
+                if (!statusLabel) return;
                 // Map label back to enum
                 const statusMap: Record<string, PolicyStatus> = {
                   "Pendente de Contato": "contact_pending" as any,
@@ -433,7 +434,7 @@ function RenewalsPage() {
                   "Renovada": "renewed" as any,
                   "Perdida": "lost" as any
                 };
-                const newStatus = statusMap[statusLabel];
+                const newStatus = statusMap[statusLabel as string];
                 if (!newStatus) return;
                 
                 updateStatusMutation.mutate({
