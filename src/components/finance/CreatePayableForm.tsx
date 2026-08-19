@@ -26,8 +26,8 @@ import { createPayable, getFinancialCategories } from "@/lib/finance-ops.functio
 const formSchema = z.object({
   description: z.string().min(2, "Descrição muito curta"),
   amount: z.coerce.number().min(0.01, "Valor deve ser maior que zero"),
-  due_date: z.string(),
-  competence_date: z.string(),
+  due_date: z.string().min(1, "Data de vencimento é obrigatória"),
+  competence_date: z.string().min(1, "Data de competência é obrigatória"),
   category_id: z.string().min(1, "Selecione uma categoria"),
   notes: z.string().optional(),
 });
