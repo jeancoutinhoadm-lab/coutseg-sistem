@@ -41,7 +41,7 @@ export function CreatePayableForm({ onSuccess }: { onSuccess?: () => void }) {
     queryFn: () => getFinancialCategories(),
   });
 
-  const todayStr = new Date().toISOString().split("T")[0];
+  const todayStr: string = new Date().toISOString().split("T")[0];
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
