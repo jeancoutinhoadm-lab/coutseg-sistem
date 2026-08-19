@@ -51,6 +51,9 @@ export const askBusinessIA = createServerFn({ method: "POST" })
     CONTEXTO COUTSEG:
     ${JSON.stringify(context, null, 2)}`;
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+
     try {
       const response = await fetch('https://api.lovable.ai/v1/chat/completions', {
         method: 'POST',
@@ -66,12 +69,66 @@ export const askBusinessIA = createServerFn({ method: "POST" })
           ],
           temperature: 0,
         }),
+        signal: controller.signal,
       });
 
+      clearTimeout(timeoutId);
+
+      const contentType = response.headers.get("content-type") || "";
+      
+      if (!response.ok) {
+        const status = response.status;
+        let errorText = "";
+        try {
+          errorText = await response.text();
+        } catch (e) {
+          errorText = "Não foi possível ler o corpo da resposta de erro.";
+        }
+
+        console.error(`Business IA Gateway Error [${status}]:`, {
+          contentType,
+          isCloudflareError: errorText.includes("1016") || errorText.includes("Origin DNS Error"),
+        });
+
+        if (status >= 500 || errorText.includes("1016") || errorText.includes("Origin DNS Error")) {
+          throw new Error("O serviço de Inteligência Artificial está temporariamente indisponível. Tente novamente em alguns instantes.");
+        }
+        
+        throw new Error("Falha na comunicação com a IA.");
+      }
+
+      if (!contentType.includes("application/json")) {
+        console.error("Business IA Error: Resposta não é JSON", { contentType });
+        throw new Error("O serviço de IA retornou um formato inesperado.");
+      }
+
       const result = await response.json();
+      
+      if (!result?.choices?.[0]?.message?.content) {
+        console.error("Business IA Error: Estrutura JSON inválida", result);
+        throw new Error("Resposta da IA com formato inválido.");
+      }
+
       return { answer: result.choices[0].message.content };
-    } catch (error) {
-      console.error("Business IA Error:", error);
+    } catch (error: any) {
+      clearTimeout(timeoutId);
+      
+      if (error.name === 'AbortError') {
+        console.error("Business IA Error: Timeout (15s)");
+        throw new Error("A IA demorou muito para responder. Tente novamente.");
+      }
+
+      console.error("Business IA Error:", error.message || error);
+      
+      // Se já for um erro com mensagem amigável, repassa
+      if (error.message && (
+        error.message.includes("temporariamente indisponível") || 
+        error.message.includes("demorou muito") ||
+        error.message.includes("formato inesperado")
+      )) {
+        throw error;
+      }
+
       throw new Error("Falha na análise da IA.");
     }
   });
