@@ -107,7 +107,7 @@ export const runDeterministicInsights = createServerFn({ method: "POST" })
     // 3. OPORTUNIDADES PARADAS
     const { data: staleOpps } = await supabase
       .from("opportunities")
-      .select("id, title, updated_at")
+      .select("id, notes, updated_at, products(name)")
       .eq("status", "open")
       .lte("updated_at", subDays(new Date(), 10).toISOString());
 
@@ -116,7 +116,7 @@ export const runDeterministicInsights = createServerFn({ method: "POST" })
         insights.push({
           type: 'COMMERCIAL',
           severity: 'MEDIUM',
-          title: `Oportunidade Parada: ${opp.title}`,
+          title: `Oportunidade Parada: ${opp.products?.name || 'Sem Produto'}`,
           description: "Esta oportunidade não sofreu alterações nos últimos 10 dias.",
           suggested_action: "Revisar status e realizar follow-up.",
           entity_related: 'opportunities',
