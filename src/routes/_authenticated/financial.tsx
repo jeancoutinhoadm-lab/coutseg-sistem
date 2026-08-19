@@ -42,10 +42,10 @@ function FinancialDashboard() {
 
   return (
     <div className="container mx-auto py-6 space-y-8">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Painel Financeiro</h1>
-          <p className="text-muted-foreground">Visão geral do caixa e contas da CoutSeg.</p>
+          <p className="text-muted-foreground"># ETAPA 17 — Auditoria e Integridade Financeira CoutSeg</p>
         </div>
         <div className="flex gap-3">
           <Dialog open={isPayableModalOpen} onOpenChange={setIsPayableModalOpen}>
