@@ -107,11 +107,6 @@ Regras:
 2. Datas devem ser YYYY-MM-DD.
 3. Responda apenas o JSON puro, sem markdown.`;
 
-Regras:
-1. Valores monetários devem ser números (1234.56).
-2. Datas devem ser YYYY-MM-DD.
-3. Extraia todas as linhas de comissão.
-4. Responda apenas o JSON puro, sem markdown.`;
 
     const startTime = Date.now();
 
