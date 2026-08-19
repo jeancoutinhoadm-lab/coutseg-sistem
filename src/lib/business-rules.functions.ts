@@ -64,11 +64,25 @@ export const runDeterministicInsights = createServerFn({ method: "POST" })
 
     if (upcomingRenewals) {
       for (const policy of upcomingRenewals) {
-        const { data: activities } = await supabase
-          .from("crm_activities")
-          .select("id")
-          .eq("policy_id", policy.id)
-          .gte("created_at", subDays(new Date(), 15).toISOString());
+        // Verificar oportunidades relacionadas à apólice (renovação é via oportunidade)
+        const { data: relatedOpps } = await supabase
+          .from("opportunities")
+          .select("id, updated_at")
+          .eq("original_policy_id", policy.id);
+
+        let hasRecentActivity = false;
+        
+        if (relatedOpps && relatedOpps.length > 0) {
+            for (const opp of relatedOpps) {
+                const { data: activities } = await supabase
+                  .from("crm_activities")
+                  .select("id")
+                  .eq("opportunity_id", opp.id)
+                  .gte("created_at", subDays(new Date(), 15).toISOString());
+                
+                if (activities && activities.length > 0) hasRecentActivity = true;
+            }
+        }
 
         const { data: tasks } = await supabase
           .from("tasks")
@@ -76,12 +90,12 @@ export const runDeterministicInsights = createServerFn({ method: "POST" })
           .eq("policy_id", policy.id)
           .eq("status", "PENDING");
 
-        if ((!activities || activities.length === 0) && (!tasks || tasks.length === 0)) {
+        if (!hasRecentActivity && (!tasks || tasks.length === 0)) {
           insights.push({
             type: 'RENEWAL_RISK',
             severity: 'HIGH',
             title: `Risco de Renovação: ${policy.policy_number}`,
-            description: `Apólice de ${policy.clients?.full_name} vence em ${new Date(policy.end_date).toLocaleDateString()} e não há atividades ou tarefas pendentes.`,
+            description: `Apólice de ${policy.clients?.full_name} vence em ${new Date(policy.end_date).toLocaleDateString()} e não há atividades recentes no CRM ou tarefas pendentes.`,
             suggested_action: "Criar tarefa urgente de renovação.",
             entity_related: 'policies',
             entity_id: policy.id,
