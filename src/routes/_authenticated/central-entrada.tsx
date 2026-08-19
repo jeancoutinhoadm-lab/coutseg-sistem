@@ -46,6 +46,13 @@ function CentralEntradaPage() {
     },
   });
 
+  const calculateHash = async (file: File) => {
+    const arrayBuffer = await file.arrayBuffer();
+    const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  };
+
   // Step 1 & 2: Upload only
   const uploadMutation = useMutation({
     mutationFn: async () => {
@@ -54,6 +61,19 @@ function CentralEntradaPage() {
 
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Usuário não autenticado");
+
+      const fileHash = await calculateHash(file);
+      
+      // Check for duplicate hash
+      const { data: existingDoc } = await supabase
+        .from('documents')
+        .select('id, name')
+        .eq('file_hash', fileHash)
+        .single();
+        
+      if (existingDoc) {
+        toast.info(`Este documento já foi enviado anteriormente: ${existingDoc.name}`);
+      }
 
       const fileExt = file.name.split(".").pop();
       const filePath = `${user.id}/${crypto.randomUUID()}.${fileExt}`;
@@ -72,12 +92,12 @@ function CentralEntradaPage() {
           file_type: file.type,
           size: file.size,
           uploaded_by: user.id,
+          file_hash: fileHash
         })
         .select()
         .single();
 
       if (docError) {
-        // Rollback: delete uploaded file if DB record fails
         await supabase.storage.from("policy_documents").remove([filePath]);
         throw docError;
       }
