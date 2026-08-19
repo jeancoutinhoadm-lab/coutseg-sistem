@@ -107,16 +107,19 @@ function CentralEntradaPage() {
       
       // Update status to processing and increment attempts
       const { data: currentProc } = await supabase.from('document_processing')
-        .select('attempts')
+        .select('*')
         .eq('document_id', lastSavedDoc.id)
         .single();
         
+      const attempts = (currentProc as any)?.attempts || 0;
+
       await supabase.from('document_processing')
         .update({ 
           status: 'processing',
-          attempts: (currentProc?.attempts || 0) + 1
-        })
+          attempts: attempts + 1
+        } as any)
         .eq('document_id', lastSavedDoc.id);
+
 
       const base64 = await new Promise<string>((resolve) => {
         const reader = new FileReader();
