@@ -96,7 +96,12 @@ export const getActiveInsights = createServerFn({ method: "GET" })
  * DAR FEEDBACK AO INSIGHT
  */
 export const feedbackInsight = createServerFn({ method: "POST" })
-  .validator((data: { id: string; useful: boolean }) => z.object({ id: z.string().uuid(), useful: z.z.boolean() }).parse(data))
+  .validator((data: unknown) => 
+    z.object({ 
+      id: z.string().uuid(), 
+      useful: z.boolean() 
+    }).parse(data)
+  )
   .handler(async ({ data }) => {
     const { error } = await supabase
       .from("business_insights")
