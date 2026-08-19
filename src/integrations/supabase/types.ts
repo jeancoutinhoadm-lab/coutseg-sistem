@@ -345,32 +345,50 @@ export type Database = {
       }
       document_processing: {
         Row: {
+          ai_confidence: Json | null
+          ai_model: string | null
+          ai_prompt_version: string | null
+          attempts: number | null
           created_at: string | null
           document_id: string | null
           error_message: string | null
           extracted_data: Json | null
           id: string
           processed_at: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
           status: string | null
           type: Database["public"]["Enums"]["document_type"] | null
         }
         Insert: {
+          ai_confidence?: Json | null
+          ai_model?: string | null
+          ai_prompt_version?: string | null
+          attempts?: number | null
           created_at?: string | null
           document_id?: string | null
           error_message?: string | null
           extracted_data?: Json | null
           id?: string
           processed_at?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           status?: string | null
           type?: Database["public"]["Enums"]["document_type"] | null
         }
         Update: {
+          ai_confidence?: Json | null
+          ai_model?: string | null
+          ai_prompt_version?: string | null
+          attempts?: number | null
           created_at?: string | null
           document_id?: string | null
           error_message?: string | null
           extracted_data?: Json | null
           id?: string
           processed_at?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           status?: string | null
           type?: Database["public"]["Enums"]["document_type"] | null
         }
@@ -969,6 +987,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      approve_document_extraction: {
+        Args: { _processing_id: string }
+        Returns: undefined
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
