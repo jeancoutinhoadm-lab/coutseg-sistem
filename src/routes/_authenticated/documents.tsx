@@ -334,7 +334,7 @@ function DocumentsPage() {
                   <div className="p-3 border rounded-md space-y-2">
                     <div className="flex justify-between items-center">
                       <span className="text-xs text-muted-foreground">Status:</span>
-                      {getStatusBadge(selectedDoc.processing?.[0]?.status)}
+                      {getStatusBadge(selectedDoc.processing?.[0]?.status ?? undefined)}
                     </div>
                     <p className="text-xs"><span className="text-muted-foreground">Modelo:</span> {selectedDoc.processing?.[0]?.ai_model || '—'}</p>
                     <p className="text-xs"><span className="text-muted-foreground">Tentativas:</span> {selectedDoc.processing?.[0]?.attempts || 0}</p>
