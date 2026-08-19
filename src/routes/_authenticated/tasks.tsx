@@ -115,7 +115,7 @@ function TasksPage() {
       LOW: 'bg-gray-100 text-gray-700 border-gray-200',
     };
     const p = (priority?.toUpperCase() || 'MEDIUM') as TaskPriority;
-    return <Badge className={`${config[p] || config.MEDIUM} border`}>{p}</Badge>;
+    return <Badge className={`${config[p as keyof typeof config] || config['MEDIUM']} border`}>{p}</Badge>;
   };
 
   const isOverdue = (task: any) => {
@@ -182,7 +182,7 @@ function TasksPage() {
           <TaskList 
             tasks={sortedTasks} 
             isLoading={isLoading} 
-            onStatusChange={(id, status) => statusMutation.mutate({ id, status })}
+            onStatusChange={(id: string, status: TaskStatus) => statusMutation.mutate({ id, status })}
             isOverdue={isOverdue}
             getPriorityBadge={getPriorityBadge}
           />
@@ -192,8 +192,8 @@ function TasksPage() {
           <TaskList 
             tasks={sortedTasks} 
             isLoading={isLoading} 
-            onStatusChange={(id, status) => statusMutation.mutate({ id, status })}
-            onTransfer={(id, userId) => transferMutation.mutate({ id, newUserId: userId })}
+            onStatusChange={(id: string, status: TaskStatus) => statusMutation.mutate({ id, status })}
+            onTransfer={(id: string, userId: string) => transferMutation.mutate({ id, newUserId: userId })}
             teamMembers={teamMembers}
             isOverdue={isOverdue}
             getPriorityBadge={getPriorityBadge}

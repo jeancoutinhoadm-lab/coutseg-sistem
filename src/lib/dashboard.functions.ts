@@ -118,11 +118,14 @@ export const getExecutiveDashboardData = createServerFn({ method: "GET" })
     const totalBalance = (accounts || []).reduce((acc: number, curr: any) => acc + (Number(curr.balance) || 0), 0);
 
     // 5. Operacional: IA e Pendências
-    const [{ count: pendingIACount }, { count: needsReviewIACount }, { count: divergentCommsCount }] = await Promise.all([
+    const [{ count: pendingIACount }, { count: needsReviewIACount }, { count: divergentCommsCount }, { data: overdueTasks }] = await Promise.all([
       supabase.from("document_processing").select("id", { count: "exact", head: true }).in("status", ["pending", "processing"]),
       supabase.from("document_processing").select("id", { count: "exact", head: true }).eq("status", "needs_review"),
       supabase.from("commissions").select("id", { count: "exact", head: true }).eq("status", "divergent"),
+      supabase.from("tasks").select("id").neq("status", "COMPLETED").lt("due_date", todayStr)
     ]);
+
+    const overdueTasksCount = overdueTasks?.length || 0;
 
     // 6. Carteira: Apólices e Renovações
     const getRenewalCount = async (days: number) => {
@@ -210,6 +213,7 @@ export const getExecutiveDashboardData = createServerFn({ method: "GET" })
         pendingIA: (pendingIACount || 0) + (needsReviewIACount || 0),
         needsReviewIA: needsReviewIACount || 0,
         divergentComms: divergentCommsCount || 0,
+        overdueTasks: overdueTasksCount,
       },
       portfolio: {
         activePolicies: activePoliciesCount || 0,
