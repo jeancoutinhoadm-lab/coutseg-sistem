@@ -93,10 +93,10 @@ function LoginPage() {
         </CardHeader>
         <Form {...form}>
           <form 
-            onSubmit={(e) => {
+            onSubmit={async (e) => {
               e.preventDefault();
               e.stopPropagation();
-              form.handleSubmit(onSubmit)(e);
+              await form.handleSubmit(onSubmit)(e);
             }}
           >
             <CardContent className="space-y-4">
