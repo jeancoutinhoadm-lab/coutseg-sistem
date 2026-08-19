@@ -8,10 +8,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Upload, FileText, Loader2, CheckCircle2, AlertCircle, Save, RefreshCw, Eye, XCircle } from "lucide-react";
+import { Upload, FileText, Loader2, CheckCircle2, AlertCircle, RefreshCw, Eye, XCircle, Trash2, Check } from "lucide-react";
 import { processDocumentWithIA } from "@/lib/ai-extraction.functions";
+import { extractCommissionReportWithIA } from "@/lib/commission-extraction.functions";
 import { logAudit } from "@/utils/audit";
 import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+
 
 export const Route = createFileRoute("/_authenticated/central-entrada")({
   component: CentralEntradaPage,
