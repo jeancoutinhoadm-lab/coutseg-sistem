@@ -119,6 +119,77 @@ export type Database = {
         }
         Relationships: []
       }
+      business_insights: {
+        Row: {
+          ai_confidence: number | null
+          broker_id: string | null
+          created_at: string | null
+          description: string
+          entity_id: string | null
+          entity_related: string | null
+          evidence: Json | null
+          expires_at: string | null
+          feedback_useful: boolean | null
+          id: string
+          origin: string | null
+          severity: Database["public"]["Enums"]["insight_severity"]
+          status: Database["public"]["Enums"]["insight_status"]
+          suggested_action: string | null
+          title: string
+          type: Database["public"]["Enums"]["insight_type"]
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          ai_confidence?: number | null
+          broker_id?: string | null
+          created_at?: string | null
+          description: string
+          entity_id?: string | null
+          entity_related?: string | null
+          evidence?: Json | null
+          expires_at?: string | null
+          feedback_useful?: boolean | null
+          id?: string
+          origin?: string | null
+          severity?: Database["public"]["Enums"]["insight_severity"]
+          status?: Database["public"]["Enums"]["insight_status"]
+          suggested_action?: string | null
+          title: string
+          type: Database["public"]["Enums"]["insight_type"]
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          ai_confidence?: number | null
+          broker_id?: string | null
+          created_at?: string | null
+          description?: string
+          entity_id?: string | null
+          entity_related?: string | null
+          evidence?: Json | null
+          expires_at?: string | null
+          feedback_useful?: boolean | null
+          id?: string
+          origin?: string | null
+          severity?: Database["public"]["Enums"]["insight_severity"]
+          status?: Database["public"]["Enums"]["insight_status"]
+          suggested_action?: string | null
+          title?: string
+          type?: Database["public"]["Enums"]["insight_type"]
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_insights_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
+            referencedRelation: "brokers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       claims: {
         Row: {
           amount: number | null
@@ -1974,6 +2045,18 @@ export type Database = {
         | "received"
         | "partial"
         | "cancelled"
+      insight_severity: "INFO" | "LOW" | "MEDIUM" | "HIGH" | "CRITICAL"
+      insight_status: "NEW" | "REVIEWED" | "DISMISSED" | "ACTED"
+      insight_type:
+        | "CROSS_SELL"
+        | "RENEWAL_RISK"
+        | "COMMERCIAL"
+        | "FINANCIAL"
+        | "COMMISSION"
+        | "OPERATIONAL"
+        | "DOCUMENT"
+        | "PRODUCTIVITY"
+        | "ANOMALY"
       lead_status:
         | "new"
         | "contacted"
@@ -2158,6 +2241,19 @@ export const Constants = {
         "received",
         "partial",
         "cancelled",
+      ],
+      insight_severity: ["INFO", "LOW", "MEDIUM", "HIGH", "CRITICAL"],
+      insight_status: ["NEW", "REVIEWED", "DISMISSED", "ACTED"],
+      insight_type: [
+        "CROSS_SELL",
+        "RENEWAL_RISK",
+        "COMMERCIAL",
+        "FINANCIAL",
+        "COMMISSION",
+        "OPERATIONAL",
+        "DOCUMENT",
+        "PRODUCTIVITY",
+        "ANOMALY",
       ],
       lead_status: [
         "new",
