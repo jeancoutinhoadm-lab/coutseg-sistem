@@ -29,8 +29,26 @@ import { getExecutiveDashboardData } from "@/lib/dashboard.functions";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 
+import { runDeterministicInsights } from "@/lib/business-rules.functions";
+import { getActiveInsights, feedbackInsight, askBusinessIA } from "@/lib/business-ai.functions";
+import { toast } from "sonner";
+import { 
+  Sparkles, 
+  ThumbsUp, 
+  ThumbsDown, 
+  Bot, 
+  MessageSquare, 
+  Send,
+  Zap
+} from "lucide-react";
+
 export const Route = createFileRoute("/_authenticated/")({
   component: DashboardPage,
+  loader: async () => {
+    // Executar insights determinísticos ao carregar o dashboard
+    await runDeterministicInsights();
+    return {};
+  },
   head: () => ({
     meta: [
       { title: "Dashboard Gerencial - Coutseg" },
