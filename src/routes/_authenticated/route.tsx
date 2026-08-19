@@ -169,7 +169,7 @@ function AuthenticatedLayout() {
   );
 }
 
-function TaskCounter({ userId }: { userId?: string }) {
+function TaskCounter({ userId }: { userId?: string | undefined }) {
   const { data: count } = useQuery({
     queryKey: ["tasks-pending-count", userId],
     queryFn: async () => {
