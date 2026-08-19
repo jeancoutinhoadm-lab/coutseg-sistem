@@ -98,19 +98,20 @@ export const getExecutiveDashboardData = createServerFn({ method: "GET" })
       supabase.from("payables").select("amount, due_date").in("status", ["pending", "partial"]),
     ]);
 
-    const today = new Date().toISOString().split("T")[0];
+    const todayStr = new Date().toISOString().split("T")[0];
     const overdueReceivables = (receivables || [])
-      .filter(r => r.due_date && r.due_date < today)
+      .filter(r => r.due_date && todayStr && r.due_date < todayStr)
       .reduce((acc, curr) => acc + (Number(curr.expected_amount) - (Number(curr.received_amount) || 0)), 0);
     
     const totalReceivables = (receivables || [])
       .reduce((acc, curr) => acc + (Number(curr.expected_amount) - (Number(curr.received_amount) || 0)), 0);
 
     const overduePayables = (payables || [])
-      .filter(p => p.due_date && p.due_date < today)
+      .filter(p => p.due_date && todayStr && p.due_date < todayStr)
       .reduce((acc, curr) => acc + Number(curr.amount), 0);
     
     const totalPayables = (payables || []).reduce((acc, curr) => acc + Number(curr.amount), 0);
+
 
 
     // 4. Saldo em Contas
