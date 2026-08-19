@@ -296,16 +296,17 @@ function DashboardPage() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="p-4 rounded-xl border bg-card">
                 <div className="text-xs text-muted-foreground uppercase font-bold">Novas</div>
-                <div className="text-2xl font-bold">{commercial.opportunities.new || 0}</div>
+                <div className="text-2xl font-bold">{commercial.opportunities['new'] || 0}</div>
               </div>
               <div className="p-4 rounded-xl border bg-card">
                 <div className="text-xs text-muted-foreground uppercase font-bold">Cotação</div>
-                <div className="text-2xl font-bold">{commercial.opportunities.quote_sent || 0}</div>
+                <div className="text-2xl font-bold">{commercial.opportunities['quote_sent'] || 0}</div>
               </div>
               <div className="p-4 rounded-xl border bg-card">
                 <div className="text-xs text-muted-foreground uppercase font-bold">Negociação</div>
-                <div className="text-2xl font-bold">{commercial.opportunities.negotiation || 0}</div>
+                <div className="text-2xl font-bold">{commercial.opportunities['negotiation'] || 0}</div>
               </div>
+
               <div className="p-4 rounded-xl border bg-primary/10 border-primary/20">
                 <div className="text-xs text-primary uppercase font-bold flex items-center gap-1">
                   <Target className="h-3 w-3" /> Cross-sell
