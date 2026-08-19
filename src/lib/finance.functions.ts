@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 
 export const getFinancialSummary = createServerFn({ method: "GET" })
@@ -37,4 +38,55 @@ export const getFinancialSummary = createServerFn({ method: "GET" })
       totalReceivables,
       totalPayables,
     };
+  });
+
+export const getFinancialPeriods = createServerFn({ method: "GET" })
+  .handler(async () => {
+    const { data } = await supabase
+      .from("financial_periods")
+      .select("*")
+      .order("period_month", { ascending: false });
+    return data || [];
+  });
+
+export const closeFinancialPeriod = createServerFn({ method: "POST" })
+  .validator((data: unknown) => z.object({
+    period_month: z.string(),
+  }).parse(data))
+  .handler(async ({ data }) => {
+    const user = (await supabase.auth.getUser()).data.user;
+    const { error } = await supabase
+      .from("financial_periods")
+      .upsert({
+        period_month: data.period_month,
+        status: "closed",
+        closed_at: new Date().toISOString(),
+        closed_by: user?.id ?? null,
+      });
+
+    if (error) throw error;
+    return { success: true };
+  });
+
+export const getFinancialEntries = createServerFn({ method: "GET" })
+  .validator((data: unknown) => z.object({
+    startDate: z.string().optional(),
+    endDate: z.string().optional(),
+  }).parse(data))
+  .handler(async ({ data }) => {
+    let query = supabase
+      .from("financial_entries")
+      .select(`
+        *,
+        bank_accounts(name),
+        financial_categories(name)
+      `)
+      .order("entry_date", { ascending: false });
+
+    if (data.startDate) query = query.gte("entry_date", data.startDate);
+    if (data.endDate) query = query.lte("entry_date", data.endDate);
+
+    const { data: entries, error } = await query;
+    if (error) throw error;
+    return entries;
   });

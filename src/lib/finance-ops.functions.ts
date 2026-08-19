@@ -49,13 +49,30 @@ export const recordPayment = createServerFn({ method: "POST" })
     notes: z.string().optional(),
   }).parse(data))
   .handler(async ({ data }) => {
+    // 1. Verificar duplicidade (Idempotência/Prevenção de pagamento duplicado)
+    const { data: existingEntry } = await supabase
+      .from("financial_entries")
+      .select("id")
+      .eq("payable_id", data.payable_id)
+      .eq("type", "expense")
+      .maybeSingle();
+
+    if (existingEntry) {
+      throw new Error("Esta despesa já possui um pagamento registrado.");
+    }
+
     const { data: payable } = await supabase
       .from("payables")
-      .select("category_id, cost_center_id, description")
+      .select("category_id, cost_center_id, description, status, amount")
       .eq("id", data.payable_id)
       .single();
 
-    if (!payable) throw new Error("Payable not found");
+    if (!payable) throw new Error("Conta a pagar não encontrada");
+    if (payable.status === 'paid') throw new Error("Esta conta já está marcada como paga.");
+
+    // 2. Lógica de Pagamento Parcial vs Total
+    const isPartial = data.amount < payable.amount;
+    const newStatus = isPartial ? "partial" : "paid";
 
     const entryData: any = {
       type: "expense",
@@ -64,28 +81,27 @@ export const recordPayment = createServerFn({ method: "POST" })
       bank_account_id: data.bank_account_id,
       category_id: payable.category_id,
       payable_id: data.payable_id,
+      user_id: (await supabase.auth.getUser()).data.user?.id,
     };
     
     if (payable.cost_center_id) entryData.cost_center_id = payable.cost_center_id;
     if (data.reference_number) entryData.reference_number = data.reference_number;
     if (data.notes) entryData.notes = data.notes;
 
-    // 1. Criar lançamento financeiro (Fluxo de Caixa)
+    // 3. Executar transação atômica (emulada por sequência de chamadas com verificação)
     const { error: entryError } = await supabase
       .from("financial_entries")
       .insert(entryData);
 
     if (entryError) throw entryError;
 
-    // 2. Atualizar status do contas a pagar
     const { error: updateError } = await supabase
       .from("payables")
-      .update({ status: "paid" as any })
+      .update({ status: newStatus as any })
       .eq("id", data.payable_id);
 
     if (updateError) throw updateError;
 
-    // 3. Atualizar saldo da conta bancária
     const { data: account } = await supabase
       .from("bank_accounts")
       .select("balance")
@@ -95,8 +111,71 @@ export const recordPayment = createServerFn({ method: "POST" })
     if (account) {
       await supabase
         .from("bank_accounts")
-        .update({ balance: (account.balance || 0) - data.amount })
+        .update({ balance: (Number(account.balance) || 0) - data.amount })
         .eq("id", data.bank_account_id);
+    }
+
+    return { success: true, status: newStatus };
+  });
+
+export const reverseEntry = createServerFn({ method: "POST" })
+  .validator((data: unknown) => z.object({
+    entry_id: z.string(),
+    reason: z.string(),
+  }).parse(data))
+  .handler(async ({ data }) => {
+    const { data: entry } = await supabase
+      .from("financial_entries")
+      .select("*")
+      .eq("id", data.entry_id)
+      .single();
+
+    if (!entry) throw new Error("Lançamento não encontrado");
+
+    // Estorno: Criar lançamento de sinal oposto
+    const reversalData: any = {
+      type: 'adjustment',
+      amount: -Number(entry.amount),
+      entry_date: new Date().toISOString().split('T')[0],
+      bank_account_id: entry.bank_account_id,
+      category_id: entry.category_id,
+      notes: `ESTORNO: ${data.reason} (Ref: ${entry.id})`,
+      user_id: (await supabase.auth.getUser()).data.user?.id,
+    };
+
+    if (entry.payable_id) reversalData.payable_id = entry.payable_id;
+    if (entry.cost_center_id) reversalData.cost_center_id = entry.cost_center_id;
+
+    const { error: reversalError } = await supabase
+      .from("financial_entries")
+      .insert(reversalData);
+
+    if (reversalError) throw reversalError;
+
+    // Se for despesa vinculada a payable, voltar status
+    if (entry.payable_id) {
+      await supabase
+        .from("payables")
+        .update({ status: "pending" as any })
+        .eq("id", entry.payable_id);
+    }
+
+    // Atualizar saldo bancário
+    const { data: account } = await supabase
+      .from("bank_accounts")
+      .select("balance")
+      .eq("id", entry.bank_account_id!)
+      .single();
+
+    if (account) {
+      const entryAmount = Number(entry.amount);
+      const currentBalance = Number(account.balance) || 0;
+      const multiplier = entry.type === 'income' ? -1 : 1;
+      
+      await supabase
+        .from("bank_accounts")
+        .update({ balance: currentBalance + (entryAmount * multiplier) })
+        .eq("id", entry.bank_account_id!);
     }
 
     return { success: true };
