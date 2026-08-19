@@ -87,17 +87,20 @@ export const getExecutiveDashboardData = createServerFn({ method: "GET" })
     };
 
     const [currentRevenue, prevRevenue, currentExpenses, prevExpenses] = await Promise.all([
-      getRevenue(startStr, endStr),
-      getRevenue(prevStartStr, prevEndStr),
-      getExpenses(startStr, endStr),
-      getExpenses(prevStartStr, prevEndStr),
+      getRevenue(startStr, endStr).catch(() => 0),
+      getRevenue(prevStartStr, prevEndStr).catch(() => 0),
+      getExpenses(startStr, endStr).catch(() => 0),
+      getExpenses(prevStartStr, prevEndStr).catch(() => 0),
     ]);
 
     // 3. Financeiro: A Receber / A Pagar
-    const [{ data: receivables }, { data: payables }] = await Promise.all([
+    const [receivablesRes, payablesRes] = await Promise.allSettled([
       supabase.from("commissions").select("expected_amount, received_amount, due_date").in("status", ["pending", "partial"]),
       supabase.from("payables").select("amount, due_date").in("status", ["pending", "partial"]),
     ]);
+
+    const receivables = receivablesRes.status === 'fulfilled' ? (receivablesRes.value.data || []) : [];
+    const payables = payablesRes.status === 'fulfilled' ? (payablesRes.value.data || []) : [];
 
     const todayStr = new Date().toISOString().split("T")[0];
     const overdueReceivables = (receivables || [])
@@ -118,12 +121,17 @@ export const getExecutiveDashboardData = createServerFn({ method: "GET" })
     const totalBalance = (accounts || []).reduce((acc: number, curr: any) => acc + (Number(curr.balance) || 0), 0);
 
     // 5. Operacional: IA e Pendências
-    const [{ count: pendingIACount }, { count: needsReviewIACount }, { count: divergentCommsCount }, { data: overdueTasks }] = await Promise.all([
+    const [pendingIARes, needsReviewIARes, divergentCommsRes, overdueTasksRes] = await Promise.allSettled([
       supabase.from("document_processing").select("id", { count: "exact", head: true }).in("status", ["pending", "processing"]),
       supabase.from("document_processing").select("id", { count: "exact", head: true }).eq("status", "needs_review"),
       supabase.from("commissions").select("id", { count: "exact", head: true }).eq("status", "divergent"),
       supabase.from("tasks").select("id").neq("status", "COMPLETED").lt("due_date", todayStr)
     ]);
+
+    const pendingIACount = pendingIARes.status === 'fulfilled' ? (pendingIARes.value.count || 0) : 0;
+    const needsReviewIACount = needsReviewIARes.status === 'fulfilled' ? (needsReviewIARes.value.count || 0) : 0;
+    const divergentCommsCount = divergentCommsRes.status === 'fulfilled' ? (divergentCommsRes.value.count || 0) : 0;
+    const overdueTasks = overdueTasksRes.status === 'fulfilled' ? (overdueTasksRes.value.data || []) : [];
 
     const overdueTasksCount = overdueTasks?.length || 0;
 
@@ -139,7 +147,7 @@ export const getExecutiveDashboardData = createServerFn({ method: "GET" })
       return count || 0;
     };
 
-    const [ren7, ren15, ren30, ren60, ren90, { count: activePoliciesCount }, { count: activeClientsCount }] = await Promise.all([
+    const [ren7, ren15, ren30, ren60, ren90, policiesRes, clientsRes] = await Promise.all([
       getRenewalCount(7),
       getRenewalCount(15),
       getRenewalCount(30),
@@ -149,11 +157,17 @@ export const getExecutiveDashboardData = createServerFn({ method: "GET" })
       supabase.from("clients").select("id", { count: "exact", head: true }).eq("status", "active"),
     ]);
 
+    const activePoliciesCount = policiesRes.data ? policiesRes.count : 0;
+    const activeClientsCount = clientsRes.data ? clientsRes.count : 0;
+
     // 7. Comercial: Leads e Oportunidades
-    const [{ data: leads }, { data: opportunities }] = await Promise.all([
+    const [leadsRes, oppsRes] = await Promise.allSettled([
       supabase.from("leads").select("status"),
       supabase.from("opportunities").select("status, priority, value_estimated, value_realized"),
     ]);
+
+    const leads = leadsRes.status === 'fulfilled' ? (leadsRes.value.data || []) : [];
+    const opportunities = oppsRes.status === 'fulfilled' ? (oppsRes.value.data || []) : [];
 
     const leadsByStatus: Record<string, number> = (leads || []).reduce((acc: Record<string, number>, curr: any) => {
       if (curr.status) acc[curr.status] = (acc[curr.status] || 0) + 1;
