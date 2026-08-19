@@ -216,10 +216,11 @@ function CentralEntradaPage() {
       await supabase.from('document_processing')
         .update({ 
           status: 'rejected',
-          reviewed_by: user?.id,
+          reviewed_by: user?.id || null,
           reviewed_at: new Date().toISOString()
         })
         .eq('document_id', lastSavedDoc.id);
+
         
       await logAudit('UPDATE', 'IA_REJECTED', lastSavedDoc.id);
     },
