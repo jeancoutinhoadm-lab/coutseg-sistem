@@ -112,6 +112,7 @@ export const getExecutiveDashboardData = createServerFn({ method: "GET" })
     
     const totalPayables = (payables || []).reduce((acc, curr) => acc + Number(curr.amount), 0);
 
+
     // 4. Saldo em Contas
     const { data: accounts } = await supabase.from("bank_accounts").select("name, balance").eq("status", "active");
     const totalBalance = (accounts || []).reduce((acc, curr) => acc + (Number(curr.balance) || 0), 0);
