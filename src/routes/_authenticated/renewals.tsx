@@ -125,7 +125,11 @@ function RenewalsPage() {
   });
 
   const getPriority = (endDate: string): Priority => {
-    const days = differenceInDays(new Date(endDate + "T00:00:00"), new Date());
+    // Usar startOfDay para garantir comparação justa apenas por datas
+    const end = startOfDay(new Date(endDate + "T12:00:00")); // T12 para evitar problemas de timezone na conversão
+    const today = startOfDay(new Date());
+    const days = differenceInDays(end, today);
+    
     if (days <= 7) return "urgent";
     if (days <= 30) return "high";
     if (days <= 60) return "normal";
