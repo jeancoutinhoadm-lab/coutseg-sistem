@@ -297,7 +297,7 @@ function RenewalsPage() {
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-col">
-                          <span>{format(new Date(r.end_date + "T00:00:00"), "dd/MM/yyyy", { locale: ptBR })}</span>
+                          <span>{format(new Date(r.end_date + "T12:00:00"), "dd/MM/yyyy", { locale: ptBR })}</span>
                           <span className={`text-xs font-bold ${days < 0 ? "text-red-500" : days <= 7 ? "text-red-600" : days <= 30 ? "text-amber-600" : "text-muted-foreground"}`}>
                             {days < 0 ? "Vencida" : days === 0 ? "HOJE" : `Em ${days} dias`}
                           </span>
