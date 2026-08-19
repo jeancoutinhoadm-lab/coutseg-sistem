@@ -97,8 +97,11 @@ export function CreatePayableForm({ onSuccess }: { onSuccess?: () => void }) {
                   <Input 
                     type="number" 
                     step="0.01" 
-                    {...field}
+                    value={field.value}
                     onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                    onBlur={field.onBlur}
+                    name={field.name}
+                    ref={field.ref}
                   />
                 </FormControl>
                 <FormMessage />
@@ -111,7 +114,7 @@ export function CreatePayableForm({ onSuccess }: { onSuccess?: () => void }) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Categoria</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione" />
