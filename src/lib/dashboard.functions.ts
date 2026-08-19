@@ -210,39 +210,47 @@ export const getExecutiveDashboardData = createServerFn({ method: "GET" })
       .sort((a, b) => b.value - a.value)
       .slice(0, 5);
 
+    // Final normalization to ensure no undefined/null numbers reach the UI
     return {
       finance: {
-        revenue: currentRevenue,
-        prevRevenue,
-        expenses: currentExpenses,
-        prevExpenses,
-        receivables: totalReceivables,
-        overdueReceivables,
-        payables: totalPayables,
-        overduePayables,
-        totalBalance,
-        bankAccounts: (accounts || []).map((a: any) => ({ name: a.name, balance: Number(a.balance) })),
+        revenue: Number(currentRevenue) || 0,
+        prevRevenue: Number(prevRevenue) || 0,
+        expenses: Number(currentExpenses) || 0,
+        prevExpenses: Number(prevExpenses) || 0,
+        receivables: Number(totalReceivables) || 0,
+        overdueReceivables: Number(overdueReceivables) || 0,
+        payables: Number(totalPayables) || 0,
+        overduePayables: Number(overduePayables) || 0,
+        totalBalance: Number(totalBalance) || 0,
+        bankAccounts: (accounts || []).map((a: any) => ({ 
+          name: a.name || "Conta Sem Nome", 
+          balance: Number(a.balance) || 0 
+        })),
       },
       operation: {
-        pendingIA: (pendingIACount || 0) + (needsReviewIACount || 0),
-        needsReviewIA: needsReviewIACount || 0,
-        divergentComms: divergentCommsCount || 0,
-        overdueTasks: overdueTasksCount,
+        pendingIA: Number(pendingIACount || 0) + Number(needsReviewIACount || 0),
+        needsReviewIA: Number(needsReviewIACount) || 0,
+        divergentComms: Number(divergentCommsCount) || 0,
+        overdueTasks: Number(overdueTasksCount) || 0,
       },
       portfolio: {
-        activePolicies: activePoliciesCount || 0,
-        activeClients: activeClientsCount || 0,
+        activePolicies: Number(activePoliciesCount) || 0,
+        activeClients: Number(activeClientsCount) || 0,
         renewals: {
-          ren7, ren15, ren30, ren60, ren90
+          ren7: Number(ren7) || 0,
+          ren15: Number(ren15) || 0,
+          ren30: Number(ren30) || 0,
+          ren60: Number(ren60) || 0,
+          ren90: Number(ren90) || 0
         }
       },
       commercial: {
-        opportunities: oppsByStatus,
-        leads: leadsByStatus,
-        totalEstimatedValue,
-        totalRealizedValue,
-        conversionRate,
-        insurerRanking: sortedRanking
+        opportunities: oppsByStatus || {},
+        leads: leadsByStatus || {},
+        totalEstimatedValue: Number(totalEstimatedValue) || 0,
+        totalRealizedValue: Number(totalRealizedValue) || 0,
+        conversionRate: Number(conversionRate) || 0,
+        insurerRanking: sortedRanking || []
       }
     };
   });

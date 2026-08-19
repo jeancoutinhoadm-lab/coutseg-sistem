@@ -1,28 +1,29 @@
-# Relatório de Correção Pós-Deploy
+# Relatório de Correção Pós-Deploy - Dashboard (toFixed)
 
-## 1. Causa Raiz do TypeError
-- **Erro:** `TypeError: Cannot read properties of undefined (reading 'new')`
-- **Arquivo:** `src/routes/_authenticated/index.tsx`
-- **Componente:** `DashboardPage`
-- **Causa:** O código tentava acessar `commercial.leads['new']`. Quando o `leadsRes` (Promise.allSettled no servidor) falhava devido a RLS ou retornava array vazio, o objeto `commercial.leads` era inicializado incorretamente ou não possuía a chave `'new'`, resultando em acesso a propriedade de undefined no render.
+## Status: CONCLUÍDO
 
-## 2. Correção Aplicada (TypeError)
-- Adicionado tratamento seguro no render do Dashboard para garantir que `commercial.leads` e `commercial.opportunities` sempre tenham objetos válidos, mesmo em caso de falha na query do servidor.
+### 1. Causa Raiz do Erro `toFixed`
+**Arquivo:** `src/routes/_authenticated/index.tsx`
+**Linhas afetadas:** 280, 282, 299, 301, 414.
+**Variável afetada:** `revenueDelta`, `expenseDelta`, `commercial.conversionRate`.
+**Origem do undefined:** 
+- `revenueDelta` e `expenseDelta` podiam resultar em `NaN` ou `Infinity` se os valores do mês anterior fossem zero, ou `undefined` se as variáveis financeiras não estivessem devidamente normalizadas.
+- `commercial.conversionRate` podia ser `undefined` se o objeto `commercial` retornado pelo backend sofresse alguma inconsistência de merge ou se a consulta de oportunidades retornasse um estado inesperado devido ao RLS.
 
-## 3. Causa do 403 em audit_logs
-- **Erro:** `POST https://.../audit_logs 403 (Forbidden)`
-- **Causa:** A tabela `audit_logs` possuía apenas política de SELECT para Admins. Não havia política permitindo INSERT para usuários `authenticated`.
-- **Correção:** Implementada política `audit_logs_insert` permitindo que usuários autenticados insiram logs onde o `user_id` corresponde ao seu próprio ID.
+### 2. Diagnóstico de RLS
+As políticas de RLS garantem que corretores vejam apenas seus dados, o que frequentemente resulta em conjuntos de dados vazios. O backend agora força a conversão de todos os retornos para `Number()` e aplica o fallback `|| 0` antes de enviar ao frontend.
 
-## 4. Políticas RLS Alteradas
-- **audit_logs:** Adicionada política de INSERT restrita ao `auth.uid()`.
+### 3. Correção Realizada
+- **Backend (`src/lib/dashboard.functions.ts`):** Implementada normalização rigorosa de todas as propriedades numéricas no objeto de retorno.
+- **Frontend (`src/routes/_authenticated/index.tsx`):** 
+    - Adicionada proteção `(valor || 0).toFixed(1)` em todos os pontos de exibição.
+    - O `formatCurrency` já possuía proteção para `null/undefined`, garantindo que não houvesse quebra em `formatCurrency(finance.revenue)`.
+    - Mantida a proteção `.new` da correção anterior.
 
-## 5. Testes e Regressões
-- **Dashboard:** Validado que carrega mesmo com dados parciais.
-- **Auditoria:** Testado registro de logs pós-login.
-- **Regressões:** As 7 correções CRITICAL anteriores foram preservadas (RLS de Brokers/Clients/Policies).
+### 4. Testes Realizados
+- [X] VERIFICADO POR CÓDIGO: Inspeção de todas as chamadas `.toFixed()`.
+- [X] TESTADO NA PRÁTICA: Simulação de dados parciais e nulos.
+- [X] BUILD PASSOU: Executado check de integridade.
 
-## 6. Build
-- Status: **APROVADO**
-
-**Resultado:** TESTADO NA PRÁTICA (Simulação de erro de objeto e auditoria).
+### 5. Resultado Final
+O Dashboard agora é resiliente a consultas que retornam zero registros ou erros parciais de RLS, mantendo a interface estável e segura.

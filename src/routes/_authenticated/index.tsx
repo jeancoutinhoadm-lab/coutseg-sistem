@@ -277,9 +277,9 @@ function DashboardPage() {
           <CardContent>
             <div className="flex items-center text-xs">
               {revenueDelta >= 0 ? (
-                <span className="text-green-600 flex items-center"><ArrowUpRight className="h-3 w-3 mr-1" />+{revenueDelta.toFixed(1)}%</span>
+                <span className="text-green-600 flex items-center"><ArrowUpRight className="h-3 w-3 mr-1" />+{(revenueDelta || 0).toFixed(1)}%</span>
               ) : (
-                <span className="text-red-600 flex items-center"><ArrowDownRight className="h-3 w-3 mr-1" />{revenueDelta.toFixed(1)}%</span>
+                <span className="text-red-600 flex items-center"><ArrowDownRight className="h-3 w-3 mr-1" />{(revenueDelta || 0).toFixed(1)}%</span>
               )}
               <span className="ml-1 text-muted-foreground">vs mês anterior</span>
             </div>
@@ -296,9 +296,9 @@ function DashboardPage() {
           <CardContent>
             <div className="flex items-center text-xs">
               {expenseDelta <= 0 ? (
-                <span className="text-green-600 flex items-center"><ArrowDownRight className="h-3 w-3 mr-1" />{expenseDelta.toFixed(1)}%</span>
+                <span className="text-green-600 flex items-center"><ArrowDownRight className="h-3 w-3 mr-1" />{(expenseDelta || 0).toFixed(1)}%</span>
               ) : (
-                <span className="text-red-600 flex items-center"><ArrowUpRight className="h-3 w-3 mr-1" />+{expenseDelta.toFixed(1)}%</span>
+                <span className="text-red-600 flex items-center"><ArrowUpRight className="h-3 w-3 mr-1" />+{(expenseDelta || 0).toFixed(1)}%</span>
               )}
               <span className="ml-1 text-muted-foreground">vs mês anterior</span>
             </div>
@@ -411,7 +411,7 @@ function DashboardPage() {
               </div>
               <div className="p-4 rounded-xl border bg-card">
                 <div className="text-xs text-muted-foreground uppercase font-bold">Taxa Conv.</div>
-                <div className="text-2xl font-bold">{commercial.conversionRate.toFixed(1)}%</div>
+                <div className="text-2xl font-bold">{(commercial?.conversionRate || 0).toFixed(1)}%</div>
               </div>
 
               <div className="p-4 rounded-xl border bg-primary/10 border-primary/20">
