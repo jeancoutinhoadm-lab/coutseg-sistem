@@ -149,8 +149,9 @@ function CentralEntradaPage() {
             ai_prompt_version: 'v2.0-step7',
             ai_confidence: result.confidence || {},
             processed_at: new Date().toISOString()
-          })
+          } as any)
           .eq('document_id', lastSavedDoc.id);
+
 
         return result;
       } catch (err: any) {
