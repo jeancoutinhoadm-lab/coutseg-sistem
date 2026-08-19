@@ -25,12 +25,14 @@ import { createPayable, getFinancialCategories } from "@/lib/finance-ops.functio
 
 const formSchema = z.object({
   description: z.string().min(2, "Descrição muito curta"),
-  amount: z.string().transform((val) => parseFloat(val)),
+  amount: z.coerce.number().min(0.01, "Valor deve ser maior que zero"),
   due_date: z.string(),
   competence_date: z.string(),
   category_id: z.string().min(1, "Selecione uma categoria"),
   notes: z.string().optional(),
 });
+
+type FormValues = z.infer<typeof formSchema>;
 
 export function CreatePayableForm({ onSuccess }: { onSuccess?: () => void }) {
   const queryClient = useQueryClient();
@@ -39,11 +41,11 @@ export function CreatePayableForm({ onSuccess }: { onSuccess?: () => void }) {
     queryFn: () => getFinancialCategories(),
   });
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       description: "",
-      amount: "0",
+      amount: 0,
       due_date: new Date().toISOString().split("T")[0],
       competence_date: new Date().toISOString().split("T")[0],
       category_id: "",
@@ -52,18 +54,19 @@ export function CreatePayableForm({ onSuccess }: { onSuccess?: () => void }) {
   });
 
   const mutation = useMutation({
-    mutationFn: (data: any) => createPayable({ data }),
+    mutationFn: (data: FormValues) => createPayable({ data }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["financial-summary"] });
       toast.success("Conta a pagar criada com sucesso");
       onSuccess?.();
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("Erro ao criar payable:", error);
       toast.error("Erro ao criar conta a pagar");
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
+  function onSubmit(values: FormValues) {
     mutation.mutate(values);
   }
 
