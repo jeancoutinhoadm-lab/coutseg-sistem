@@ -45,18 +45,15 @@ export function CreatePayableForm({ onSuccess }: { onSuccess?: () => void }) {
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-  });
-
-  React.useEffect(() => {
-    form.reset({
+    defaultValues: {
       description: "",
       amount: 0,
-      due_date: todayStr,
-      competence_date: todayStr,
+      due_date: todayStr as any,
+      competence_date: todayStr as any,
       category_id: "",
       notes: "",
-    });
-  }, [todayStr, form]);
+    },
+  });
 
   const mutation = useMutation({
     mutationFn: (data: FormValues) => createPayable({ data }),
