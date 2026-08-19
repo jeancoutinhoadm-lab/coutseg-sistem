@@ -65,10 +65,16 @@ export const extractCommissionReportWithIA = createServerFn({ method: "POST" })
       throw new Error("Configuração de IA (LOVABLE_API_KEY) ausente.");
     }
 
-    const prompt = `Você é um sistema de extração de dados financeiros de seguros.
+    const prompt = `Você é um sistema de extração de dados financeiros de seguros de ALTA PRECISÃO.
 Leia exclusivamente o documento fornecido (Relatório de Comissões).
 Extraia somente informações presentes no documento.
 Nunca invente informações. Se não encontrar, retorne null.
+
+EXTREMAMENTE IMPORTANTE:
+1. Extraia TODAS as linhas de comissão. Não pule nenhuma.
+2. Identifique a quantidade total de linhas de comissão no documento e o valor total pago informado.
+3. Se o documento tiver subtotais ou cabeçalhos repetidos, ignore-os na lista de 'items', mas use-os para validar a contagem.
+
 Retorne um JSON estruturado seguindo este schema:
 
 {
@@ -77,6 +83,8 @@ Retorne um JSON estruturado seguindo este schema:
   "competence": "Mês/Ano de referência",
   "payment_date": "Data de pagamento (YYYY-MM-DD)",
   "report_reference": "Número do extrato/referência",
+  "document_line_count": 0,
+  "document_total": 0.00,
   "items": [
     {
       "policy_number": "Número da apólice",
@@ -93,6 +101,11 @@ Retorne um JSON estruturado seguindo este schema:
     }
   ]
 }
+
+Regras:
+1. Valores monetários devem ser números (1234.56). Use null se não encontrar.
+2. Datas devem ser YYYY-MM-DD.
+3. Responda apenas o JSON puro, sem markdown.`;
 
 Regras:
 1. Valores monetários devem ser números (1234.56).
