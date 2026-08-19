@@ -165,7 +165,7 @@ function CentralEntradaPage() {
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex flex-col gap-1">
         <h1 className="text-3xl font-bold tracking-tight">Central de Entrada</h1>
-        <p className="text-muted-foreground">faça uma verificação completa no site para verificar se tudo esta funcionando</p>
+        <p className="text-muted-foreground">estou com erro ao fazer upload da apolice Erro ao processar: Network connection lost.</p>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
