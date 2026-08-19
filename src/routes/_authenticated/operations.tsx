@@ -383,7 +383,7 @@ function OperationsPage() {
               </div>
             )}
 
-            {step === 2 && (
+            {step === 2 && !isCreatingClient && (
               <div className="space-y-4">
                 <div className="flex gap-2">
                   <Input
@@ -420,13 +420,60 @@ function OperationsPage() {
                   ))}
 
                   {searchMutation.isSuccess && foundClients.length === 0 && (
-                    <Button variant="outline" className="w-full" onClick={handleCreateNewClient}>
-                      Cadastrar Novo Cliente
-                    </Button>
+                    <div className="text-center py-4 space-y-2">
+                      <p className="text-sm text-muted-foreground">Cliente não encontrado</p>
+                      <Button variant="outline" className="w-full" onClick={handleCreateNewClient}>
+                        <Plus className="mr-2 h-4 w-4" /> Cadastrar Cliente
+                      </Button>
+                    </div>
                   )}
                 </div>
               </div>
             )}
+
+            {step === 2 && isCreatingClient && (
+              <div className="grid gap-4">
+                <div className="grid gap-2">
+                  <Label>Nome Completo *</Label>
+                  <Input 
+                    value={newClientData.full_name}
+                    onChange={(e) => setNewClientData({...newClientData, full_name: e.target.value})}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label>CPF/CNPJ</Label>
+                    <Input 
+                      value={newClientData.cpf_cnpj}
+                      onChange={(e) => setNewClientData({...newClientData, cpf_cnpj: e.target.value})}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Telefone</Label>
+                    <Input 
+                      value={newClientData.phone}
+                      onChange={(e) => setNewClientData({...newClientData, phone: e.target.value})}
+                    />
+                  </div>
+                </div>
+                <div className="grid gap-2">
+                  <Label>Email</Label>
+                  <Input 
+                    type="email"
+                    value={newClientData.email}
+                    onChange={(e) => setNewClientData({...newClientData, email: e.target.value})}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Endereço</Label>
+                  <Input 
+                    value={newClientData.address}
+                    onChange={(e) => setNewClientData({...newClientData, address: e.target.value})}
+                  />
+                </div>
+              </div>
+            )}
+
 
             {step === 3 && (
               <div className="space-y-4">
