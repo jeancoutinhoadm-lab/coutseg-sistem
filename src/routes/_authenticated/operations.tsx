@@ -69,10 +69,20 @@ function OperationsPage() {
   const [foundClients, setFoundClients] = useState<any[]>([]);
   const [selectedClient, setSelectedClient] = useState<any>(null);
   const [opTitle, setOpTitle] = useState("");
+  const [isCreatingClient, setIsCreatingClient] = useState(false);
+  const [newClientData, setNewClientData] = useState({
+    full_name: "",
+    cpf_cnpj: "",
+    phone: "",
+    email: "",
+    address: "",
+  });
 
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const searchFn = useServerFn(searchOperationTarget);
   const createFn = useServerFn(createOperation);
+  const createClientFn = useServerFn(createInlineClient);
 
   // Listar operações existentes
   const { data: operations, isLoading } = useQuery({
@@ -107,18 +117,34 @@ function OperationsPage() {
     },
   });
 
+  const inlineClientMutation = useMutation({
+    mutationFn: (variables: any) => createClientFn({ data: variables }),
+    onSuccess: (client) => {
+      toast.success("Cliente cadastrado!");
+      setSelectedClient(client);
+      setIsCreatingClient(false);
+      setStep(3);
+    },
+    onError: (err: any) => {
+      toast.error("Erro ao cadastrar cliente: " + err.message);
+    },
+  });
+
   const createOpMutation = useMutation({
     mutationFn: (variables: any) => createFn({ data: variables }),
-    onSuccess: () => {
+    onSuccess: (op) => {
       toast.success("Operação iniciada com sucesso!");
       setIsNewOpModalOpen(false);
       resetModal();
       queryClient.invalidateQueries({ queryKey: ["operations-list"] });
+      // Redirecionar para detalhes da operação (próximo passo do plano)
+      // navigate({ to: "/operations/$id", params: { id: op.id } });
     },
     onError: (err: any) => {
       toast.error("Erro ao iniciar operação: " + err.message);
     },
   });
+
 
   const resetModal = () => {
     setStep(1);
