@@ -44,12 +44,12 @@ export const convertLeadToOpportunity = createServerFn({ method: "POST" })
         .from("clients")
         .insert({
           full_name: lead.full_name,
-          email: lead.email,
-          phone: lead.phone,
-          cpf_cnpj: lead.cpf_cnpj,
-          broker_id: brokerId || lead.broker_id,
+          email: lead.email || null,
+          phone: lead.phone || null,
+          cpf_cnpj: lead.cpf_cnpj || null,
+          broker_id: brokerId || lead.broker_id || null,
           status: "active"
-        })
+        } as any)
         .select("id")
         .single();
       
@@ -63,11 +63,11 @@ export const convertLeadToOpportunity = createServerFn({ method: "POST" })
       .insert({
         client_id: clientId,
         lead_id: leadId,
-        broker_id: brokerId || lead.broker_id,
-        product_id: productId,
+        broker_id: brokerId || lead.broker_id || null,
+        product_id: productId || null,
         status: "new",
         priority: "normal",
-      })
+      } as any)
       .select("id")
       .single();
 
@@ -91,7 +91,7 @@ export const convertLeadToOpportunity = createServerFn({ method: "POST" })
       opportunity_id: opportunity.id,
       type: "conversion",
       description: `Lead convertido em cliente (ID: ${clientId}) e oportunidade criada.`,
-    });
+    } as any);
 
     return { opportunityId: opportunity.id, clientId };
   });
@@ -124,7 +124,7 @@ export const markOpportunityAsLost = createServerFn({ method: "POST" })
       opportunity_id: opportunityId,
       type: "loss",
       description: `Oportunidade marcada como PERDIDA. Motivo: ${reason}`,
-    });
+    } as any);
 
     return { success: true };
   });
