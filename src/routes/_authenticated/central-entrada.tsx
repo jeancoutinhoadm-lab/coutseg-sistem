@@ -102,13 +102,12 @@ function CentralEntradaPage() {
     }
   });
 
-  // Step 4 & 5: IA Processing (Refined for Step 7 Architecture)
+  // Step 4 & 5: IA Processing (Refined for Step 8 - Commission Real IA)
   const processMutation = useMutation({
     mutationFn: async () => {
       if (!file || !lastSavedDoc) throw new Error("Arquivo não disponível para processamento");
       setCurrentStep('processing');
       
-      // Update status to processing and increment attempts
       const { data: currentProc } = await supabase.from('document_processing')
         .select('*')
         .eq('document_id', lastSavedDoc.id)
@@ -123,7 +122,6 @@ function CentralEntradaPage() {
         } as any)
         .eq('document_id', lastSavedDoc.id);
 
-
       const base64 = await new Promise<string>((resolve) => {
         const reader = new FileReader();
         reader.onloadend = () => resolve(reader.result as string);
@@ -134,27 +132,43 @@ function CentralEntradaPage() {
       if (!imageBase64) throw new Error("Falha ao preparar dados para IA");
 
       try {
-        const result = await processDocumentWithIA({
-          data: {
-            image: imageBase64,
-            mimeType: file.type || 'application/octet-stream',
-            documentType: docType,
-            simulationMode: true // Forced simulation for Step 7 verification
-          }
-        });
+        let result: any;
+        
+        if (docType === 'commission_report') {
+          // Real extraction for commission reports
+          result = await extractCommissionReportWithIA({
+            data: {
+              image: imageBase64,
+              mimeType: file.type || 'application/octet-stream',
+              documentId: lastSavedDoc.id
+            }
+          });
+        } else {
+          // Legacy/Simulation for other types
+          result = await processDocumentWithIA({
+            data: {
+              image: imageBase64,
+              mimeType: file.type || 'application/octet-stream',
+              documentType: docType,
+              simulationMode: true
+            }
+          });
+        }
 
-        // Step 6: Update database with extracted results, metadata and set to needs_review
         await supabase.from('document_processing')
           .update({ 
-            status: 'needs_review', // IA extracted, waiting for human approval
+            status: 'needs_review',
             extracted_data: result,
-            ai_model: 'gpt-4o-simulated',
-            ai_prompt_version: 'v2.0-step7',
+            ai_model: result.metadata?.ai_model || 'gpt-4o',
+            ai_prompt_version: 'v2.1-step8',
             ai_confidence: result.confidence || {},
+            input_tokens: result.metadata?.input_tokens,
+            output_tokens: result.metadata?.output_tokens,
+            estimated_cost: result.metadata?.estimated_cost,
+            execution_duration_ms: result.metadata?.execution_duration_ms,
             processed_at: new Date().toISOString()
           } as any)
           .eq('document_id', lastSavedDoc.id);
-
 
         return result;
       } catch (err: any) {
@@ -178,30 +192,58 @@ function CentralEntradaPage() {
     }
   });
 
+
   const approveMutation = useMutation({
     mutationFn: async () => {
-      if (!lastSavedDoc) return;
+      if (!lastSavedDoc || !extractedData) return;
       
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Usuário não autenticado");
+
       const { data: proc } = await supabase.from('document_processing')
         .select('id')
         .eq('document_id', lastSavedDoc.id)
         .single();
         
       if (!proc) throw new Error("Processamento não encontrado");
+
+      if (docType === 'commission_report') {
+        // Process each approved item
+        const items = extractedData.items.filter((i: any) => i.status !== 'rejected');
+        
+        for (const item of items) {
+          const { data, error } = await supabase.rpc('process_commission_item_approval', {
+            _document_id: lastSavedDoc.id,
+            _item: item,
+            _user_id: user.id
+          });
+          
+          if (error) {
+            console.error("Erro ao processar item:", error);
+            toast.error(`Erro no item ${item.policy_number}: ${error.message}`);
+          }
+        }
+      } else {
+        // Legacy approval for other types
+        const { error } = await supabase.rpc('approve_document_extraction', {
+          _processing_id: proc.id
+        });
+        if (error) throw error;
+      }
       
-      // The RPC is created in Step 7 migration
-      const { error } = await supabase.rpc('approve_document_extraction', {
-        _processing_id: proc.id
-      });
-      
-      if (error) throw error;
-      
-      // If doc is a policy, we still allow legacy finalSave logic for this turn
-      // until we fully implement the data syncing in next steps
-      await finalSaveMutation.mutateAsync();
+      // Update overall status to completed
+      await supabase.from('document_processing')
+        .update({ 
+          status: 'completed',
+          reviewed_by: user.id,
+          reviewed_at: new Date().toISOString()
+        } as any)
+        .eq('document_id', lastSavedDoc.id);
+
+      await logAudit('UPDATE', 'IA_APPROVED', lastSavedDoc.id);
     },
     onSuccess: () => {
-      toast.success("Extração aprovada e dados vinculados!");
+      toast.success("Processamento aprovado e finalizado!");
       setCurrentStep('idle');
       setExtractedData(null);
       setFile(null);
@@ -213,6 +255,29 @@ function CentralEntradaPage() {
       toast.error("Erro ao aprovar: " + error.message);
     }
   });
+
+  const updateItemStatus = (index: number, status: string) => {
+    if (!extractedData || !extractedData.items) return;
+    const newItems = [...extractedData.items];
+    newItems[index] = { ...newItems[index], status };
+    setExtractedData({ ...extractedData, items: newItems });
+  };
+
+  const updateItemValue = (index: number, field: string, value: any) => {
+    if (!extractedData || !extractedData.items) return;
+    const newItems = [...extractedData.items];
+    newItems[index] = { ...newItems[index], [field]: value, status: 'corrected' };
+    
+    // Recalculate difference if monetary values change
+    if (field === 'paid_commission' || field === 'expected_commission') {
+      const paid = field === 'paid_commission' ? Number(value) : Number(newItems[index].paid_commission);
+      const expected = field === 'expected_commission' ? Number(value) : Number(newItems[index].expected_commission);
+      newItems[index].difference = paid - expected;
+    }
+    
+    setExtractedData({ ...extractedData, items: newItems });
+  };
+
 
   const rejectMutation = useMutation({
     mutationFn: async () => {
@@ -379,43 +444,107 @@ function CentralEntradaPage() {
                   <span>Extração concluída! Por favor, revise os dados abaixo.</span>
                 </div>
                 
-                <Label className="text-xs uppercase text-muted-foreground font-semibold">Dados Identificados:</Label>
-                <div className="grid grid-cols-2 gap-2 text-sm p-3 bg-muted rounded-md border">
-                  <div>
-                    <span className="text-muted-foreground block text-[10px] uppercase">Número</span>
-                    {extractedData.policy_number || extractedData.provider_name || '—'}
+                {docType === 'commission_report' && extractedData.items ? (
+                  <div className="border rounded-md overflow-hidden bg-background">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="text-[10px] uppercase">Apólice / Cliente</TableHead>
+                          <TableHead className="text-[10px] uppercase text-right">Previsto</TableHead>
+                          <TableHead className="text-[10px] uppercase text-right">Pago</TableHead>
+                          <TableHead className="text-[10px] uppercase text-right">Dif.</TableHead>
+                          <TableHead className="text-[10px] uppercase text-center w-24">Ação</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {extractedData.items.map((item: any, index: number) => (
+                          <TableRow key={index} className={item.status === 'rejected' ? 'opacity-40' : ''}>
+                            <TableCell className="py-2">
+                              <div className="text-xs font-bold">{item.policy_number || 'S/N'}</div>
+                              <div className="text-[10px] text-muted-foreground truncate max-w-[120px]">{item.client_name || '—'}</div>
+                            </TableCell>
+                            <TableCell className="text-right py-2">
+                              <Input 
+                                type="number" 
+                                className="h-7 text-right text-xs p-1" 
+                                value={item.expected_commission || 0}
+                                onChange={(e) => updateItemValue(index, 'expected_commission', e.target.value)}
+                              />
+                            </TableCell>
+                            <TableCell className="text-right py-2">
+                              <Input 
+                                type="number" 
+                                className="h-7 text-right text-xs p-1" 
+                                value={item.paid_commission || 0}
+                                onChange={(e) => updateItemValue(index, 'paid_commission', e.target.value)}
+                              />
+                            </TableCell>
+                            <TableCell className={`text-right py-2 text-xs font-mono ${item.difference < 0 ? 'text-red-500' : item.difference > 0 ? 'text-green-500' : 'text-muted-foreground'}`}>
+                              {item.difference?.toFixed(2) || '0.00'}
+                            </TableCell>
+                            <TableCell className="py-2">
+                              <div className="flex justify-center gap-1">
+                                {item.status === 'rejected' ? (
+                                  <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => updateItemStatus(index, 'pending_review')}>
+                                    <RefreshCw className="h-3 w-3" />
+                                  </Button>
+                                ) : (
+                                  <>
+                                    <Button size="icon" variant="ghost" className="h-7 w-7 text-green-600" onClick={() => updateItemStatus(index, 'confirmed')}>
+                                      <Check className="h-3 w-3" />
+                                    </Button>
+                                    <Button size="icon" variant="ghost" className="h-7 w-7 text-red-500" onClick={() => updateItemStatus(index, 'rejected')}>
+                                      <Trash2 className="h-3 w-3" />
+                                    </Button>
+                                  </>
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
                   </div>
-                  <div>
-                    <span className="text-muted-foreground block text-[10px] uppercase">Valor</span>
-                    {extractedData.premium ? `R$ ${extractedData.premium}` : extractedData.amount ? `R$ ${extractedData.amount}` : '—'}
-                  </div>
-                  <div className="col-span-2">
-                    <span className="text-muted-foreground block text-[10px] uppercase">Cliente / Provedor</span>
-                    {extractedData.client_name || extractedData.provider_name || '—'}
-                  </div>
-                </div>
+                ) : (
+                  <>
+                    <Label className="text-xs uppercase text-muted-foreground font-semibold">Dados Identificados:</Label>
+                    <div className="grid grid-cols-2 gap-2 text-sm p-3 bg-muted rounded-md border">
+                      <div>
+                        <span className="text-muted-foreground block text-[10px] uppercase">Número</span>
+                        {extractedData.policy_number || extractedData.provider_name || '—'}
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-[10px] uppercase">Valor</span>
+                        {extractedData.premium ? `R$ ${extractedData.premium}` : extractedData.amount ? `R$ ${extractedData.amount}` : '—'}
+                      </div>
+                      <div className="col-span-2">
+                        <span className="text-muted-foreground block text-[10px] uppercase">Cliente / Provedor</span>
+                        {extractedData.client_name || extractedData.provider_name || '—'}
+                      </div>
+                    </div>
+                  </>
+                )}
 
-                <div className="flex gap-2">
+                <div className="flex gap-2 pt-2">
                   <Button 
-                    className="flex-1 bg-green-600 hover:bg-green-700" 
+                    className="flex-1 bg-green-600 hover:bg-green-700 font-bold" 
                     onClick={() => approveMutation.mutate()}
                     disabled={approveMutation.isPending}
                   >
                     {approveMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
-                    Aprovar e Vincular
+                    APROVAR E REGISTRAR FINANCEIRO
                   </Button>
                   <Button 
                     variant="destructive" 
-                    className="flex-1" 
+                    className="px-3" 
                     onClick={() => rejectMutation.mutate()}
                     disabled={rejectMutation.isPending}
                   >
-                    <XCircle className="mr-2 h-4 w-4" />
-                    Rejeitar
+                    <XCircle className="h-4 w-4" />
                   </Button>
                 </div>
-                <Button variant="outline" className="w-full" onClick={() => setCurrentStep('uploaded')}>Re-processar IA</Button>
               </div>
+
             )}
 
             {!extractedData && currentStep === 'uploaded' && (
