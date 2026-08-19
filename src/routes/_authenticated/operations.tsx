@@ -311,7 +311,12 @@ function OperationsPage() {
                 </TableRow>
               ) : (
                 operations?.map((op: any) => (
-                  <TableRow key={op.id}>
+                    <TableRow 
+                      key={op.id} 
+                      className="cursor-pointer hover:bg-muted/50"
+                      onClick={() => navigate({ to: "/operations/$id", params: { id: op.id } })}
+                    >
+
                     <TableCell className="text-xs">
                       {formatDisplayDate(op.created_at, "dd/MM/yy HH:mm")}
                     </TableCell>
