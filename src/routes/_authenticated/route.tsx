@@ -1,5 +1,8 @@
 import { createFileRoute, Link, Outlet, redirect, useRouter } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Badge } from "@/components/ui/badge";
+import { Bell } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -121,9 +124,15 @@ function AuthenticatedLayout() {
                             activeProps={{
                               className: "bg-sidebar-accent text-sidebar-accent-foreground",
                             }}
+                            className="flex items-center justify-between w-full"
                           >
-                            <item.icon className="h-4 w-4" />
-                            <span>{item.title}</span>
+                            <div className="flex items-center gap-2">
+                              <item.icon className="h-4 w-4" />
+                              <span>{item.title}</span>
+                            </div>
+                            {item.to === "/tasks" && (
+                              <TaskCounter userId={user?.id} />
+                            )}
                           </Link>
                         </SidebarMenuButton>
                       </SidebarMenuItem>
@@ -157,5 +166,31 @@ function AuthenticatedLayout() {
         </main>
       </div>
     </SidebarProvider>
+  );
+}
+
+function TaskCounter({ userId }: { userId?: string }) {
+  const { data: count } = useQuery({
+    queryKey: ["tasks-pending-count", userId],
+    queryFn: async () => {
+      if (!userId) return 0;
+      const { count, error } = await supabase
+        .from("tasks")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", userId)
+        .eq("status", "PENDING");
+      if (error) return 0;
+      return count || 0;
+    },
+    refetchInterval: 30000, // Atualiza a cada 30s
+    enabled: !!userId
+  });
+
+  if (!count) return null;
+
+  return (
+    <Badge className="ml-auto flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground p-0">
+      {count > 99 ? '99+' : count}
+    </Badge>
   );
 }
