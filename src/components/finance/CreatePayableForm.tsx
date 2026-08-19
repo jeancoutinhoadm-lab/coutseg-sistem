@@ -49,7 +49,7 @@ export function CreatePayableForm({ onSuccess }: { onSuccess?: () => void }) {
       due_date: new Date().toISOString().split("T")[0],
       competence_date: new Date().toISOString().split("T")[0],
       category_id: "",
-      notes: undefined,
+      notes: "",
     },
   });
 
