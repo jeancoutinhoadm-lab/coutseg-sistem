@@ -27,7 +27,7 @@ export const runDeterministicInsights = createServerFn({ method: "POST" })
     const insights: z.infer<typeof insightSchema>[] = [];
     
     // 1. CROSS-SELL DETERMINÍSTICO (Ex: Auto sem Residencial)
-    const { data: clients } = await supabase.from("clients").select("id, full_name");
+    const { data: clients, error: clientsError } = await supabase.from("clients").select("id, full_name");
     
     if (clients) {
       for (const client of clients) {
@@ -127,6 +127,7 @@ export const runDeterministicInsights = createServerFn({ method: "POST" })
 
     // Salvar insights ignorando duplicados (simplificado via UPSERT se houvesse chave única, mas usaremos loop por enquanto)
     if (insights.length > 0) {
+      const { data: { user } } = await supabase.auth.getUser();
       // Nota: Idealmente verificaríamos se o insight já existe e está NEW
       for (const insight of insights) {
         const { data: existing } = await supabase
@@ -138,7 +139,11 @@ export const runDeterministicInsights = createServerFn({ method: "POST" })
             .maybeSingle();
             
         if (!existing) {
-            await supabase.from("business_insights").insert(insight as any);
+            // Se tivermos um usuário, associamos a ele para evitar falha de RLS caso exija owner
+            await supabase.from("business_insights").insert({
+              ...insight,
+              user_id: user?.id
+            } as any);
         }
       }
     }

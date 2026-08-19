@@ -50,7 +50,12 @@ export const Route = createFileRoute("/_authenticated/")({
   component: DashboardPage,
   loader: async () => {
     // Executar insights determinísticos ao carregar o dashboard
-    await runDeterministicInsights();
+    // Encapsulado em try/catch para evitar que erro de RLS trave a página
+    try {
+      await runDeterministicInsights();
+    } catch (error) {
+      console.error("Erro ao processar insights determinísticos:", error);
+    }
     return {};
   },
   head: () => ({
