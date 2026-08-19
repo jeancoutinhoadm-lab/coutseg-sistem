@@ -169,7 +169,7 @@ function DocumentsPage() {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" asChild>
-            <Link to="/_authenticated/central-entrada">
+            <Link to="/central-entrada">
               <History className="w-4 h-4 mr-2" /> Central de Entrada
             </Link>
           </Button>
