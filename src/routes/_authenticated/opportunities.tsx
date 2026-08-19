@@ -115,6 +115,7 @@ function OpportunitiesPage() {
               .eq("rule_id", rule.id)
               .maybeSingle();
 
+            // Não recriar se já existir (mesmo que rejeitada ou perdida, para evitar spam)
             if (!existing) {
               await supabase.from("opportunities").insert({
                 client_id: client.id,
