@@ -26,6 +26,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
   Users,
@@ -289,8 +290,4 @@ function NotificationBell({ userId }: { userId?: string | undefined }) {
       </PopoverContent>
     </Popover>
   );
-}
-
-function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(" ");
 }
