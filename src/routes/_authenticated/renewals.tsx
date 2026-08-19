@@ -125,7 +125,11 @@ function RenewalsPage() {
   });
 
   const getPriority = (endDate: string): Priority => {
-    const days = differenceInDays(new Date(endDate + "T00:00:00"), new Date());
+    // Usar startOfDay para garantir comparação justa apenas por datas
+    const end = startOfDay(new Date(endDate + "T12:00:00")); // T12 para evitar problemas de timezone na conversão
+    const today = startOfDay(new Date());
+    const days = differenceInDays(end, today);
+    
     if (days <= 7) return "urgent";
     if (days <= 30) return "high";
     if (days <= 60) return "normal";
@@ -169,7 +173,7 @@ function RenewalsPage() {
     total: renewals?.length ?? 0,
     urgent: renewals?.filter(r => getPriority(r.end_date) === "urgent").length ?? 0,
     inProgress: renewals?.filter(r => ["contacted", "quote_in_progress", "quote_sent", "negotiation"].includes(r.status || "")).length ?? 0,
-    expired: renewals?.filter(r => differenceInDays(new Date(r.end_date + "T00:00:00"), new Date()) < 0).length ?? 0,
+    expired: renewals?.filter(r => differenceInDays(startOfDay(new Date(r.end_date + "T12:00:00")), startOfDay(new Date())) < 0).length ?? 0,
   };
 
   return (
@@ -276,7 +280,9 @@ function RenewalsPage() {
                 </TableRow>
               ) : (
                 filtered?.map((r) => {
-                  const days = differenceInDays(new Date(r.end_date + "T00:00:00"), new Date());
+                  const end = startOfDay(new Date(r.end_date + "T12:00:00"));
+                  const today = startOfDay(new Date());
+                  const days = differenceInDays(end, today);
                   const priority = getPriority(r.end_date);
                   
                   return (
@@ -291,7 +297,7 @@ function RenewalsPage() {
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-col">
-                          <span>{format(new Date(r.end_date + "T00:00:00"), "dd/MM/yyyy", { locale: ptBR })}</span>
+                          <span>{format(new Date(r.end_date + "T12:00:00"), "dd/MM/yyyy", { locale: ptBR })}</span>
                           <span className={`text-xs font-bold ${days < 0 ? "text-red-500" : days <= 7 ? "text-red-600" : days <= 30 ? "text-amber-600" : "text-muted-foreground"}`}>
                             {days < 0 ? "Vencida" : days === 0 ? "HOJE" : `Em ${days} dias`}
                           </span>
