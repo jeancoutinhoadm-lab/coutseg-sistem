@@ -68,7 +68,7 @@ function CentralEntradaPage() {
           file_path: filePath,
           file_type: file.type,
           size: file.size,
-          uploaded_by: user?.id,
+          uploaded_by: user?.id || null,
         })
         .select()
         .single();
