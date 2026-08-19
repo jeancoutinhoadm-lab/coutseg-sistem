@@ -445,3 +445,145 @@ function formatCurrency(value?: number) {
     maximumFractionDigits: 0,
   }).format(value);
 }
+
+function BusinessIntelligence() {
+  const [question, setQuestion] = useState("");
+  const [isAsking, setIsAsking] = useState(false);
+  const [chat, setChat] = useState<{q: string, a: string}[]>([]);
+
+  const { data: insights, isLoading: loadingInsights, refetch } = useQuery({
+    queryKey: ["business-insights"],
+    queryFn: () => getActiveInsights(),
+  });
+
+  const handleAsk = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!question.trim()) return;
+    setIsAsking(true);
+    try {
+      const { answer } = await askBusinessIA({ data: { question } });
+      setChat(prev => [...prev, { q: question, a: answer }]);
+      setQuestion("");
+    } catch (err) {
+      toast.error("Erro ao consultar IA");
+    } finally {
+      setIsAsking(false);
+    }
+  };
+
+  const handleFeedback = async (id: string, useful: boolean) => {
+    try {
+      await feedbackInsight({ data: { id, useful } });
+      toast.success("Feedback registrado");
+      refetch();
+    } catch (err) {
+      toast.error("Erro ao salvar feedback");
+    }
+  };
+
+  return (
+    <div className="grid gap-6 md:grid-cols-2">
+      {/* Feed de Insights */}
+      <Card className="border-primary/20 bg-primary/5">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-primary" />
+            Inteligência da CoutSeg
+          </CardTitle>
+          <CardDescription>Insights automáticos e detecção de anomalias</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4 max-h-[400px] overflow-y-auto">
+          {loadingInsights ? (
+            Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-20 w-full" />)
+          ) : insights?.length === 0 ? (
+            <div className="text-center py-10 text-muted-foreground text-sm">
+              Nenhum insight novo detectado. Tudo sob controle!
+            </div>
+          ) : (
+            insights?.map((insight: any) => (
+              <div key={insight.id} className="p-3 rounded-lg bg-background border shadow-sm space-y-2 group">
+                <div className="flex justify-between items-start">
+                  <Badge variant={insight.severity === 'CRITICAL' || insight.severity === 'HIGH' ? 'destructive' : 'secondary'} className="text-[10px]">
+                    {insight.type}
+                  </Badge>
+                  <span className="text-[10px] text-muted-foreground">{new Date(insight.created_at).toLocaleDateString()}</span>
+                </div>
+                <h4 className="font-bold text-sm">{insight.title}</h4>
+                <p className="text-xs text-muted-foreground leading-relaxed">{insight.description}</p>
+                {insight.suggested_action && (
+                  <div className="bg-primary/10 p-2 rounded text-[11px] border border-primary/20">
+                    <span className="font-bold text-primary">Sugestão: </span>
+                    {insight.suggested_action}
+                  </div>
+                )}
+                <div className="flex justify-end gap-2 pt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleFeedback(insight.id, true)}>
+                    <ThumbsUp className="h-3 w-3 text-green-600" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleFeedback(insight.id, false)}>
+                    <ThumbsDown className="h-3 w-3 text-red-600" />
+                  </Button>
+                </div>
+              </div>
+            ))
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Chat Analítico */}
+      <Card className="flex flex-col border-indigo-200 bg-indigo-50/30">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Bot className="h-5 w-5 text-indigo-600" />
+            Assistente Analítico
+          </CardTitle>
+          <CardDescription>Pergunte sobre seus indicadores (Somente Leitura)</CardDescription>
+        </CardHeader>
+        <CardContent className="flex-1 flex flex-col space-y-4 min-h-[300px]">
+          <div className="flex-1 space-y-4 overflow-y-auto max-h-[250px] p-2">
+            {chat.length === 0 && (
+              <div className="h-full flex flex-col items-center justify-center text-center p-4 space-y-2 opacity-60">
+                <MessageSquare className="h-8 w-8 text-indigo-300" />
+                <p className="text-xs text-indigo-900">
+                  "Por que minha receita caiu este mês?"<br/>
+                  "Quais oportunidades estão paradas?"
+                </p>
+              </div>
+            )}
+            {chat.map((msg, i) => (
+              <div key={i} className="space-y-2">
+                <div className="bg-indigo-600 text-white p-2 rounded-lg rounded-tr-none ml-8 text-xs self-end">
+                  {msg.q}
+                </div>
+                <div className="bg-white border p-2 rounded-lg rounded-tl-none mr-8 text-xs flex gap-2">
+                  <Zap className="h-3 w-3 text-amber-500 shrink-0 mt-0.5" />
+                  <div className="whitespace-pre-wrap">{msg.a}</div>
+                </div>
+              </div>
+            ))}
+            {isAsking && (
+              <div className="flex items-center gap-2 text-xs text-indigo-600 animate-pulse">
+                <Bot className="h-4 w-4" />
+                Analisando dados reais...
+              </div>
+            )}
+          </div>
+          
+          <form onSubmit={handleAsk} className="flex gap-2 mt-auto pt-4 border-t border-indigo-100">
+            <input 
+              type="text"
+              placeholder="Sua pergunta..."
+              className="flex-1 bg-white border rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              disabled={isAsking}
+            />
+            <Button type="submit" size="icon" disabled={isAsking || !question.trim()}>
+              <Send className="h-4 w-4" />
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
