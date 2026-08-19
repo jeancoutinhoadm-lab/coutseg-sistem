@@ -41,9 +41,9 @@ export const getFinancialReport = createServerFn({ method: "GET" })
     const summary = (entries || []).reduce(
       (acc, curr) => {
         const amt = Number(curr.amount) || 0;
-        if (curr.type === "revenue") {
+        if (curr.type === "income") {
           acc.revenue += amt;
-        } else {
+        } else if (curr.type === "expense") {
           acc.expenses += amt;
         }
         return acc;
