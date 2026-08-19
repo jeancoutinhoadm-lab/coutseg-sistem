@@ -31,6 +31,8 @@ export interface CommissionReportData {
   competence: string | null;
   payment_date: string | null;
   report_reference: string | null;
+  document_line_count: number | null;
+  document_total: number | null;
   items: CommissionReportItem[];
   metadata?: {
     input_tokens?: number;
