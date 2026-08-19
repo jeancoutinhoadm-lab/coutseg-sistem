@@ -1,11 +1,10 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -33,13 +32,14 @@ export const Route = createFileRoute("/auth/login")({
   beforeLoad: async () => {
     const { data } = await supabase.auth.getUser();
     if (data.user) {
-      throw redirect({ to: "/dashboard" });
+      throw redirect({ to: "/" });
     }
   },
 });
 
 function LoginPage() {
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
   const form = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: "", password: "" },
@@ -47,25 +47,37 @@ function LoginPage() {
 
   const onSubmit = async (values: LoginForm) => {
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({
-      email: values.email,
-      password: values.password,
-    });
-    setLoading(false);
-    if (error) {
-      toast.error("Erro ao entrar", { description: error.message });
-      return;
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: values.email,
+        password: values.password,
+      });
+      
+      if (error) {
+        toast.error("Erro ao entrar", { description: error.message || "E-mail ou senha incorretos." });
+        return;
+      }
+      
+      await logAudit('LOGIN', 'USER');
+      toast.success("Login realizado com sucesso");
+      navigate({ to: "/" });
+    } catch (err) {
+      console.error("Login error:", err);
+      toast.error("Erro inesperado", { description: "Ocorreu um erro ao tentar realizar o login." });
+    } finally {
+      setLoading(false);
     }
-    await logAudit('LOGIN', 'USER');
-    window.location.href = "/dashboard";
   };
 
   const signInWithGoogle = async () => {
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/`,
+      },
     });
-    if (result.error) {
-      toast.error("Erro ao entrar com Google", { description: result.error.message });
+    if (error) {
+      toast.error("Erro ao entrar com Google", { description: error.message });
     }
   };
 
@@ -80,7 +92,13 @@ function LoginPage() {
           <CardDescription>Corretora de Seguros</CardDescription>
         </CardHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)}>
+          <form 
+            onSubmit={async (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              await form.handleSubmit(onSubmit)(e);
+            }}
+          >
             <CardContent className="space-y-4">
               <FormField
                 control={form.control}
