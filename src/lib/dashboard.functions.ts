@@ -152,7 +152,7 @@ export const getExecutiveDashboardData = createServerFn({ method: "GET" })
       return acc;
     }, {} as Record<string, number>);
 
-    const crossSellCount = (opportunities || []).filter(o => o.status === 'cross_sell' as any).length;
+    const crossSellCount = (opportunities || []).filter((o: { status: string | null }) => o.status === 'cross_sell' as any).length;
 
     // 8. Ranking de Seguradoras
     const { data: insurerRanking } = await supabase
@@ -168,16 +168,17 @@ export const getExecutiveDashboardData = createServerFn({ method: "GET" })
       .gte("receipt_date", startStr)
       .lte("receipt_date", endStr);
     
-    const ranking = (insurerRanking || []).reduce((acc: any, curr: any) => {
+    const ranking = (insurerRanking || []).reduce((acc: Record<string, number>, curr: any) => {
       const name = curr.commissions?.insurers?.name || "Outros";
       acc[name] = (acc[name] || 0) + (Number(curr.amount) || 0);
       return acc;
-    }, {});
+    }, {} as Record<string, number>);
 
     const sortedRanking = Object.entries(ranking)
-      .map(([name, value]: [string, any]) => ({ name, value }))
+      .map(([name, value]) => ({ name, value }))
       .sort((a, b) => b.value - a.value)
       .slice(0, 5);
+
 
     return {
       finance: {
