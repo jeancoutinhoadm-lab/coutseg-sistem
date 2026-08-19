@@ -148,10 +148,13 @@ export const getExecutiveDashboardData = createServerFn({ method: "GET" })
 
     // 7. Comercial: Oportunidades
     const { data: opportunities } = await supabase.from("opportunities").select("status, priority");
-    const oppsByStatus = (opportunities || []).reduce((acc: any, curr) => {
-      acc[curr.status] = (acc[curr.status] || 0) + 1;
+    const oppsByStatus = (opportunities || []).reduce((acc: Record<string, number>, curr) => {
+      if (curr.status) {
+        acc[curr.status] = (acc[curr.status] || 0) + 1;
+      }
       return acc;
-    }, {});
+    }, {} as Record<string, number>);
+
     const crossSellCount = (opportunities || []).filter(o => o.status === 'cross_sell' as any).length;
 
     // 8. Ranking de Seguradoras
