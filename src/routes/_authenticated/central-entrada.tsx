@@ -50,8 +50,11 @@ function CentralEntradaPage() {
       if (!file) throw new Error("Selecione um arquivo");
       setCurrentStep('uploading');
 
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Usuário não autenticado");
+
       const fileExt = file.name.split(".").pop();
-      const filePath = `${crypto.randomUUID()}.${fileExt}`;
+      const filePath = `${user.id}/${crypto.randomUUID()}.${fileExt}`;
       
       const { error: uploadError } = await supabase.storage
         .from("policy_documents")
@@ -59,8 +62,6 @@ function CentralEntradaPage() {
 
       if (uploadError) throw uploadError;
       
-      const { data: { user } } = await supabase.auth.getUser();
-
       const { data: doc, error: docError } = await supabase
         .from("documents")
         .insert({
@@ -68,12 +69,16 @@ function CentralEntradaPage() {
           file_path: filePath,
           file_type: file.type,
           size: file.size,
-          uploaded_by: user?.id || null,
+          uploaded_by: user.id,
         })
         .select()
         .single();
 
-      if (docError) throw docError;
+      if (docError) {
+        // Rollback: delete uploaded file if DB record fails
+        await supabase.storage.from("policy_documents").remove([filePath]);
+        throw docError;
+      }
       
       // Step 3: Record processing status
       await supabase.from('document_processing').insert({
