@@ -21,20 +21,20 @@ const createOperationSchema = z.object({
 export const createOperation = createServerFn({ method: "POST" })
   .inputValidator((data) => createOperationSchema.parse(data))
   .handler(async ({ data }) => {
-    const { data: user } = await supabase.auth.getUser();
-    if (!user.user) throw new Error("Unauthorized");
+    const { data: authData } = await supabase.auth.getUser();
+    if (!authData.user) throw new Error("Unauthorized");
 
     const { data: operation, error } = await supabase
       .from("operations")
       .insert({
         type: data.type,
         title: data.title,
-        description: data.description,
-        client_id: data.clientId,
-        policy_id: data.policyId,
-        previous_policy_id: data.previousPolicyId,
-        responsible_id: user.user.id,
-        created_by: user.user.id,
+        description: data.description ?? null,
+        client_id: data.clientId ?? null,
+        policy_id: data.policyId ?? null,
+        previous_policy_id: data.previousPolicyId ?? null,
+        responsible_id: authData.user.id,
+        created_by: authData.user.id,
         status: 'draft',
         metadata: data.metadata || {},
       })
