@@ -180,7 +180,7 @@ export const getCRMReport = createServerFn({ method: "GET" })
 
     const [leads, opps] = await Promise.all([
       supabase.from("leads").select("*"),
-      supabase.from("opportunities").select("*, products(name), clients(full_name), leads(full_name)")
+      supabase.from("opportunities").select("*, products(name), clients(full_name)")
     ]);
 
     return {
@@ -200,8 +200,7 @@ export const getProductivityReport = createServerFn({ method: "GET" })
     let query = supabase
       .from("tasks")
       .select(`
-        *,
-        responsible:profiles!tasks_user_id_fkey(full_name)
+        *
       `);
 
     if (brokerId) query = query.eq("user_id", brokerId);
