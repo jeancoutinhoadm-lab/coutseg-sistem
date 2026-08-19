@@ -97,11 +97,7 @@ export function CreatePayableForm({ onSuccess }: { onSuccess?: () => void }) {
                   <Input 
                     type="number" 
                     step="0.01" 
-                    value={field.value}
-                    onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                    onBlur={field.onBlur}
-                    name={field.name}
-                    ref={field.ref}
+                    {...field}
                   />
                 </FormControl>
                 <FormMessage />
