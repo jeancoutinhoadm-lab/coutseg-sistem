@@ -20,6 +20,7 @@ import { Route as AuthenticatedCommissionsRouteImport } from './routes/_authenti
 import { Route as AuthenticatedDocumentsRouteImport } from './routes/_authenticated/documents'
 import { Route as AuthenticatedFinancialRouteImport } from './routes/_authenticated/financial'
 import { Route as AuthenticatedInsurersRouteImport } from './routes/_authenticated/insurers'
+import { Route as AuthenticatedOpportunitiesRouteImport } from './routes/_authenticated/opportunities'
 import { Route as AuthenticatedPoliciesRouteImport } from './routes/_authenticated/policies'
 import { Route as AuthenticatedProductsRouteImport } from './routes/_authenticated/products'
 import { Route as AuthenticatedRenewalsRouteImport } from './routes/_authenticated/renewals'
@@ -83,6 +84,12 @@ const AuthenticatedInsurersRoute = AuthenticatedInsurersRouteImport.update({
   path: '/insurers',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedOpportunitiesRoute =
+  AuthenticatedOpportunitiesRouteImport.update({
+    id: '/opportunities',
+    path: '/opportunities',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedPoliciesRoute = AuthenticatedPoliciesRouteImport.update({
   id: '/policies',
   path: '/policies',
@@ -125,6 +132,7 @@ export interface FileRoutesByFullPath {
   '/documents': typeof AuthenticatedDocumentsRoute
   '/financial': typeof AuthenticatedFinancialRoute
   '/insurers': typeof AuthenticatedInsurersRoute
+  '/opportunities': typeof AuthenticatedOpportunitiesRoute
   '/policies': typeof AuthenticatedPoliciesRoute
   '/products': typeof AuthenticatedProductsRoute
   '/renewals': typeof AuthenticatedRenewalsRoute
@@ -142,6 +150,7 @@ export interface FileRoutesByTo {
   '/documents': typeof AuthenticatedDocumentsRoute
   '/financial': typeof AuthenticatedFinancialRoute
   '/insurers': typeof AuthenticatedInsurersRoute
+  '/opportunities': typeof AuthenticatedOpportunitiesRoute
   '/policies': typeof AuthenticatedPoliciesRoute
   '/products': typeof AuthenticatedProductsRoute
   '/renewals': typeof AuthenticatedRenewalsRoute
@@ -162,6 +171,7 @@ export interface FileRoutesById {
   '/_authenticated/documents': typeof AuthenticatedDocumentsRoute
   '/_authenticated/financial': typeof AuthenticatedFinancialRoute
   '/_authenticated/insurers': typeof AuthenticatedInsurersRoute
+  '/_authenticated/opportunities': typeof AuthenticatedOpportunitiesRoute
   '/_authenticated/policies': typeof AuthenticatedPoliciesRoute
   '/_authenticated/products': typeof AuthenticatedProductsRoute
   '/_authenticated/renewals': typeof AuthenticatedRenewalsRoute
@@ -183,6 +193,7 @@ export interface FileRouteTypes {
     | '/documents'
     | '/financial'
     | '/insurers'
+    | '/opportunities'
     | '/policies'
     | '/products'
     | '/renewals'
@@ -200,6 +211,7 @@ export interface FileRouteTypes {
     | '/documents'
     | '/financial'
     | '/insurers'
+    | '/opportunities'
     | '/policies'
     | '/products'
     | '/renewals'
@@ -219,6 +231,7 @@ export interface FileRouteTypes {
     | '/_authenticated/documents'
     | '/_authenticated/financial'
     | '/_authenticated/insurers'
+    | '/_authenticated/opportunities'
     | '/_authenticated/policies'
     | '/_authenticated/products'
     | '/_authenticated/renewals'
@@ -314,6 +327,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedInsurersRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/opportunities': {
+      id: '/_authenticated/opportunities'
+      path: '/opportunities'
+      fullPath: '/opportunities'
+      preLoaderRoute: typeof AuthenticatedOpportunitiesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/policies': {
       id: '/_authenticated/policies'
       path: '/policies'
@@ -368,6 +388,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDocumentsRoute: typeof AuthenticatedDocumentsRoute
   AuthenticatedFinancialRoute: typeof AuthenticatedFinancialRoute
   AuthenticatedInsurersRoute: typeof AuthenticatedInsurersRoute
+  AuthenticatedOpportunitiesRoute: typeof AuthenticatedOpportunitiesRoute
   AuthenticatedPoliciesRoute: typeof AuthenticatedPoliciesRoute
   AuthenticatedProductsRoute: typeof AuthenticatedProductsRoute
   AuthenticatedRenewalsRoute: typeof AuthenticatedRenewalsRoute
@@ -384,6 +405,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDocumentsRoute: AuthenticatedDocumentsRoute,
   AuthenticatedFinancialRoute: AuthenticatedFinancialRoute,
   AuthenticatedInsurersRoute: AuthenticatedInsurersRoute,
+  AuthenticatedOpportunitiesRoute: AuthenticatedOpportunitiesRoute,
   AuthenticatedPoliciesRoute: AuthenticatedPoliciesRoute,
   AuthenticatedProductsRoute: AuthenticatedProductsRoute,
   AuthenticatedRenewalsRoute: AuthenticatedRenewalsRoute,
