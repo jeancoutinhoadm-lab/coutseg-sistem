@@ -274,28 +274,32 @@ function CentralEntradaPage() {
         for (const item of items) {
           const { data: result, error } = await supabase.rpc('process_commission_item_approval', {
             _document_id: lastSavedDoc.id,
-            _item: item,
+            _item: item as any,
             _user_id: user.id
           });
           
           if (error) {
             console.error("Erro ao processar item:", error);
             toast.error(`Erro no item ${item.policy_number}: ${error.message}`);
-          } else if (validationData?.status === 'failed' && result?.commission_id) {
-            // Se houver divergência, registrar a reconciliação para este item
-            const diff = (Number(item.paid_commission) || 0) - (Number(item.expected_commission) || 0);
-            await supabase.rpc('reconcile_commission', {
-              _commission_id: result.commission_id,
-              _adjustment_amount: diff,
-              _reason: reconciliationReason,
-              _user_id: user.id,
-              _metadata: {
-                document_id: lastSavedDoc.id,
-                validation_errors: validationData.errors
-              }
-            });
+          } else if (validationData?.status === 'failed' && result) {
+            const res = result as any;
+            if (res.commission_id) {
+              // Se houver divergência, registrar a reconciliação para este item
+              const diff = (Number(item.paid_commission) || 0) - (Number(item.expected_commission) || 0);
+              await supabase.rpc('reconcile_commission' as any, {
+                _commission_id: res.commission_id,
+                _adjustment_amount: diff,
+                _reason: reconciliationReason,
+                _user_id: user.id,
+                _metadata: {
+                  document_id: lastSavedDoc.id,
+                  validation_errors: validationData.errors
+                }
+              });
+            }
           }
         }
+
 
       } else {
         // Legacy approval for other types
