@@ -113,7 +113,7 @@ function DashboardPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">CoutSeg Gestão</h1>
           <div className="mt-2 p-4 bg-primary/10 border border-primary/20 rounded-lg">
-            <h2 className="text-sm font-bold text-primary uppercase tracking-wider"># ETAPA 26 — IMPLANTAÇÃO OPERACIONAL REAL DA COUTSEG</h2>
+            <h2 className="text-sm font-bold text-primary uppercase tracking-wider"># ETAPA 26.1 — EXECUÇÃO DO FLUXO PILOTO REAL</h2>
             <p className="text-sm text-muted-foreground mt-1">
               A CoutSeg Gestão foi homologada e está: <strong className="text-green-600">GO-LIVE READY COM RESSALVAS</strong>.
             </p>
