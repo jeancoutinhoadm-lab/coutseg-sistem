@@ -503,9 +503,10 @@ function OperationsPage() {
 
           <DialogFooter className="flex justify-between sm:justify-between">
             {step > 1 ? (
-              <Button variant="ghost" onClick={() => setStep(step - 1)}>
+              <Button variant="ghost" onClick={() => isCreatingClient ? setIsCreatingClient(false) : setStep(step - 1)}>
                 Voltar
               </Button>
+
             ) : (
               <div />
             )}
