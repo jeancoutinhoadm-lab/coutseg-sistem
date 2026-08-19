@@ -6,14 +6,56 @@ import { z } from "zod";
  * This is a thin wrapper around the AI Gateway.
  */
 export const processDocumentWithIA = createServerFn({ method: "POST" })
-  .inputValidator((data: { image: string; mimeType: string; documentType: 'policy' | 'bill' | 'commission_report' | 'other' }) => 
+  .inputValidator((data: { 
+    image: string; 
+    mimeType: string; 
+    documentType: 'policy' | 'bill' | 'commission_report' | 'other';
+    simulationMode?: boolean;
+  }) => 
     z.object({
       image: z.string(),
       mimeType: z.string(),
-      documentType: z.enum(['policy', 'bill', 'commission_report', 'other'])
+      documentType: z.enum(['policy', 'bill', 'commission_report', 'other']),
+      simulationMode: z.boolean().optional()
     }).parse(data)
   )
   .handler(async ({ data }) => {
+    // Mode for Step 7 tests
+    if (data.simulationMode) {
+      console.log("IA em modo simulação (Etapa 7)");
+      await new Promise(r => setTimeout(r, 1500));
+      
+      const mockData = {
+        policy: {
+          policy_number: "SIM-2026-999",
+          client_name: "CLIENTE TESTE IA",
+          client_cpf_cnpj: "000.000.000-00",
+          insurer_name: "SEGURADORA TESTE",
+          start_date: new Date().toISOString().split('T')[0],
+          end_date: new Date(Date.now() + 31536000000).toISOString().split('T')[0],
+          premium: 1500.50,
+          confidence: { policy_number: 0.99, client_name: 0.95 }
+        },
+        bill: {
+          provider_name: "PROVEDOR TESTE",
+          amount: 250.00,
+          due_date: new Date().toISOString().split('T')[0],
+          confidence: { amount: 1.0 }
+        },
+        commission_report: {
+          insurer_name: "SEGURADORA TESTE",
+          total_amount: 5000.00,
+          confidence: { total_amount: 0.98 }
+        },
+        other: {
+          description: "Documento de teste estruturado",
+          confidence: { description: 0.90 }
+        }
+      };
+
+      return mockData[data.documentType];
+    }
+
     // The LOVABLE_API_KEY is automatically available in the environment when using the AI Gateway.
     const apiKey = process.env['LOVABLE_API_KEY'];
 
