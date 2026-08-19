@@ -1,61 +1,36 @@
-# ETAPA 7 — ARQUITETURA SEGURA DE IA PARA LEITURA DE DOCUMENTOS
+# Plano Etapa 11 — Motor de Conciliação de Comissões
 
-Esta etapa estabelece a fundação técnica para o processamento inteligente de documentos, priorizando segurança, auditoria e integridade de dados sem acoplar a um provedor de IA específico neste momento.
+Este plano detalha a implementação do motor de conciliação financeira, garantindo que as comissões importadas sejam comparadas com o esperado e auditadas com rastreabilidade total.
 
-## 1. Evolução do Schema de Processamento
+## 1. Ajustes no Schema (Migração)
+*   **Comissões**: Adicionar coluna `reported_amount` (valor informado no relatório) para separar de `expected_amount` e `received_amount`.
+*   **Conciliação**: Criar tabela `commission_reconciliations` para registrar ajustes manuais, justificativas e auditoria específica.
+*   **Status**: Adicionar/Refinar status de conciliação (`matched`, `divergent`, `reconciled`, `reversed`).
+*   **RLS**: Garantir que as políticas permitam acesso adequado por cargo (Financeiro/Admin).
 
-Ajustar a tabela `document_processing` para suportar o fluxo de estados completo e garantir a rastreabilidade.
+## 2. Refinamento da Extração IA
+*   Ajustar o prompt para garantir a distinção clara entre valor esperado pela seguradora e valor efetivamente pago.
+*   Melhorar o matching de apólices no backend para usar múltiplos critérios (Apólice, Seguradora, Competência).
 
-- **Status:** Atualizar enum/check para `PENDING`, `PROCESSING`, `EXTRACTED`, `NEEDS_REVIEW`, `APPROVED`, `REJECTED`, `FAILED`.
-- **Rastreabilidade:** Garantir que `document_id` seja a âncora de toda extração.
-- **Auditoria de Versão:** Adicionar campos `ai_model`, `ai_prompt_version` e `ai_confidence` (JSONB para granularidade por campo).
-- **Idempotência:** Garantir que reprocessamentos sejam rastreados como novas tentativas ou versões, evitando duplicidades.
+## 3. Lógica de Negócio e RPC
+*   Implementar a lógica de cálculo de diferença (`difference = reported - expected`).
+*   Criar RPC atômica para conciliação manual que registra o ajuste, a justificativa e gera o log de auditoria em uma única transação.
+*   Implementar proteção contra duplicidade de conciliação.
 
-## 2. Refinamento de RLS e Segurança
+## 4. Interface de Revisão e Conciliação
+*   Atualizar a tabela de revisão na "Central de Entrada" para mostrar `Esperado`, `Reportado` e `Diferença`.
+*   Adicionar modal de conciliação manual que exige justificativa.
+*   Implementar badges de status de conciliação.
 
-Proteção rigorosa para que a IA (ou usuários não autorizados) não escreva diretamente nas tabelas principais.
+## 5. Dashboard e Relatórios
+*   Auditar e atualizar o dashboard financeiro para consolidar os novos campos.
+*   Garantir filtros por seguradora, competência e status de conciliação.
 
-- **Tabelas Principais:** Manter RLS atual.
-- **Tabela document_processing:** Restringir `extracted_data` e `status` apenas para ADMIN/ADMINISTRATIVO.
-- **Fluxo de Aprovação:** Criar uma função no banco para mover dados de `extracted_data` para as tabelas finais (`clients`, `policies`, etc.) somente após aprovação humana explícita.
-
-## 3. Frontend: Central de Entrada e Revisão
-
-Evoluir a UI da Central de Entrada para gerenciar o novo fluxo.
-
-- **Estados de UI:** Refletir os novos status do backend.
-- **Componente de Revisão:** Criar interface para comparar dados extraídos com o documento original antes da aprovação.
-- **Logs de Processamento:** Exibir histórico de tentativas e erros de forma amigável.
+## 6. Verificação e Testes
+*   Executar os 15 testes obrigatórios definidos na especificação.
+*   Validar RLS e transações atômicas.
 
 ## Detalhes Técnicos
-
-### Alterações de Banco de Dados (Migration SQL)
-
-1.  **Enum de Status:** Atualizar `document_processing.status` para incluir os novos estados.
-2.  **Novas Colunas:**
-    - `ai_model` (text): Nome do modelo (ex: 'gpt-4o').
-    - `ai_prompt_version` (text): Versão do prompt utilizado.
-    - `ai_confidence` (jsonb): Confiança por campo (ex: `{"policy_number": 0.99}`).
-    - `attempts` (int): Contador de retentativas.
-    - `reviewed_by` (uuid): Referência ao usuário que aprovou/rejeitou.
-    - `reviewed_at` (timestamptz): Data da revisão.
-3.  **RLS:** Refinar políticas para garantir que apenas o sistema (via service_role) ou usuários autorizados alterem status de processamento.
-
-### Alterações de Aplicação (React)
-
-1.  **`src/routes/_authenticated/central-entrada.tsx`**:
-    - Adaptar para o novo ciclo de status.
-    - Implementar lógica de "Revisão Necessária".
-    - Adicionar botões de "Aprovar" e "Rejeitar" (acessíveis apenas por perfis autorizados).
-2.  **`src/lib/ai-extraction.functions.ts`**:
-    - Refatorar para salvar metadados de modelo e versão.
-    - Implementar simulação de extração para testes da Etapa 7.
-
-## Matriz de Testes (Simulados)
-
-- **Teste 1:** Upload -> Criar `document_processing` como `PENDING`.
-- **Teste 2:** Simular início -> Status `PROCESSING`.
-- **Teste 3:** Simular extração -> Status `NEEDS_REVIEW` com dados em `extracted_data`.
-- **Teste 4:** Verificar bloqueio de edição direta de `extracted_data` via API pública.
-- **Teste 5:** ADMIN aprova -> Status `APPROVED` e registro de auditoria.
-- **Teste 6:** Reprocessar -> Novo ciclo controlado sem duplicar registros principais.
+*   **Tabelas Afetadas**: `commissions`, `commission_reconciliations`, `audit_logs`.
+*   **Tecnologias**: PostgreSQL, TanStack Query/Table, Supabase RPC.
+*   **Segurança**: RLS por `app_role`, RPC com `SECURITY DEFINER` e `search_path`.
