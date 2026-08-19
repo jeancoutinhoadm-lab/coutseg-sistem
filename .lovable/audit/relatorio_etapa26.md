@@ -27,3 +27,13 @@
 
 ## 7. Recomendação
 Aguardando finalização do fluxo piloto para liberação de carga real parcial.
+
+## 8. Evidências Técnicas
+- **Tabela agency_settings:** Criada e migrada.
+- **Página de Configurações:** Implementada em /settings.
+- **Menu Lateral:** Atualizado com link para Configurações.
+- **Botão Gerar Piloto:** Adicionado ao Dashboard para Admin.
+- **Checklist Operacional:** Criado (checklist_primeiro_dia.md).
+
+---
+*Próximos Passos: Executar o fluxo piloto e validar consistência financeira.*

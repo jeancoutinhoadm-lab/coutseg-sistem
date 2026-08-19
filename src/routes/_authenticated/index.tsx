@@ -39,8 +39,10 @@ import {
   Bot, 
   MessageSquare, 
   Send,
-  Zap
+  Zap,
+  Play
 } from "lucide-react";
+import { createPilotData } from "@/lib/test-data.functions";
 
 export const Route = createFileRoute("/_authenticated/")({
   component: DashboardPage,
@@ -121,7 +123,25 @@ function DashboardPage() {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2 bg-muted p-1 rounded-lg self-start">
+        <div className="flex gap-2">
+          {role === "admin" && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="gap-2"
+              onClick={async () => {
+                try {
+                  await createPilotData();
+                  toast.success("Dados piloto gerados com sucesso!");
+                } catch (e) {
+                  toast.error("Erro ao gerar dados piloto.");
+                }
+              }}
+            >
+              <Play className="h-4 w-4" /> Gerar Piloto
+            </Button>
+          )}
+          <div className="flex items-center gap-2 bg-muted p-1 rounded-lg self-start">
           {(["7days", "30days", "month", "90days", "year"] as const).map((p) => (
             <Button
               key={p}
