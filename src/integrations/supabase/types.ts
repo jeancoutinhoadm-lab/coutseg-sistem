@@ -1259,6 +1259,117 @@ export type Database = {
         }
         Relationships: []
       }
+      operation_checklists: {
+        Row: {
+          completed_at: string | null
+          completed_by: string | null
+          id: string
+          is_completed: boolean | null
+          operation_id: string | null
+          required: boolean | null
+          task_name: string
+        }
+        Insert: {
+          completed_at?: string | null
+          completed_by?: string | null
+          id?: string
+          is_completed?: boolean | null
+          operation_id?: string | null
+          required?: boolean | null
+          task_name: string
+        }
+        Update: {
+          completed_at?: string | null
+          completed_by?: string | null
+          id?: string
+          is_completed?: boolean | null
+          operation_id?: string | null
+          required?: boolean | null
+          task_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "operation_checklists_operation_id_fkey"
+            columns: ["operation_id"]
+            isOneToOne: false
+            referencedRelation: "operations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      operations: {
+        Row: {
+          client_id: string | null
+          completed_at: string | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          id: string
+          metadata: Json | null
+          policy_id: string | null
+          previous_policy_id: string | null
+          responsible_id: string | null
+          status: Database["public"]["Enums"]["operation_status"]
+          title: string
+          type: Database["public"]["Enums"]["operation_type"]
+          updated_at: string | null
+        }
+        Insert: {
+          client_id?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          policy_id?: string | null
+          previous_policy_id?: string | null
+          responsible_id?: string | null
+          status?: Database["public"]["Enums"]["operation_status"]
+          title: string
+          type: Database["public"]["Enums"]["operation_type"]
+          updated_at?: string | null
+        }
+        Update: {
+          client_id?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          policy_id?: string | null
+          previous_policy_id?: string | null
+          responsible_id?: string | null
+          status?: Database["public"]["Enums"]["operation_status"]
+          title?: string
+          type?: Database["public"]["Enums"]["operation_type"]
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "operations_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "operations_policy_id_fkey"
+            columns: ["policy_id"]
+            isOneToOne: false
+            referencedRelation: "policies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "operations_previous_policy_id_fkey"
+            columns: ["previous_policy_id"]
+            isOneToOne: false
+            referencedRelation: "policies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       opportunities: {
         Row: {
           broker_id: string | null
@@ -2106,6 +2217,19 @@ export type Database = {
         | "converted"
         | "lost"
         | "rejected"
+      operation_status:
+        | "draft"
+        | "in_progress"
+        | "pending_docs"
+        | "review"
+        | "completed"
+        | "cancelled"
+      operation_type:
+        | "new_sale"
+        | "renewal"
+        | "endorsement"
+        | "cancellation"
+        | "update"
       policy_status:
         | "active"
         | "pending"
@@ -2304,6 +2428,21 @@ export const Constants = {
         "converted",
         "lost",
         "rejected",
+      ],
+      operation_status: [
+        "draft",
+        "in_progress",
+        "pending_docs",
+        "review",
+        "completed",
+        "cancelled",
+      ],
+      operation_type: [
+        "new_sale",
+        "renewal",
+        "endorsement",
+        "cancellation",
+        "update",
       ],
       policy_status: [
         "active",
