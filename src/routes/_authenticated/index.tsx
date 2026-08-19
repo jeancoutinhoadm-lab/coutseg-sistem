@@ -110,15 +110,16 @@ function DashboardPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">CoutSeg Gestão</h1>
-          <p className="text-muted-foreground whitespace-pre-wrap"># ETAPA 25.1 — VALIDAÇÃO REAL DAS LACUNAS DO GO-LIVE
-
-O relatório da Etapa 25 foi analisado. O problema é que ele declara "GO-LIVE READY", mas não diferencia claramente o que foi realmente testado, o que foi apenas verificado por código e o que não foi testado.
-
-NÃO criar funcionalidades. NÃO modificar arquitetura. NÃO alterar dados reais. NÃO fazer deploy destrutivo.
-
-Esta etapa existe exclusivamente para preencher as evidências que faltaram no relatório, com testes reais de RLS, IDOR, Storage, Financeiro e Integridade de Dados.
-
-STATUS: EM VALIDAÇÃO DE EVIDÊNCIAS REAL</p>
+          <div className="mt-2 p-4 bg-primary/10 border border-primary/20 rounded-lg">
+            <h2 className="text-sm font-bold text-primary uppercase tracking-wider"># ETAPA 26 — IMPLANTAÇÃO OPERACIONAL REAL DA COUTSEG</h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              A CoutSeg Gestão foi homologada e está: <strong className="text-green-600">GO-LIVE READY COM RESSALVAS</strong>.
+            </p>
+            <p className="text-xs text-muted-foreground mt-2 max-w-2xl">
+              O sistema está preparado para a gestão interna centralizada. Multicálculos e portais das seguradoras continuam sendo usados externamente. 
+              Foco em configuração mestre, fluxo piloto e preparação para migração de dados reais.
+            </p>
+          </div>
         </div>
         <div className="flex items-center gap-2 bg-muted p-1 rounded-lg self-start">
           {(["7days", "30days", "month", "90days", "year"] as const).map((p) => (
