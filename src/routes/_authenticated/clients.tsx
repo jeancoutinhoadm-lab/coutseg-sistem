@@ -324,7 +324,7 @@ function ClientProductsView({ clientId }: { clientId: string }) {
             {opportunities?.length ? (
               opportunities.map(opp => (
                 <div key={opp.id} className="flex items-center justify-between p-2 rounded border text-xs">
-                  <span>{opp.description}</span>
+                  <span>{opp.evidence || 'Sem evidência'}</span>
                   <Badge variant="outline" className="capitalize">{opp.status}</Badge>
                 </div>
               ))
