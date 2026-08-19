@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { toast } from "sonner";
@@ -51,30 +52,36 @@ function RegisterPage() {
 
   const onSubmit = async (values: RegisterForm) => {
     setLoading(true);
-    const { data, error } = await supabase.auth.signUp({
-      email: values.email,
-      password: values.password,
-      options: {
-        data: { full_name: values.fullName },
-      },
-    });
-    setLoading(false);
-    
-    if (error) {
-      toast.error("Erro ao criar conta", { description: error.message });
-      return;
-    }
-
-    await logAudit('CREATE', 'USER', undefined, null, { email: values.email, fullName: values.fullName });
-    
-    if (data.session) {
-      toast.success("Conta criada com sucesso!");
-      navigate({ to: "/" });
-    } else {
-      toast.success("Conta criada", {
-        description: "Verifique seu e-mail para confirmar o cadastro antes de entrar.",
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: values.email,
+        password: values.password,
+        options: {
+          data: { full_name: values.fullName },
+        },
       });
-      navigate({ to: "/auth/login" });
+      
+      if (error) {
+        toast.error("Erro ao criar conta", { description: error.message });
+        return;
+      }
+
+      await logAudit('CREATE', 'USER', undefined, null, { email: values.email, fullName: values.fullName });
+      
+      if (data.session) {
+        toast.success("Conta criada com sucesso!");
+        navigate({ to: "/" });
+      } else {
+        toast.success("Conta criada", {
+          description: "Verifique seu e-mail para confirmar o cadastro antes de entrar.",
+        });
+        navigate({ to: "/auth/login" });
+      }
+    } catch (err) {
+      console.error("Register error:", err);
+      toast.error("Erro inesperado", { description: "Ocorreu um erro ao tentar criar a conta." });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -89,7 +96,13 @@ function RegisterPage() {
           <CardDescription>Comece a usar o sistema da Coutseg</CardDescription>
         </CardHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)}>
+          <form 
+            onSubmit={async (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              await form.handleSubmit(onSubmit)(e);
+            }}
+          >
             <CardContent className="space-y-4">
               <FormField
                 control={form.control}
