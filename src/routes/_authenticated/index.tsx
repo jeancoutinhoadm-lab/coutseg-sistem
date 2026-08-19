@@ -21,6 +21,8 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Link } from "@tanstack/react-router";
+import { getExecutiveDashboardData } from "@/lib/dashboard.functions";
+
 
 export const Route = createFileRoute("/_authenticated/")({
   component: DashboardPage,
