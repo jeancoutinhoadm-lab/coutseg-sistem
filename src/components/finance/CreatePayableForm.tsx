@@ -66,9 +66,13 @@ export function CreatePayableForm({ onSuccess }: { onSuccess?: () => void }) {
     },
   });
 
+  const onSubmit = (values: FormValues) => {
+    mutation.mutate(values);
+  };
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit((v) => mutation.mutate(v))} className="space-y-4">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <FormField
           control={form.control}
           name="description"
