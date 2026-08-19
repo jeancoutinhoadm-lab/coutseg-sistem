@@ -295,23 +295,23 @@ function DashboardPage() {
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="p-4 rounded-xl border bg-card">
-                <div className="text-xs text-muted-foreground uppercase font-bold">Novas</div>
-                <div className="text-2xl font-bold">{commercial.opportunities['new'] || 0}</div>
+                <div className="text-xs text-muted-foreground uppercase font-bold">Leads (Novos)</div>
+                <div className="text-2xl font-bold">{commercial.leads['new'] || 0}</div>
               </div>
               <div className="p-4 rounded-xl border bg-card">
-                <div className="text-xs text-muted-foreground uppercase font-bold">Cotação</div>
-                <div className="text-2xl font-bold">{commercial.opportunities['quote_sent'] || 0}</div>
+                <div className="text-xs text-muted-foreground uppercase font-bold">Oportunidades</div>
+                <div className="text-2xl font-bold">{Object.values(commercial.opportunities).reduce((a, b) => a + b, 0)}</div>
               </div>
               <div className="p-4 rounded-xl border bg-card">
-                <div className="text-xs text-muted-foreground uppercase font-bold">Negociação</div>
-                <div className="text-2xl font-bold">{commercial.opportunities['negotiation'] || 0}</div>
+                <div className="text-xs text-muted-foreground uppercase font-bold">Taxa Conv.</div>
+                <div className="text-2xl font-bold">{commercial.conversionRate.toFixed(1)}%</div>
               </div>
 
               <div className="p-4 rounded-xl border bg-primary/10 border-primary/20">
                 <div className="text-xs text-primary uppercase font-bold flex items-center gap-1">
-                  <Target className="h-3 w-3" /> Cross-sell
+                  <Target className="h-3 w-3" /> Valor Est.
                 </div>
-                <div className="text-2xl font-bold text-primary">{commercial.crossSellCount}</div>
+                <div className="text-2xl font-bold text-primary">{formatCurrency(commercial.totalEstimatedValue)}</div>
               </div>
             </div>
             <Button variant="outline" className="w-full mt-6" asChild>
