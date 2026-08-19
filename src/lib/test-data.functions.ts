@@ -23,7 +23,7 @@ export const createPilotData = async () => {
 
     const { data: account } = await supabase
       .from("bank_accounts")
-      .upsert({ name: "CONTA CORRENTE (PILOTO)", balance: 0, status: "active" }, { onConflict: 'name' })
+      .upsert({ name: "CONTA CORRENTE (PILOTO)", status: "active" }, { onConflict: 'name' })
       .select().single();
 
     // 2. Criar Cliente Piloto
@@ -54,7 +54,7 @@ export const createPilotData = async () => {
         source: "outros",
         status: "new",
         notes: "Lead Piloto de Teste CRM"
-      })
+      } as any)
       .select()
       .single();
 
@@ -66,21 +66,20 @@ export const createPilotData = async () => {
       .insert({
         client_id: client.id,
         lead_id: lead.id,
-        product_id: product?.id,
+        product_id: product?.id || null,
         status: "new",
         priority: "normal"
-      })
+      } as any)
       .select().single();
 
     const { data: quote } = await supabase
       .from("quotes")
       .insert({
-        opportunity_id: opportunity?.id,
-        insurer_id: insurer?.id,
+        opportunity_id: opportunity?.id || null,
+        insurer_id: insurer?.id || null,
         premium: 2500.00,
-        commission_percentage: 15,
         status: "pending"
-      })
+      } as any)
       .select().single();
 
     // 5. Criar Apólice e Renovação Próxima
@@ -88,14 +87,14 @@ export const createPilotData = async () => {
       .from("policies")
       .insert({
         client_id: client.id,
-        insurer_id: insurer?.id,
-        product_id: product?.id,
+        insurer_id: insurer?.id || null,
+        product_id: product?.id || null,
         policy_number: "PILOTO-2026-001",
         start_date: new Date().toISOString().split('T')[0],
         end_date: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 15 dias pra frente
         premium: 2500.00,
         status: "active"
-      })
+      } as any)
       .select().single();
 
     // 6. Financeiro: Receita e Despesa
@@ -104,20 +103,20 @@ export const createPilotData = async () => {
         type: "income",
         amount: 1000.00,
         entry_date: new Date().toISOString().split('T')[0],
-        category_id: category?.id,
-        bank_account_id: account?.id,
+        category_id: category?.id || null,
+        bank_account_id: account?.id || null,
         user_id: user.id,
         notes: "RECEITA PILOTO"
-      },
+      } as any,
       {
         type: "expense",
         amount: 200.00,
         entry_date: new Date().toISOString().split('T')[0],
-        category_id: category?.id, // Simplificado usando a mesma categoria
-        bank_account_id: account?.id,
+        category_id: category?.id || null, 
+        bank_account_id: account?.id || null,
         user_id: user.id,
         notes: "DESPESA PILOTO"
-      }
+      } as any
     ]);
 
     // 7. Tarefas
@@ -127,15 +126,15 @@ export const createPilotData = async () => {
         status: "PENDING",
         priority: "HIGH",
         user_id: user.id,
-        policy_id: policy?.id
-      },
+        policy_id: policy?.id || null
+      } as any,
       {
         title: "Confirmar Renovação Piloto",
         status: "PENDING",
         priority: "MEDIUM",
         user_id: user.id,
-        policy_id: policy?.id
-      }
+        policy_id: policy?.id || null
+      } as any
     ]);
 
     return { success: true, clientId: client.id };
