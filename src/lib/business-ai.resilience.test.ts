@@ -1,6 +1,6 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { askBusinessIA } from './business-ai.functions';
+import { processBusinessIA } from './business-ai.functions';
 
 // Mock do supabase
 vi.mock('@/integrations/supabase/client', () => ({
