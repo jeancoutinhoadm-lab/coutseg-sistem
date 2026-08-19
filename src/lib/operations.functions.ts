@@ -19,7 +19,7 @@ const createOperationSchema = z.object({
  * Cria uma nova operação centralizada
  */
 export const createOperation = createServerFn({ method: "POST" })
-  .inputValidator((data) => createOperationSchema.parse(data))
+  .validator((data: unknown) => createOperationSchema.parse(data))
   .handler(async ({ data }) => {
     const { data: authData } = await supabase.auth.getUser();
     if (!authData.user) throw new Error("Unauthorized");
@@ -66,7 +66,7 @@ export const createOperation = createServerFn({ method: "POST" })
  * Busca unificada de clientes para iniciar operação
  */
 export const searchOperationTarget = createServerFn({ method: "GET" })
-  .inputValidator((data) => z.object({ query: z.string() }).parse(data))
+  .validator((data: unknown) => z.object({ query: z.string() }).parse(data))
   .handler(async ({ data }) => {
     const { data: clients, error } = await supabase
       .from("clients")
