@@ -25,8 +25,10 @@ import {
   Mail,
   History,
   FileText,
-  DollarSign
+  DollarSign,
+  CalendarClock
 } from "lucide-react";
+import { createOperationalTask } from "@/lib/tasks.functions";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { convertLeadToOpportunity, markOpportunityAsLost } from "@/lib/crm.functions";
@@ -314,6 +316,37 @@ function CRMPage() {
                       </Button>
                       <Button variant="outline" className="w-full justify-start text-xs" size="sm">
                         <DollarSign className="mr-2 h-3 w-3" /> Venda
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        className="w-full justify-start text-xs" 
+                        size="sm"
+                        onClick={async () => {
+                          try {
+                            const res = await createOperationalTask({
+                              data: {
+                                title: `CRM: Acompanhar ${(selectedOpportunity.products as any)?.name || 'Oportunidade'}`,
+                                description: `Realizar follow-up comercial para ${(selectedOpportunity.clients as any)?.full_name || (selectedOpportunity.leads as any)?.full_name}. Valor est: R$ ${selectedOpportunity.value_estimated}`,
+                                priority: selectedOpportunity.priority === 'high' ? 'HIGH' : 'MEDIUM',
+                                user_id: selectedOpportunity.broker_id || undefined,
+                                opportunity_id: selectedOpportunity.id,
+                                client_id: selectedOpportunity.client_id,
+                                lead_id: selectedOpportunity.lead_id,
+                                origin: 'opportunity',
+                                origin_id: selectedOpportunity.id
+                              }
+                            });
+                            if (res.status === 'already_exists') {
+                              toast.info("Tarefa de acompanhamento já existe.");
+                            } else {
+                              toast.success("Tarefa de follow-up gerada!");
+                            }
+                          } catch (e: any) {
+                            toast.error("Erro ao gerar tarefa: " + e.message);
+                          }
+                        }}
+                      >
+                        <CalendarClock className="mr-2 h-3 w-3" /> Tarefa
                       </Button>
                     </div>
                     <Button 
