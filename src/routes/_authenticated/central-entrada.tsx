@@ -165,7 +165,7 @@ function CentralEntradaPage() {
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex flex-col gap-1">
         <h1 className="text-3xl font-bold tracking-tight">Central de Entrada</h1>
-        <p className="text-muted-foreground">Implementar recuperação por email</p>
+        <p className="text-muted-foreground">estou tendo problemas para fazer loguin, verifique jeancoutinho.adm@gmail.com</p>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
