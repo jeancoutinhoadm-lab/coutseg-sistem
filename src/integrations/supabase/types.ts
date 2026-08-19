@@ -1093,15 +1093,26 @@ export type Database = {
         Args: { _document_id: string; _item: Json; _user_id: string }
         Returns: Json
       }
-      reconcile_commission: {
-        Args: {
-          _adjustment_amount?: number
-          _commission_id: string
-          _new_status: string
-          _reason: string
-        }
-        Returns: Json
-      }
+      reconcile_commission:
+        | {
+            Args: {
+              _adjustment_amount: number
+              _commission_id: string
+              _metadata?: Json
+              _reason: string
+              _user_id: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              _adjustment_amount?: number
+              _commission_id: string
+              _new_status: string
+              _reason: string
+            }
+            Returns: Json
+          }
     }
     Enums: {
       app_role:
