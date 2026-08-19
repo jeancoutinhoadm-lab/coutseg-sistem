@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
-import { startOfMonth, endOfMonth, subDays, isBefore, parseISO } from "date-fns";
+import { subDays } from "date-fns";
 
 const insightSchema = z.object({
   type: z.enum(['CROSS_SELL', 'RENEWAL_RISK', 'COMMERCIAL', 'FINANCIAL', 'COMMISSION', 'OPERATIONAL', 'DOCUMENT', 'PRODUCTIVITY', 'ANOMALY']),
