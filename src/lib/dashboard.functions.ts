@@ -146,15 +146,27 @@ export const getExecutiveDashboardData = createServerFn({ method: "GET" })
       supabase.from("clients").select("id", { count: "exact", head: true }).eq("status", "active"),
     ]);
 
-    // 7. Comercial: Oportunidades
-    const { data: opportunities } = await supabase.from("opportunities").select("status, priority");
-    const oppsByStatus: Record<string, number> = (opportunities || []).reduce((acc: Record<string, number>, curr: any) => {
-      if (curr.status) {
-        acc[curr.status] = (acc[curr.status] || 0) + 1;
-      }
+    // 7. Comercial: Leads e Oportunidades
+    const [{ data: leads }, { data: opportunities }] = await Promise.all([
+      supabase.from("leads").select("status"),
+      supabase.from("opportunities").select("status, priority, value_estimated, value_realized"),
+    ]);
+
+    const leadsByStatus: Record<string, number> = (leads || []).reduce((acc: Record<string, number>, curr: any) => {
+      if (curr.status) acc[curr.status] = (acc[curr.status] || 0) + 1;
       return acc;
     }, {});
-    const crossSellCount = (opportunities || []).filter((o: any) => o.status === 'cross_sell').length;
+
+    const oppsByStatus: Record<string, number> = (opportunities || []).reduce((acc: Record<string, number>, curr: any) => {
+      if (curr.status) acc[curr.status] = (acc[curr.status] || 0) + 1;
+      return acc;
+    }, {});
+
+    const totalEstimatedValue = (opportunities || []).reduce((acc: number, curr: any) => acc + (Number(curr.value_estimated) || 0), 0);
+    const totalRealizedValue = (opportunities || []).reduce((acc: number, curr: any) => acc + (Number(curr.value_realized) || 0), 0);
+    const wonCount = oppsByStatus['won'] || 0;
+    const lostCount = oppsByStatus['lost'] || 0;
+    const conversionRate = (wonCount + lostCount) > 0 ? (wonCount / (wonCount + lostCount)) * 100 : 0;
 
     // 8. Ranking de Seguradoras
     const { data: insurerRankingData } = await supabase
