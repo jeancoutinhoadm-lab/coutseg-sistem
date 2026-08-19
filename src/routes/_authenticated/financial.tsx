@@ -8,16 +8,29 @@ import {
   Wallet, 
   Receipt, 
   History,
-  TrendingUp
+  TrendingUp,
+  Plus
 } from "lucide-react";
 import { getFinancialSummary } from "@/lib/finance.functions";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { CreatePayableForm } from "@/components/finance/CreatePayableForm";
+import { useState } from "react";
 
 export const Route = createFileRoute("/_authenticated/financial")({
   component: FinancialDashboard,
 });
 
 function FinancialDashboard() {
+  const [isPayableModalOpen, setIsPayableModalOpen] = useState(false);
+  
   const { data: summary, isLoading } = useQuery({
     queryKey: ["financial-summary"],
     queryFn: () => getFinancialSummary(),
@@ -35,9 +48,24 @@ function FinancialDashboard() {
           <p className="text-muted-foreground">Visão geral do caixa e contas da CoutSeg.</p>
         </div>
         <div className="flex gap-3">
-          <Button asChild variant="outline">
-            <Link to="/commissions">Comissões</Link>
-          </Button>
+          <Dialog open={isPayableModalOpen} onOpenChange={setIsPayableModalOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <Plus className="w-4 h-4" />
+                Nova Despesa
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Cadastrar Conta a Pagar</DialogTitle>
+                <DialogDescription>
+                  Informe os detalhes da despesa para controle interno.
+                </DialogDescription>
+              </DialogHeader>
+              <CreatePayableForm onSuccess={() => setIsPayableModalOpen(false)} />
+            </DialogContent>
+          </Dialog>
+          
           <Button asChild>
             <Link to="/central-entrada">Novo Documento</Link>
           </Button>
