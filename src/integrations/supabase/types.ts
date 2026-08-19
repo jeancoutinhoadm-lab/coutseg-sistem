@@ -47,6 +47,33 @@ export type Database = {
         }
         Relationships: []
       }
+      bank_accounts: {
+        Row: {
+          account_type: string | null
+          balance: number | null
+          bank_name: string | null
+          created_at: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          account_type?: string | null
+          balance?: number | null
+          bank_name?: string | null
+          created_at?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          account_type?: string | null
+          balance?: number | null
+          bank_name?: string | null
+          created_at?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       brokers: {
         Row: {
           active: boolean | null
@@ -207,9 +234,65 @@ export type Database = {
           },
         ]
       }
+      commission_receipts: {
+        Row: {
+          amount: number
+          bank_account_id: string | null
+          commission_id: string | null
+          created_at: string | null
+          document_id: string | null
+          id: string
+          notes: string | null
+          receipt_date: string
+        }
+        Insert: {
+          amount: number
+          bank_account_id?: string | null
+          commission_id?: string | null
+          created_at?: string | null
+          document_id?: string | null
+          id?: string
+          notes?: string | null
+          receipt_date: string
+        }
+        Update: {
+          amount?: number
+          bank_account_id?: string | null
+          commission_id?: string | null
+          created_at?: string | null
+          document_id?: string | null
+          id?: string
+          notes?: string | null
+          receipt_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commission_receipts_bank_account_id_fkey"
+            columns: ["bank_account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_receipts_commission_id_fkey"
+            columns: ["commission_id"]
+            isOneToOne: false
+            referencedRelation: "commissions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_receipts_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       commissions: {
         Row: {
           created_at: string | null
+          divergence_amount: number | null
           due_date: string | null
           expected_amount: number
           id: string
@@ -221,6 +304,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          divergence_amount?: number | null
           due_date?: string | null
           expected_amount: number
           id?: string
@@ -232,6 +316,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          divergence_amount?: number | null
           due_date?: string | null
           expected_amount?: number
           id?: string
@@ -404,35 +489,51 @@ export type Database = {
       expenses: {
         Row: {
           amount: number
+          bank_account_id: string | null
           category_id: string | null
           created_at: string | null
           date: string
           description: string
           document_id: string | null
+          due_day: number | null
           id: string
+          recurrence: boolean | null
           status: string | null
         }
         Insert: {
           amount: number
+          bank_account_id?: string | null
           category_id?: string | null
           created_at?: string | null
           date: string
           description: string
           document_id?: string | null
+          due_day?: number | null
           id?: string
+          recurrence?: boolean | null
           status?: string | null
         }
         Update: {
           amount?: number
+          bank_account_id?: string | null
           category_id?: string | null
           created_at?: string | null
           date?: string
           description?: string
           document_id?: string | null
+          due_day?: number | null
           id?: string
+          recurrence?: boolean | null
           status?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "expenses_bank_account_id_fkey"
+            columns: ["bank_account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "expenses_category_id_fkey"
             columns: ["category_id"]
