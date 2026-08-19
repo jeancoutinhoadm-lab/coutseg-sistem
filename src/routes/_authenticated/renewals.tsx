@@ -173,7 +173,7 @@ function RenewalsPage() {
     total: renewals?.length ?? 0,
     urgent: renewals?.filter(r => getPriority(r.end_date) === "urgent").length ?? 0,
     inProgress: renewals?.filter(r => ["contacted", "quote_in_progress", "quote_sent", "negotiation"].includes(r.status || "")).length ?? 0,
-    expired: renewals?.filter(r => differenceInDays(new Date(r.end_date + "T00:00:00"), new Date()) < 0).length ?? 0,
+    expired: renewals?.filter(r => differenceInDays(startOfDay(new Date(r.end_date + "T12:00:00")), startOfDay(new Date())) < 0).length ?? 0,
   };
 
   return (
