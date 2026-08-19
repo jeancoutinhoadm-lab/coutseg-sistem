@@ -65,6 +65,7 @@ function DashboardPage() {
         urgentRenewals: urgentRenewals ?? [],
         divergentCommissions: divergentCommissions ?? [],
         pendingTasks: Number(taskCount) ?? 0,
+        pendingOpportunities: Number(opportunitiesCount) ?? 0,
         totalPremium,
         totalCommission
       };
