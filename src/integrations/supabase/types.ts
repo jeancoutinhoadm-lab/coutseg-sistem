@@ -693,6 +693,35 @@ export type Database = {
           },
         ]
       }
+      insurer_aliases: {
+        Row: {
+          alias: string
+          created_at: string | null
+          id: string
+          insurer_id: string | null
+        }
+        Insert: {
+          alias: string
+          created_at?: string | null
+          id?: string
+          insurer_id?: string | null
+        }
+        Update: {
+          alias?: string
+          created_at?: string | null
+          id?: string
+          insurer_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "insurer_aliases_insurer_id_fkey"
+            columns: ["insurer_id"]
+            isOneToOne: false
+            referencedRelation: "insurers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       insurers: {
         Row: {
           active: boolean | null
@@ -831,6 +860,7 @@ export type Database = {
           policy_number: string
           premium: number
           priority: string | null
+          product_id: string | null
           renewal_date: string | null
           renewed_from_policy_id: string | null
           responsible_user_id: string | null
@@ -858,6 +888,7 @@ export type Database = {
           policy_number: string
           premium: number
           priority?: string | null
+          product_id?: string | null
           renewal_date?: string | null
           renewed_from_policy_id?: string | null
           responsible_user_id?: string | null
@@ -885,6 +916,7 @@ export type Database = {
           policy_number?: string
           premium?: number
           priority?: string | null
+          product_id?: string | null
           renewal_date?: string | null
           renewed_from_policy_id?: string | null
           responsible_user_id?: string | null
@@ -917,10 +949,46 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "policies_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "policies_renewed_from_policy_id_fkey"
             columns: ["renewed_from_policy_id"]
             isOneToOne: false
             referencedRelation: "policies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_aliases: {
+        Row: {
+          alias: string
+          created_at: string | null
+          id: string
+          product_id: string | null
+        }
+        Insert: {
+          alias: string
+          created_at?: string | null
+          id?: string
+          product_id?: string | null
+        }
+        Update: {
+          alias?: string
+          created_at?: string | null
+          id?: string
+          product_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_aliases_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
             referencedColumns: ["id"]
           },
         ]
