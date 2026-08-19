@@ -552,6 +552,8 @@ export type Database = {
       policies: {
         Row: {
           broker_id: string | null
+          cancellation_date: string | null
+          cancellation_reason: string | null
           client_id: string
           commission_amount: number | null
           commission_rate: number | null
@@ -561,17 +563,22 @@ export type Database = {
           end_date: string
           id: string
           insurer_id: string
+          issuance_date: string | null
           notes: string | null
           policy_number: string
           premium: number
           renewal_date: string | null
+          renewed_from_policy_id: string | null
           start_date: string
           status: Database["public"]["Enums"]["policy_status"] | null
           type: Database["public"]["Enums"]["policy_type"]
           updated_at: string | null
+          updated_by: string | null
         }
         Insert: {
           broker_id?: string | null
+          cancellation_date?: string | null
+          cancellation_reason?: string | null
           client_id: string
           commission_amount?: number | null
           commission_rate?: number | null
@@ -581,17 +588,22 @@ export type Database = {
           end_date: string
           id?: string
           insurer_id: string
+          issuance_date?: string | null
           notes?: string | null
           policy_number: string
           premium: number
           renewal_date?: string | null
+          renewed_from_policy_id?: string | null
           start_date: string
           status?: Database["public"]["Enums"]["policy_status"] | null
           type: Database["public"]["Enums"]["policy_type"]
           updated_at?: string | null
+          updated_by?: string | null
         }
         Update: {
           broker_id?: string | null
+          cancellation_date?: string | null
+          cancellation_reason?: string | null
           client_id?: string
           commission_amount?: number | null
           commission_rate?: number | null
@@ -601,14 +613,17 @@ export type Database = {
           end_date?: string
           id?: string
           insurer_id?: string
+          issuance_date?: string | null
           notes?: string | null
           policy_number?: string
           premium?: number
           renewal_date?: string | null
+          renewed_from_policy_id?: string | null
           start_date?: string
           status?: Database["public"]["Enums"]["policy_status"] | null
           type?: Database["public"]["Enums"]["policy_type"]
           updated_at?: string | null
+          updated_by?: string | null
         }
         Relationships: [
           {
@@ -630,6 +645,13 @@ export type Database = {
             columns: ["insurer_id"]
             isOneToOne: false
             referencedRelation: "insurers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "policies_renewed_from_policy_id_fkey"
+            columns: ["renewed_from_policy_id"]
+            isOneToOne: false
+            referencedRelation: "policies"
             referencedColumns: ["id"]
           },
         ]
@@ -869,7 +891,18 @@ export type Database = {
         | "proposal"
         | "endorsement"
         | "other"
-      policy_status: "active" | "pending" | "expired" | "cancelled"
+      policy_status:
+        | "active"
+        | "pending"
+        | "expired"
+        | "cancelled"
+        | "lead"
+        | "quotation"
+        | "proposal"
+        | "analyzing"
+        | "issued"
+        | "renewed"
+        | "refused"
       policy_type: "auto" | "home" | "life" | "health" | "business" | "other"
     }
     CompositeTypes: {
@@ -1014,7 +1047,19 @@ export const Constants = {
         "endorsement",
         "other",
       ],
-      policy_status: ["active", "pending", "expired", "cancelled"],
+      policy_status: [
+        "active",
+        "pending",
+        "expired",
+        "cancelled",
+        "lead",
+        "quotation",
+        "proposal",
+        "analyzing",
+        "issued",
+        "renewed",
+        "refused",
+      ],
       policy_type: ["auto", "home", "life", "health", "business", "other"],
     },
   },

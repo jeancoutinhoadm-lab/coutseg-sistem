@@ -25,6 +25,24 @@ import type { Database } from "@/integrations/supabase/types";
 import { logAudit } from "@/utils/audit";
 import { extractPolicyData } from "@/utils/ai-processor";
 
+const getStatusLabel = (status: Database["public"]["Enums"]["policy_status"]) => {
+  const labels: Record<string, string> = {
+    lead: "Lead",
+    quotation: "Cotação",
+    proposal: "Proposta",
+    analyzing: "Em Análise",
+    issued: "Emitida",
+    active: "Vigente",
+    renewed: "Renovada",
+    expired: "Vencida",
+    cancelled: "Cancelada",
+    refused: "Recusada",
+    pending: "Pendente"
+  };
+  return labels[status as string] || status;
+};
+
+
 export const Route = createFileRoute("/_authenticated/policies")({
   component: PoliciesPage,
   head: () => ({
@@ -167,11 +185,32 @@ function PoliciesPage() {
                       <TableCell className="capitalize">{policy.type}</TableCell>
                       <TableCell>{formatCurrency(policy.premium)}</TableCell>
                       <TableCell>
-                        <Badge variant={policy.status === "active" ? "default" : "secondary"}>
-                          {policy.status}
+                        <Badge variant={policy.status === "active" ? "default" : policy.status === "cancelled" ? "destructive" : "secondary"}>
+                          {getStatusLabel(policy.status as any)}
                         </Badge>
+
                       </TableCell>
                       <TableCell className="text-right">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          title="Renovar"
+                          onClick={() => {
+                            // Pre-fill for renewal
+                            setEditing({
+                              ...policy,
+                              id: "", // New ID
+                              policy_number: "", // Usually changes
+                              start_date: policy.end_date, // Starts when old ends
+                              end_date: "", // To be filled
+                              renewed_from_policy_id: policy.id,
+                              status: "quotation" as any
+                            } as any);
+                            setDialogOpen(true);
+                          }}
+                        >
+                          <Plus className="h-4 w-4 text-blue-500" />
+                        </Button>
                         <Button
                           variant="ghost"
                           size="icon"
@@ -182,6 +221,7 @@ function PoliciesPage() {
                         >
                           <Pencil className="h-4 w-4" />
                         </Button>
+
                         <Button
                           variant="ghost"
                           size="icon"
@@ -212,7 +252,21 @@ function PoliciesPage() {
         editing={editing}
         onSubmit={(values) => saveMutation.mutate(values)}
         isPending={saveMutation.isPending}
+        onRenew={(policy) => {
+          setEditing({
+            ...policy,
+            id: "",
+            policy_number: "",
+            start_date: policy.end_date,
+            end_date: "",
+            renewed_from_policy_id: policy.id,
+            status: "quotation" as any
+          } as any);
+          setDialogOpen(true);
+        }}
+
       />
+
     </div>
   );
 }
@@ -223,14 +277,17 @@ function PolicyDialog({
   editing,
   onSubmit,
   isPending,
+  onRenew,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   editing: Database["public"]["Tables"]["policies"]["Row"] | null;
   onSubmit: (values: Database["public"]["Tables"]["policies"]["Insert"]) => void;
   isPending: boolean;
+  onRenew?: (policy: Database["public"]["Tables"]["policies"]["Row"]) => void;
 }) {
   const [policyNumber, setPolicyNumber] = useState(editing?.policy_number ?? "");
+
   const [clientId, setClientId] = useState(editing?.client_id ?? "");
   const [insurerId, setInsurerId] = useState(editing?.insurer_id ?? "");
   const [brokerId, setBrokerId] = useState(editing?.broker_id ?? "");
@@ -247,11 +304,18 @@ function PolicyDialog({
   const [renewalDate, setRenewalDate] = useState(editing?.renewal_date ?? "");
   const [coverageAmount, setCoverageAmount] = useState(editing?.coverage_amount ?? 0);
   
+  // Cancellation fields
+  const [cancellationReason, setCancellationReason] = useState(editing?.cancellation_reason ?? "");
+  const [cancellationDate, setCancellationDate] = useState(editing?.cancellation_date ?? "");
+  const [issuanceDate, setIssuanceDate] = useState(editing?.issuance_date ?? "");
+  const [renewedFromPolicyId, setRenewedFromPolicyId] = useState(editing?.renewed_from_policy_id ?? "");
+  
   // States for file upload
   const [uploading, setUploading] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const queryClient = useQueryClient();
+
 
   // Reset form when editing changes
   useEffect(() => {
@@ -268,6 +332,10 @@ function PolicyDialog({
       setEndDate(editing.end_date);
       setRenewalDate(editing.renewal_date ?? "");
       setCoverageAmount(editing.coverage_amount ?? 0);
+      setCancellationReason(editing.cancellation_reason ?? "");
+      setCancellationDate(editing.cancellation_date ?? "");
+      setIssuanceDate(editing.issuance_date ?? "");
+      setRenewedFromPolicyId(editing.renewed_from_policy_id ?? "");
     } else {
       setPolicyNumber("");
       setClientId("");
@@ -281,9 +349,14 @@ function PolicyDialog({
       setEndDate("");
       setRenewalDate("");
       setCoverageAmount(0);
+      setCancellationReason("");
+      setCancellationDate("");
+      setIssuanceDate("");
+      setRenewedFromPolicyId("");
     }
     setSelectedFile(null);
   }, [editing, open]);
+
 
   const { data: documents } = useQuery({
     queryKey: ["policy-documents", editing?.id],
@@ -406,7 +479,12 @@ function PolicyDialog({
       start_date: startDate,
       end_date: endDate,
       renewal_date: renewalDate || null,
+      cancellation_reason: cancellationReason || null,
+      cancellation_date: cancellationDate || null,
+      issuance_date: issuanceDate || null,
+      renewed_from_policy_id: renewedFromPolicyId || null,
     };
+
 
     if (editing) {
       onSubmit(values);
@@ -603,20 +681,46 @@ function PolicyDialog({
               <Input id="renewalDate" type="date" value={renewalDate} onChange={(e) => setRenewalDate(e.target.value)} />
             </div>
           </div>
-          <div className="grid gap-2">
-            <Label htmlFor="status">Status</Label>
-            <Select value={status} onValueChange={(v) => setStatus(v as Database["public"]["Enums"]["policy_status"])}>
-              <SelectTrigger id="status">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="active">Ativa</SelectItem>
-                <SelectItem value="pending">Pendente</SelectItem>
-                <SelectItem value="expired">Expirada</SelectItem>
-                <SelectItem value="cancelled">Cancelada</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="issuanceDate">Data de Emissão</Label>
+              <Input id="issuanceDate" type="date" value={issuanceDate} onChange={(e) => setIssuanceDate(e.target.value)} />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="status">Status</Label>
+              <Select value={status} onValueChange={(v) => setStatus(v as Database["public"]["Enums"]["policy_status"])}>
+                <SelectTrigger id="status">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="lead">Lead</SelectItem>
+                  <SelectItem value="quotation">Cotação</SelectItem>
+                  <SelectItem value="proposal">Proposta</SelectItem>
+                  <SelectItem value="analyzing">Em Análise</SelectItem>
+                  <SelectItem value="issued">Emitida</SelectItem>
+                  <SelectItem value="active">Vigente</SelectItem>
+                  <SelectItem value="renewed">Renovada</SelectItem>
+                  <SelectItem value="expired">Vencida</SelectItem>
+                  <SelectItem value="cancelled">Cancelada</SelectItem>
+                  <SelectItem value="refused">Recusada</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
+
+          {status === "cancelled" && (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="cancellationDate">Data de Cancelamento</Label>
+                <Input id="cancellationDate" type="date" value={cancellationDate} onChange={(e) => setCancellationDate(e.target.value)} />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="cancellationReason">Motivo do Cancelamento</Label>
+                <Input id="cancellationReason" value={cancellationReason} onChange={(e) => setCancellationReason(e.target.value)} />
+              </div>
+            </div>
+          )}
+
 
           <div className="grid gap-2 border-t pt-4">
             <Label className="flex items-center gap-2">
