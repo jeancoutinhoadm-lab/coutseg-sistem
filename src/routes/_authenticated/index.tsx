@@ -227,8 +227,8 @@ function DashboardPage() {
 
       {/* A Receber / A Pagar Drill-down */}
       <div className="grid gap-6 md:grid-cols-2">
-        <Card className="group hover:border-primary transition-colors cursor-pointer" asChild>
-          <Link to="/financial" search={{ type: 'receivable' } as any}>
+        <Link to="/financial" search={{ type: 'receivable' } as any} className="block group">
+          <Card className="hover:border-primary transition-colors cursor-pointer h-full">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-lg">Contas a Receber</CardTitle>
               <Badge variant={finance.overdueReceivables > 0 ? "destructive" : "outline"}>
@@ -243,7 +243,7 @@ function DashboardPage() {
               <div className="mt-4 h-2 w-full bg-muted rounded-full overflow-hidden">
                 <div 
                   className="h-full bg-primary" 
-                  style={{ width: `${Math.min(100, (finance.revenue / (finance.revenue + finance.receivables)) * 100)}%` }}
+                  style={{ width: `${Math.min(100, (finance.revenue / ((finance.revenue + finance.receivables) || 1)) * 100)}%` }}
                 />
               </div>
               <div className="mt-2 flex justify-between text-[10px] uppercase font-bold text-muted-foreground">
@@ -251,11 +251,11 @@ function DashboardPage() {
                 <span>Pendente</span>
               </div>
             </CardContent>
-          </Link>
-        </Card>
+          </Card>
+        </Link>
 
-        <Card className="group hover:border-primary transition-colors cursor-pointer" asChild>
-          <Link to="/financial" search={{ type: 'payable' } as any}>
+        <Link to="/financial" search={{ type: 'payable' } as any} className="block group">
+          <Card className="hover:border-primary transition-colors cursor-pointer h-full">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-lg">Contas a Pagar</CardTitle>
               <Badge variant={finance.overduePayables > 0 ? "destructive" : "outline"}>
@@ -270,7 +270,7 @@ function DashboardPage() {
               <div className="mt-4 h-2 w-full bg-muted rounded-full overflow-hidden">
                 <div 
                   className="h-full bg-red-500" 
-                  style={{ width: `${Math.min(100, (finance.expenses / (finance.expenses + finance.payables)) * 100)}%` }}
+                  style={{ width: `${Math.min(100, (finance.expenses / ((finance.expenses + finance.payables) || 1)) * 100)}%` }}
                 />
               </div>
               <div className="mt-2 flex justify-between text-[10px] uppercase font-bold text-muted-foreground">
@@ -278,9 +278,10 @@ function DashboardPage() {
                 <span>Pendente</span>
               </div>
             </CardContent>
-          </Link>
-        </Card>
+          </Card>
+        </Link>
       </div>
+
 
       {/* Pipeline e Ranking */}
       <div className="grid gap-6 md:grid-cols-3">
