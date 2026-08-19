@@ -327,7 +327,7 @@ function CentralEntradaPage() {
       setFile(null);
       setLastSavedDoc(null);
       queryClient.invalidateQueries();
-      navigate({ to: "/" });
+      navigate({ to: "/documents" });
     },
     onError: (error: any) => {
       toast.error("Erro ao aprovar: " + error.message);
