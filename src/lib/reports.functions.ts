@@ -111,15 +111,20 @@ export const getCommissionReport = createServerFn({ method: "GET" })
       .from("commissions")
       .select(`
         *,
-        insurers(name),
-        products(name),
         commission_receipts(*)
       `)
       .order("due_date", { ascending: false });
 
     if (startDate) query = query.gte("due_date", startDate);
     if (endDate) query = query.lte("due_date", endDate);
-    if (insurerId) query = query.eq("insurer_id", insurerId);
+    if (insurerId) {
+      const { data: policies } = await supabase.from("policies").select("id").eq("insurer_id", insurerId);
+      if (policies?.length) {
+        query = query.in("policy_id", policies.map(p => p.id));
+      } else {
+        query = query.eq("policy_id", "00000000-0000-0000-0000-000000000000"); // Empty result
+      }
+    }
 
     const { data: commissions, error } = await query;
     if (error) throw error;
@@ -142,7 +147,7 @@ export const getProductionReport = createServerFn({ method: "GET" })
         id,
         insurer_id,
         insurers(name),
-        net_premium,
+        premium,
         commissions(expected_amount)
       `)
       .is("deleted_at", null);
@@ -154,7 +159,7 @@ export const getProductionReport = createServerFn({ method: "GET" })
         id,
         product_id,
         products(name),
-        net_premium,
+        premium,
         commissions(expected_amount)
       `)
       .is("deleted_at", null);
