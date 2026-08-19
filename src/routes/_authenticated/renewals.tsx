@@ -280,7 +280,9 @@ function RenewalsPage() {
                 </TableRow>
               ) : (
                 filtered?.map((r) => {
-                  const days = differenceInDays(new Date(r.end_date + "T00:00:00"), new Date());
+                  const end = startOfDay(new Date(r.end_date + "T12:00:00"));
+                  const today = startOfDay(new Date());
+                  const days = differenceInDays(end, today);
                   const priority = getPriority(r.end_date);
                   
                   return (
