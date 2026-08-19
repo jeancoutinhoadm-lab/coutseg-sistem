@@ -133,9 +133,10 @@ export const getExecutiveDashboardData = createServerFn({ method: "GET" })
         .select("id", { count: "exact", head: true })
         .eq("status", "active")
         .lte("end_date", d)
-        .gte("end_date", today);
+        .gte("end_date", todayStr);
       return count || 0;
     };
+
 
     const [ren7, ren15, ren30, ren60, ren90, { count: activePolicies }, { count: activeClients }] = await Promise.all([
       getRenewalCount(7),
