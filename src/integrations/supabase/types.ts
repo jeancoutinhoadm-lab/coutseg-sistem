@@ -393,6 +393,48 @@ export type Database = {
           },
         ]
       }
+      cross_sell_rules: {
+        Row: {
+          active: boolean | null
+          created_at: string | null
+          description: string | null
+          id: string
+          source_product_id: string | null
+          target_product_id: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          created_at?: string | null
+          description?: string | null
+          id: string
+          source_product_id?: string | null
+          target_product_id?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          source_product_id?: string | null
+          target_product_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cross_sell_rules_source_product_id_fkey"
+            columns: ["source_product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cross_sell_rules_target_product_id_fkey"
+            columns: ["target_product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       document_processing: {
         Row: {
           ai_confidence: Json | null
@@ -695,10 +737,14 @@ export type Database = {
           broker_id: string | null
           client_id: string | null
           created_at: string | null
+          evidence: string | null
           id: string
           notes: string | null
+          original_policy_id: string | null
           priority: string | null
           product_id: string | null
+          rejection_reason: string | null
+          rule_id: string | null
           score: number | null
           status: string | null
           updated_at: string | null
@@ -707,10 +753,14 @@ export type Database = {
           broker_id?: string | null
           client_id?: string | null
           created_at?: string | null
+          evidence?: string | null
           id?: string
           notes?: string | null
+          original_policy_id?: string | null
           priority?: string | null
           product_id?: string | null
+          rejection_reason?: string | null
+          rule_id?: string | null
           score?: number | null
           status?: string | null
           updated_at?: string | null
@@ -719,10 +769,14 @@ export type Database = {
           broker_id?: string | null
           client_id?: string | null
           created_at?: string | null
+          evidence?: string | null
           id?: string
           notes?: string | null
+          original_policy_id?: string | null
           priority?: string | null
           product_id?: string | null
+          rejection_reason?: string | null
+          rule_id?: string | null
           score?: number | null
           status?: string | null
           updated_at?: string | null
@@ -740,6 +794,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunities_original_policy_id_fkey"
+            columns: ["original_policy_id"]
+            isOneToOne: false
+            referencedRelation: "policies"
             referencedColumns: ["id"]
           },
           {
@@ -769,8 +830,10 @@ export type Database = {
           notes: string | null
           policy_number: string
           premium: number
+          priority: string | null
           renewal_date: string | null
           renewed_from_policy_id: string | null
+          responsible_user_id: string | null
           start_date: string
           status: Database["public"]["Enums"]["policy_status"] | null
           type: Database["public"]["Enums"]["policy_type"]
@@ -794,8 +857,10 @@ export type Database = {
           notes?: string | null
           policy_number: string
           premium: number
+          priority?: string | null
           renewal_date?: string | null
           renewed_from_policy_id?: string | null
+          responsible_user_id?: string | null
           start_date: string
           status?: Database["public"]["Enums"]["policy_status"] | null
           type: Database["public"]["Enums"]["policy_type"]
@@ -819,8 +884,10 @@ export type Database = {
           notes?: string | null
           policy_number?: string
           premium?: number
+          priority?: string | null
           renewal_date?: string | null
           renewed_from_policy_id?: string | null
+          responsible_user_id?: string | null
           start_date?: string
           status?: Database["public"]["Enums"]["policy_status"] | null
           type?: Database["public"]["Enums"]["policy_type"]
@@ -911,6 +978,73 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      renewal_alerts: {
+        Row: {
+          created_at: string | null
+          days_to_expiry: number
+          id: string
+          policy_id: string
+          viewed_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          days_to_expiry: number
+          id?: string
+          policy_id: string
+          viewed_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          days_to_expiry?: number
+          id?: string
+          policy_id?: string
+          viewed_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "renewal_alerts_policy_id_fkey"
+            columns: ["policy_id"]
+            isOneToOne: false
+            referencedRelation: "policies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      renewal_history: {
+        Row: {
+          action: string
+          created_at: string | null
+          id: string
+          notes: string | null
+          policy_id: string
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          policy_id: string
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          policy_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "renewal_history_policy_id_fkey"
+            columns: ["policy_id"]
+            isOneToOne: false
+            referencedRelation: "policies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       revenue: {
         Row: {
@@ -1074,6 +1208,10 @@ export type Database = {
         Args: { _processing_id: string }
         Returns: undefined
       }
+      calculate_policy_priority: {
+        Args: { expiry_date: string }
+        Returns: string
+      }
       check_commission_duplicate: {
         Args: {
           _due_date: string
@@ -1146,6 +1284,13 @@ export type Database = {
         | "issued"
         | "renewed"
         | "refused"
+        | "upcoming"
+        | "contact_pending"
+        | "contacted"
+        | "quote_in_progress"
+        | "quote_sent"
+        | "negotiation"
+        | "lost"
       policy_type: "auto" | "home" | "life" | "health" | "business" | "other"
     }
     CompositeTypes: {
@@ -1308,6 +1453,13 @@ export const Constants = {
         "issued",
         "renewed",
         "refused",
+        "upcoming",
+        "contact_pending",
+        "contacted",
+        "quote_in_progress",
+        "quote_sent",
+        "negotiation",
+        "lost",
       ],
       policy_type: ["auto", "home", "life", "health", "business", "other"],
     },
