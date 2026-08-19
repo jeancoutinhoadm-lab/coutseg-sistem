@@ -493,9 +493,21 @@ function CentralEntradaPage() {
 
             {currentStep === 'processed' && extractedData && (
               <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
-                <div className="flex items-center gap-2 p-2 bg-amber-50 border border-amber-100 rounded-md text-amber-700 text-sm">
-                  <AlertCircle className="h-4 w-4" />
-                  <span>Extração concluída! Por favor, revise os dados abaixo.</span>
+                <div className={`flex items-start gap-2 p-3 border rounded-md text-sm ${validationData?.status === 'failed' ? 'bg-red-50 border-red-100 text-red-800' : validationData?.status === 'unknown' ? 'bg-amber-50 border-amber-100 text-amber-800' : 'bg-green-50 border-green-100 text-green-800'}`}>
+                  {validationData?.status === 'failed' ? <AlertCircle className="h-5 w-5 mt-0.5" /> : validationData?.status === 'unknown' ? <AlertCircle className="h-5 w-5 mt-0.5" /> : <CheckCircle2 className="h-5 w-5 mt-0.5" />}
+                  <div className="flex-1">
+                    <p className="font-bold">
+                      {validationData?.status === 'failed' ? "Divergência Crítica Detectada" : 
+                       validationData?.status === 'unknown' ? "Validação Manual Necessária" : 
+                       "Integridade Validada"}
+                    </p>
+                    {validationData?.errors.map((err, i) => (
+                      <p key={i} className="text-xs mt-1">• {err}</p>
+                    ))}
+                    {validationData?.status === 'failed' && (
+                      <p className="text-[10px] mt-2 font-semibold uppercase opacity-70">Aprovação bloqueada até correção dos valores.</p>
+                    )}
+                  </div>
                 </div>
                 
                 {docType === 'commission_report' && extractedData.items ? (
