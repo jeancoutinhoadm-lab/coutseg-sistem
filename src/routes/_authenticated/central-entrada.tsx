@@ -100,15 +100,23 @@ function CentralEntradaPage() {
     }
   });
 
-  // Step 4 & 5: IA Processing
+  // Step 4 & 5: IA Processing (Refined for Step 7 Architecture)
   const processMutation = useMutation({
     mutationFn: async () => {
       if (!file || !lastSavedDoc) throw new Error("Arquivo não disponível para processamento");
       setCurrentStep('processing');
       
-      // Update status to processing
+      // Update status to processing and increment attempts
+      const { data: currentProc } = await supabase.from('document_processing')
+        .select('attempts')
+        .eq('document_id', lastSavedDoc.id)
+        .single();
+        
       await supabase.from('document_processing')
-        .update({ status: 'processing' })
+        .update({ 
+          status: 'processing',
+          attempts: (currentProc?.attempts || 0) + 1
+        })
         .eq('document_id', lastSavedDoc.id);
 
       const base64 = await new Promise<string>((resolve) => {
@@ -125,22 +133,25 @@ function CentralEntradaPage() {
           data: {
             image: imageBase64,
             mimeType: file.type || 'application/octet-stream',
-            documentType: docType
+            documentType: docType,
+            simulationMode: true // Forced simulation for Step 7 verification
           }
         });
 
-        // Step 6: Update database with extracted results
+        // Step 6: Update database with extracted results, metadata and set to needs_review
         await supabase.from('document_processing')
           .update({ 
-            status: 'completed',
+            status: 'needs_review', // IA extracted, waiting for human approval
             extracted_data: result,
+            ai_model: 'gpt-4o-simulated',
+            ai_prompt_version: 'v2.0-step7',
+            ai_confidence: result.confidence || {},
             processed_at: new Date().toISOString()
           })
           .eq('document_id', lastSavedDoc.id);
 
         return result;
       } catch (err: any) {
-        // Handle IA failure specifically but keep the document
         await supabase.from('document_processing')
           .update({ 
             status: 'failed',
@@ -150,6 +161,68 @@ function CentralEntradaPage() {
         throw err;
       }
     },
+    onSuccess: (data) => {
+      setExtractedData(data);
+      setCurrentStep('processed');
+      toast.success("Extração IA concluída! Aguardando revisão.");
+    },
+    onError: (error: any) => {
+      setCurrentStep('uploaded');
+      toast.error("Erro na IA: " + error.message);
+    }
+  });
+
+  const approveMutation = useMutation({
+    mutationFn: async () => {
+      if (!lastSavedDoc) return;
+      
+      const { data: proc } = await supabase.from('document_processing')
+        .select('id')
+        .eq('document_id', lastSavedDoc.id)
+        .single();
+        
+      if (!proc) throw new Error("Processamento não encontrado");
+      
+      const { error } = await supabase.rpc('approve_document_extraction', {
+        _processing_id: proc.id
+      });
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Extração aprovada com sucesso!");
+      setCurrentStep('idle');
+      setExtractedData(null);
+      setFile(null);
+      setLastSavedDoc(null);
+      queryClient.invalidateQueries();
+    },
+    onError: (error: any) => {
+      toast.error("Erro ao aprovar: " + error.message);
+    }
+  });
+
+  const rejectMutation = useMutation({
+    mutationFn: async () => {
+      if (!lastSavedDoc) return;
+      
+      await supabase.from('document_processing')
+        .update({ 
+          status: 'rejected',
+          reviewed_by: (await supabase.auth.getUser()).data.user?.id,
+          reviewed_at: new Date().toISOString()
+        })
+        .eq('document_id', lastSavedDoc.id);
+        
+      await logAudit('UPDATE', 'IA_REJECTED', lastSavedDoc.id);
+    },
+    onSuccess: () => {
+      toast.success("Extração rejeitada.");
+      setCurrentStep('uploaded');
+      setExtractedData(null);
+    }
+  });
+
     onSuccess: (data) => {
       setExtractedData(data);
       setCurrentStep('processed');
