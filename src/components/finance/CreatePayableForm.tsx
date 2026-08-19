@@ -48,10 +48,10 @@ export function CreatePayableForm({ onSuccess }: { onSuccess?: () => void }) {
     defaultValues: {
       description: "",
       amount: 0,
-      due_date: todayStr as string,
-      competence_date: todayStr as string,
+      due_date: todayStr,
+      competence_date: todayStr,
       category_id: "",
-    } as any, // Bypass strict defaultValues type check
+    },
   });
 
   const mutation = useMutation({
