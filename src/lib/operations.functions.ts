@@ -179,10 +179,11 @@ export const completeOperation = createServerFn({ method: "POST" })
       .update({ 
         status: 'completed',
         metadata: { 
-          ...operation.metadata,
+          ...(operation.metadata as Record<string, any> || {}),
           completed_at: new Date().toISOString(),
           completed_by: authData.user.id
         }
+
       })
       .eq("id", data.operationId);
 
@@ -194,7 +195,7 @@ export const completeOperation = createServerFn({ method: "POST" })
     return { success: true };
   });
 
-function getInitialChecklist(type: OperationType) {
+function getInitialChecklist(type: OperationType): { name: string; required: boolean }[] {
   const common = [
     { name: "Documento da Apólice (PDF)", required: true },
     { name: "Conferência de Dados Cadastrais", required: true },
@@ -228,45 +229,3 @@ function getInitialChecklist(type: OperationType) {
   }
 }
 
-
-/**
- * Define o checklist inicial por tipo de operação com obrigatoriedade
- */
-function getInitialChecklist(type: OperationType): { name: string; required: boolean }[] {
-  switch (type) {
-    case 'new_sale':
-      return [
-        { name: "Cliente confirmado", required: true },
-        { name: "Oportunidade registrada", required: true },
-        { name: "Cotação apresentada", required: true },
-        { name: "Apólice emitida", required: true },
-        { name: "Documento anexado", required: true },
-        { name: "Comissão configurada", required: true }
-      ];
-    case 'renewal':
-      return [
-        { name: "Cliente confirmado", required: true },
-        { name: "Apólice anterior localizada", required: true },
-        { name: "Nova vigência definida", required: true },
-        { name: "Prêmio atualizado", required: true },
-        { name: "Nova apólice emitida", required: true },
-        { name: "Documento anexado", required: true }
-      ];
-    case 'endorsement':
-      return [
-        { name: "Apólice original identificada", required: true },
-        { name: "Motivo do endosso registrado", required: true },
-        { name: "Alterações conferidas", required: true },
-        { name: "Documento do endosso anexado", required: true }
-      ];
-    case 'cancellation':
-      return [
-        { name: "Motivo do cancelamento", required: true },
-        { name: "Data do distrato", required: true },
-        { name: "Confirmação da seguradora", required: true },
-        { name: "Ajuste financeiro (se houver)", required: false }
-      ];
-    default:
-      return [{ name: "Conferência de dados", required: true }];
-  }
-}
