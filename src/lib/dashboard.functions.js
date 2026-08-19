@@ -56,15 +56,13 @@ export const getExecutiveDashboardData = createServerFn({ method: "GET" })
             .gte("receipt_date", s)
             .lte("receipt_date", e);
         if (insurerId) {
-            // Nested filter via commissions
             const { data: commIds } = await supabase.from("commissions").select("id").eq("insurer_id", insurerId);
             if (commIds?.length)
-                query = query.in("commission_id", commIds.map(c => c.id));
+                query = query.in("commission_id", commIds.map((c) => c.id));
         }
         const { data: recs } = await query;
         return (recs || []).reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
     };
-    // 2. Financeiro: Despesas (Financial Entries of type 'expense')
     const getExpenses = async (s, e) => {
         let query = supabase
             .from("financial_entries")
@@ -81,22 +79,20 @@ export const getExecutiveDashboardData = createServerFn({ method: "GET" })
         getExpenses(startStr, endStr),
         getExpenses(prevStartStr, prevEndStr),
     ]);
-    // 3. Financeiro: A Receber / A Pagar
     const [{ data: receivables }, { data: payables }] = await Promise.all([
         supabase.from("commissions").select("expected_amount, received_amount, due_date").in("status", ["pending", "partial"]),
         supabase.from("payables").select("amount, due_date").in("status", ["pending", "partial"]),
     ]);
     const todayStr = new Date().toISOString().split("T")[0];
     const overdueReceivables = (receivables || [])
-        .filter(r => r.due_date && todayStr && r.due_date < todayStr)
+        .filter((r) => r.due_date && todayStr && r.due_date < todayStr)
         .reduce((acc, curr) => acc + (Number(curr.expected_amount) - (Number(curr.received_amount) || 0)), 0);
     const totalReceivables = (receivables || [])
         .reduce((acc, curr) => acc + (Number(curr.expected_amount) - (Number(curr.received_amount) || 0)), 0);
     const overduePayables = (payables || [])
-        .filter(p => p.due_date && todayStr && p.due_date < todayStr)
+        .filter((p) => p.due_date && todayStr && p.due_date < todayStr)
         .reduce((acc, curr) => acc + Number(curr.amount), 0);
     const totalPayables = (payables || []).reduce((acc, curr) => acc + Number(curr.amount), 0);
-    // 4. Saldo em Contas
     const { data: accounts } = await supabase.from("bank_accounts").select("name, balance").eq("status", "active");
     const totalBalance = (accounts || []).reduce((acc, curr) => acc + (Number(curr.balance) || 0), 0);
     // 5. Operacional: IA e Pendências
@@ -133,7 +129,7 @@ export const getExecutiveDashboardData = createServerFn({ method: "GET" })
         }
         return acc;
     }, {});
-    const crossSellCount = (opportunities || []).filter(o => o.status === 'cross_sell').length;
+    const crossSellCount = (opportunities || []).filter((o) => o.status === 'cross_sell').length;
     // 8. Ranking de Seguradoras
     const { data: insurerRanking } = await supabase
         .from("commission_receipts")
