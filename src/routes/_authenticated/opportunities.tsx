@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   TrendingUp, 
   Search, 
@@ -20,295 +19,381 @@ import {
   AlertCircle,
   Package,
   ArrowRight,
-  RefreshCw
+  RefreshCw,
+  Plus,
+  Phone,
+  Mail,
+  History,
+  FileText,
+  DollarSign
 } from "lucide-react";
 import { toast } from "sonner";
-import type { Database } from "@/integrations/supabase/types";
+import { useServerFn } from "@tanstack/react-start";
+import { convertLeadToOpportunity, markOpportunityAsLost } from "@/lib/crm.functions";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
-type OpportunityStatus = "new" | "contacted" | "quoting" | "negotiating" | "won" | "lost" | "deferred" | "rejected";
+type OpportunityStatus = "new" | "contacted" | "quoting" | "negotiating" | "won" | "lost" | "deferred";
+type LeadStatus = "new" | "contacted" | "qualified" | "converted" | "lost" | "rejected";
 
 export const Route = createFileRoute("/_authenticated/opportunities")({
-  component: OpportunitiesPage,
+  component: CRMPage,
   head: () => ({
     meta: [
-      { title: "Oportunidades de Negócio - Coutseg" },
-      { name: "description", content: "Pipeline de cross-sell e oportunidades comerciais geradas pelo sistema." },
+      { title: "CRM & Oportunidades - Coutseg" },
+      { name: "description", content: "Pipeline comercial, gestão de leads e oportunidades de venda." },
     ],
   }),
 });
 
-function OpportunitiesPage() {
-  const [filter, setFilter] = useState("all");
+function CRMPage() {
+  const [activeTab, setActiveTab] = useState<"leads" | "opportunities">("opportunities");
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [selectedOpportunity, setSelectedOpportunity] = useState<any>(null);
+  const [isLossModalOpen, setIsLossModalOpen] = useState(false);
+  const [lossReason, setLossReason] = useState("");
+  
   const queryClient = useQueryClient();
+  const convertLead = useServerFn(convertLeadToOpportunity);
+  const markLost = useServerFn(markOpportunityAsLost);
 
-  const { data: opportunities, isLoading } = useQuery({
-    queryKey: ["opportunities-list", filter],
+  // Queries
+  const { data: leads, isLoading: isLoadingLeads } = useQuery({
+    queryKey: ["leads", statusFilter, search],
+    queryFn: async () => {
+      let query = supabase.from("leads").select("*, brokers(full_name)");
+      if (statusFilter !== "all") query = query.eq("status", statusFilter);
+      if (search) query = query.ilike("full_name", `%${search}%`);
+      const { data, error } = await query.order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    enabled: activeTab === "leads"
+  });
+
+  const { data: opportunities, isLoading: isLoadingOpps } = useQuery({
+    queryKey: ["opportunities", statusFilter, search],
     queryFn: async () => {
       let query = supabase
         .from("opportunities")
-        .select("*, clients(full_name), products(name), brokers(full_name)")
-        .order("created_at", { ascending: false });
-
-      if (filter !== "all") {
-        query = query.eq("status", filter);
-      }
-
-      const { data, error } = await query;
+        .select("*, clients(full_name), products(name), brokers(full_name), leads(full_name)");
+      
+      if (statusFilter !== "all") query = query.eq("status", statusFilter);
+      
+      const { data, error } = await query.order("priority", { ascending: false }).order("created_at", { ascending: false });
       if (error) throw error;
       return data;
     },
+    enabled: activeTab === "opportunities"
   });
 
-  const { data: crossSellRules } = useQuery({
-    queryKey: ["cross-sell-rules"],
+  const { data: activities } = useQuery({
+    queryKey: ["crm-activities", selectedOpportunity?.id],
     queryFn: async () => {
-      const { data, error } = await supabase.from("cross_sell_rules").select("*");
+      if (!selectedOpportunity?.id) return [];
+      const { data, error } = await supabase
+        .from("crm_activities")
+        .select("*")
+        .eq("opportunity_id", selectedOpportunity.id)
+        .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
-    }
+    },
+    enabled: !!selectedOpportunity
   });
 
-  const generateOpportunitiesMutation = useMutation({
-    mutationFn: async () => {
-      // Step 1: Get all active clients and their current active policies
-      const { data: clients, error: clientsError } = await supabase
-        .from("clients")
-        .select("id, full_name, broker_id");
-      
-      if (clientsError) throw clientsError;
-
-      const { data: activePolicies, error: policiesError } = await supabase
-        .from("policies")
-        .select("client_id, type")
-        .eq("status", "active");
-      
-      if (policiesError) throw policiesError;
-
-      // Step 2: Get cross-sell rules
-      const { data: rules, error: rulesError } = await supabase
-        .from("cross_sell_rules")
-        .select("*")
-        .eq("active", true);
-      
-      if (rulesError) throw rulesError;
-
-      // Step 3: Identify missing products based on rules
-      let newCount = 0;
-      for (const client of clients) {
-        const clientProductTypes = activePolicies
-          .filter(p => p.client_id === client.id)
-          .map(p => p.type.toLowerCase());
-
-        for (const rule of rules) {
-          // Simplistic rule logic based on policy types for now
-          // In a real scenario, this would match rule.source_product_id
-          const hasSource = clientProductTypes.some(t => t.includes('auto')); // Example: If has Auto
-          const hasTarget = clientProductTypes.some(t => t.includes('home')); // Check if has Home
-
-          if (hasSource && !hasTarget) {
-            // Check if opportunity already exists
-            const { data: existing } = await supabase
-              .from("opportunities")
-              .select("id, status")
-              .eq("client_id", client.id)
-              .eq("rule_id", rule.id)
-              .maybeSingle();
-
-            // Não recriar se já existir (mesmo que rejeitada ou perdida, para evitar spam)
-            if (!existing) {
-              await supabase.from("opportunities").insert({
-                client_id: client.id,
-                product_id: rule.target_product_id,
-                broker_id: client.broker_id,
-                status: "new",
-                priority: "normal",
-                rule_id: rule.id,
-                evidence: `Cliente possui apólice ativa do tipo Auto, mas não possui Residencial. Regra: ${rule.description}`
-              });
-              newCount++;
-            }
-          }
-        }
-      }
-      return newCount;
-    },
-    onSuccess: (count) => {
-      queryClient.invalidateQueries({ queryKey: ["opportunities-list"] });
-      toast.success(`${count} novas oportunidades identificadas`);
-    },
-    onError: (err) => {
-      toast.error("Erro ao gerar oportunidades", { description: err.message });
-    }
-  });
-
-  const updateStatusMutation = useMutation({
-    mutationFn: async ({ id, status }: { id: string, status: OpportunityStatus }) => {
-      const { error } = await supabase
-        .from("opportunities")
-        .update({ status } as any)
-        .eq("id", id);
-      if (error) throw error;
-    },
+  // Mutations
+  const convertLeadMutation = useMutation({
+    mutationFn: (leadId: string) => convertLead({ data: { leadId } }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["opportunities-list"] });
-      toast.success("Status atualizado");
+      queryClient.invalidateQueries({ queryKey: ["leads"] });
+      queryClient.invalidateQueries({ queryKey: ["opportunities"] });
+      toast.success("Lead convertido com sucesso!");
+    },
+    onError: (err: any) => toast.error("Erro na conversão: " + err.message)
+  });
+
+  const lossMutation = useMutation({
+    mutationFn: () => markLost({ data: { opportunityId: selectedOpportunity.id, reason: lossReason } }),
+    onSuccess: () => {
+      setIsLossModalOpen(false);
+      setSelectedOpportunity(null);
+      setLossReason("");
+      queryClient.invalidateQueries({ queryKey: ["opportunities"] });
+      toast.success("Oportunidade marcada como perdida.");
     }
   });
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: string, type: 'lead' | 'opp') => {
     const variants: Record<string, any> = {
-      new: { label: "Nova", color: "bg-blue-100 text-blue-700 border-blue-200" },
-      contacted: { label: "Contatada", color: "bg-amber-100 text-amber-700 border-amber-200" },
-      quoting: { label: "Cotando", color: "bg-purple-100 text-purple-700 border-purple-200" },
-      negotiating: { label: "Em Negociação", color: "bg-indigo-100 text-indigo-700 border-indigo-200" },
-      won: { label: "Ganha", color: "bg-green-100 text-green-700 border-green-200" },
-      lost: { label: "Perdida", color: "bg-red-100 text-red-700 border-red-200" },
-      rejected: { label: "Rejeitada", color: "bg-slate-100 text-slate-700 border-slate-200" },
+      new: { label: "Novo", color: "bg-blue-100 text-blue-700" },
+      contacted: { label: "Contatado", color: "bg-yellow-100 text-yellow-700" },
+      qualified: { label: "Qualificado", color: "bg-green-100 text-green-700" },
+      converted: { label: "Convertido", color: "bg-emerald-100 text-emerald-700" },
+      quoting: { label: "Cotando", color: "bg-purple-100 text-purple-700" },
+      negotiating: { label: "Negociando", color: "bg-orange-100 text-orange-700" },
+      won: { label: "Ganha", color: "bg-green-100 text-green-700" },
+      lost: { label: "Perdida", color: "bg-red-100 text-red-700" },
+      rejected: { label: "Rejeitado", color: "bg-gray-100 text-gray-700" },
     };
     const config = variants[status] || { label: status, color: "bg-gray-100" };
-    return <Badge className={`${config.color} border font-medium`}>{config.label}</Badge>;
+    return <Badge className={`${config.color} border-none font-medium`}>{config.label}</Badge>;
   };
-
-  const filtered = opportunities?.filter(o => 
-    (o.clients as any)?.full_name?.toLowerCase().includes(search.toLowerCase()) ||
-    (o.products as any)?.name?.toLowerCase().includes(search.toLowerCase())
-  );
 
   return (
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div className="flex flex-col gap-1">
-          <h1 className="text-3xl font-bold tracking-tight">Oportunidades Comerciais</h1>
-          <p className="text-muted-foreground">Pipeline de Cross-sell baseado na carteira existente.</p>
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Centro Comercial CRM</h1>
+          <p className="text-muted-foreground">Gestão de Leads, Pipeline de Vendas e Oportunidades.</p>
         </div>
-        <Button 
-          onClick={() => generateOpportunitiesMutation.mutate()}
-          disabled={generateOpportunitiesMutation.isPending}
-        >
-          {generateOpportunitiesMutation.isPending ? (
-            <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
+        <div className="flex gap-2">
+          <Button variant="outline">
             <TrendingUp className="mr-2 h-4 w-4" />
-          )}
-          Identificar Oportunidades
-        </Button>
+            Relatórios
+          </Button>
+          <Button>
+            <Plus className="mr-2 h-4 w-4" />
+            Novo Lead
+          </Button>
+        </div>
       </div>
 
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div className="flex items-center gap-2 flex-1 max-w-sm">
-          <div className="relative w-full">
+      <Tabs value={activeTab} onValueChange={(v: any) => setActiveTab(v)}>
+        <TabsList className="grid w-full grid-cols-2 max-w-[400px]">
+          <TabsTrigger value="opportunities">Oportunidades</TabsTrigger>
+          <TabsTrigger value="leads">Leads (Entrada)</TabsTrigger>
+        </TabsList>
+
+        <div className="mt-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="relative w-full max-w-sm">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
-              type="search"
-              placeholder="Buscar cliente ou produto..."
+              placeholder="Buscar por nome..."
               className="pl-8"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Select value={filter} onValueChange={setFilter}>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-[180px]">
               <Filter className="mr-2 h-4 w-4" />
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Todos os Status</SelectItem>
-              <SelectItem value="new">Novas</SelectItem>
-              <SelectItem value="contacted">Contatadas</SelectItem>
-              <SelectItem value="quoting">Cotando</SelectItem>
-              <SelectItem value="won">Ganhas</SelectItem>
-              <SelectItem value="rejected">Rejeitadas</SelectItem>
+              <SelectItem value="all">Todos</SelectItem>
+              {activeTab === 'leads' ? (
+                <>
+                  <SelectItem value="new">Novos</SelectItem>
+                  <SelectItem value="contacted">Contatados</SelectItem>
+                  <SelectItem value="converted">Convertidos</SelectItem>
+                </>
+              ) : (
+                <>
+                  <SelectItem value="new">Novas</SelectItem>
+                  <SelectItem value="quoting">Cotando</SelectItem>
+                  <SelectItem value="negotiating">Negociando</SelectItem>
+                  <SelectItem value="won">Ganhas</SelectItem>
+                  <SelectItem value="lost">Perdidas</SelectItem>
+                </>
+              )}
             </SelectContent>
           </Select>
         </div>
-      </div>
 
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Cliente</TableHead>
-                <TableHead>Produto Alvo</TableHead>
-                <TableHead>Evidência / Motivo</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Gerada em</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8">Carregando...</TableCell>
-                </TableRow>
-              ) : filtered?.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                    Nenhuma oportunidade encontrada. Clique em "Identificar Oportunidades" para analisar a carteira.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filtered?.map((o) => (
-                  <TableRow key={o.id}>
-                    <TableCell className="font-medium">{(o.clients as any)?.full_name}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Package className="h-4 w-4 text-muted-foreground" />
-                        <span>{(o.products as any)?.name}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="max-w-md">
-                      <p className="text-sm text-muted-foreground line-clamp-2" title={(o as any).evidence}>
-                        {(o as any).evidence || "Regra de cross-sell detectada."}
-                      </p>
-                    </TableCell>
-                    <TableCell>{getStatusBadge(o.status || "new")}</TableCell>
-                    <TableCell className="text-sm">
-                      {new Date(o.created_at!).toLocaleDateString('pt-BR')}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        {o.status === 'new' && (
-                          <>
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              onClick={() => updateStatusMutation.mutate({ id: o.id, status: 'contacted' })}
-                            >
-                              <CheckCircle2 className="mr-1 h-3 w-3" />
-                              Contatar
-                            </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              className="text-red-600"
-                              onClick={() => updateStatusMutation.mutate({ id: o.id, status: 'rejected' })}
-                            >
-                              <XCircle className="mr-1 h-3 w-3" />
-                              Rejeitar
-                            </Button>
-                          </>
-                        )}
-                        {o.status !== 'won' && o.status !== 'rejected' && (
-                           <Button variant="ghost" size="sm" asChild>
-                              <a href={`/clients?search=${(o.clients as any)?.full_name}`}>
-                                Ver Cliente
-                                <ArrowRight className="ml-1 h-3 w-3" />
-                              </a>
-                           </Button>
-                        )}
-                      </div>
-                    </TableCell>
+        <TabsContent value="leads" className="mt-0">
+          <Card>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nome</TableHead>
+                    <TableHead>Contato</TableHead>
+                    <TableHead>Origem</TableHead>
+                    <TableHead>Broker</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
-                ))
+                </TableHeader>
+                <TableBody>
+                  {isLoadingLeads ? (
+                    <TableRow><TableCell colSpan={6} className="text-center py-8">Carregando...</TableCell></TableRow>
+                  ) : leads?.map((lead) => (
+                    <TableRow key={lead.id}>
+                      <TableCell className="font-medium">{lead.full_name}</TableCell>
+                      <TableCell>
+                        <div className="flex flex-col text-xs text-muted-foreground">
+                          <span className="flex items-center gap-1"><Phone className="h-3 w-3" /> {lead.phone || '-'}</span>
+                          <span className="flex items-center gap-1"><Mail className="h-3 w-3" /> {lead.email || '-'}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>{lead.source || 'Manual'}</TableCell>
+                      <TableCell>{(lead.brokers as any)?.full_name || '-'}</TableCell>
+                      <TableCell>{getStatusBadge(lead.status, 'lead')}</TableCell>
+                      <TableCell className="text-right">
+                        {lead.status !== 'converted' && (
+                          <Button 
+                            size="sm" 
+                            variant="secondary"
+                            onClick={() => convertLeadMutation.mutate(lead.id)}
+                            disabled={convertLeadMutation.isPending}
+                          >
+                            Converter
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="opportunities" className="mt-0">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <Card className="md:col-span-3">
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Oportunidade</TableHead>
+                      <TableHead>Cliente</TableHead>
+                      <TableHead>Valor Est.</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Prioridade</TableHead>
+                      <TableHead className="text-right">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {isLoadingOpps ? (
+                      <TableRow><TableCell colSpan={6} className="text-center py-8">Carregando...</TableCell></TableRow>
+                    ) : opportunities?.map((opp) => (
+                      <TableRow 
+                        key={opp.id} 
+                        className={`cursor-pointer hover:bg-muted/50 ${selectedOpportunity?.id === opp.id ? 'bg-muted' : ''}`}
+                        onClick={() => setSelectedOpportunity(opp)}
+                      >
+                        <TableCell>
+                          <div className="font-medium">{(opp.products as any)?.name || 'Produto não def.'}</div>
+                          <div className="text-xs text-muted-foreground">Criada em {new Date(opp.created_at!).toLocaleDateString('pt-BR')}</div>
+                        </TableCell>
+                        <TableCell>{(opp.clients as any)?.full_name || (opp.leads as any)?.full_name}</TableCell>
+                        <TableCell>{opp.value_estimated ? `R$ ${Number(opp.value_estimated).toLocaleString('pt-BR')}` : '-'}</TableCell>
+                        <TableCell>{getStatusBadge(opp.status, 'opp')}</TableCell>
+                        <TableCell>
+                           <Badge variant={opp.priority === 'high' ? 'destructive' : 'outline'}>
+                             {opp.priority}
+                           </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button variant="ghost" size="icon">
+                            <ArrowRight className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+
+            <div className="space-y-4">
+              {selectedOpportunity ? (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Detalhes</CardTitle>
+                    <CardDescription>Ações rápidas para esta oportunidade</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button variant="outline" className="w-full justify-start text-xs" size="sm">
+                        <FileText className="mr-2 h-3 w-3" /> Cotações
+                      </Button>
+                      <Button variant="outline" className="w-full justify-start text-xs" size="sm">
+                        <DollarSign className="mr-2 h-3 w-3" /> Venda
+                      </Button>
+                    </div>
+                    <Button 
+                      variant="destructive" 
+                      className="w-full text-xs" 
+                      size="sm"
+                      onClick={() => setIsLossModalOpen(true)}
+                      disabled={selectedOpportunity.status === 'lost' || selectedOpportunity.status === 'won'}
+                    >
+                      <XCircle className="mr-2 h-3 w-3" /> Perda Total
+                    </Button>
+
+                    <div className="border-t pt-4">
+                      <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
+                        <History className="h-4 w-4" /> Timeline
+                      </h4>
+                      <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2">
+                        {activities?.map((act: any) => (
+                          <div key={act.id} className="text-xs border-l-2 border-primary/20 pl-3 py-1">
+                            <p className="font-medium text-muted-foreground">
+                              {new Date(act.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                            </p>
+                            <p>{act.description}</p>
+                          </div>
+                        ))}
+                        {(!activities || activities.length === 0) && (
+                          <p className="text-xs text-muted-foreground italic text-center py-4">Sem atividades registradas.</p>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="h-full flex items-center justify-center border-2 border-dashed rounded-lg p-8 text-center text-muted-foreground">
+                   <div className="space-y-2">
+                     <AlertCircle className="h-8 w-8 mx-auto opacity-20" />
+                     <p>Selecione uma oportunidade para ver detalhes e timeline</p>
+                   </div>
+                </div>
               )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+            </div>
+          </div>
+        </TabsContent>
+      </Tabs>
+
+      {/* Loss Modal */}
+      <Dialog open={isLossModalOpen} onOpenChange={setIsLossModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Registrar Perda de Oportunidade</DialogTitle>
+            <DialogDescription>
+              Por que esta oportunidade não foi fechada? Este dado é vital para auditoria.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Motivo da Perda</Label>
+              <Select value={lossReason} onValueChange={setLossReason}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o motivo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="price">Preço alto</SelectItem>
+                  <SelectItem value="competitor">Fechou com concorrente</SelectItem>
+                  <SelectItem value="coverage">Falta de cobertura</SelectItem>
+                  <SelectItem value="no_interest">Sem interesse no momento</SelectItem>
+                  <SelectItem value="no_response">Sem retorno do cliente</SelectItem>
+                  <SelectItem value="other">Outro (detalhar nas notas)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setIsLossModalOpen(false)}>Cancelar</Button>
+            <Button variant="destructive" onClick={() => lossMutation.mutate()} disabled={!lossReason || lossMutation.isPending}>
+              Confirmar Perda
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
