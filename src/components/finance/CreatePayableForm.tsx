@@ -41,19 +41,22 @@ export function CreatePayableForm({ onSuccess }: { onSuccess?: () => void }) {
     queryFn: () => getFinancialCategories(),
   });
 
-  const todayStr: string = new Date().toISOString().split("T")[0];
+  const todayStr = new Date().toISOString().split("T")[0];
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
+  });
+
+  React.useEffect(() => {
+    form.reset({
       description: "",
       amount: 0,
       due_date: todayStr,
       competence_date: todayStr,
       category_id: "",
       notes: "",
-    },
-  });
+    });
+  }, [todayStr, form]);
 
   const mutation = useMutation({
     mutationFn: (data: FormValues) => createPayable({ data }),
