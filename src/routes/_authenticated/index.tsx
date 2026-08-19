@@ -110,22 +110,15 @@ function DashboardPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">CoutSeg Gestão</h1>
-          <p className="text-muted-foreground whitespace-pre-wrap"># ETAPA 25 — PREPARAÇÃO PARA PRODUÇÃO E GO-LIVE DA COUTSEG
+          <p className="text-muted-foreground whitespace-pre-wrap"># ETAPA 25.1 — VALIDAÇÃO REAL DAS LACUNAS DO GO-LIVE
 
-A CoutSeg concluiu:
-- Etapa 18 — Dashboard Executivo
-- Etapa 19 — CRM Comercial
-- Etapa 20 — Produtividade
-- Etapa 21 — Relatórios
-- Etapa 22 — Inteligência de Negócio
-- Etapa 23 — Segurança
-- Etapa 24 — Homologação
+O relatório da Etapa 25 foi analisado. O problema é que ele declara "GO-LIVE READY", mas não diferencia claramente o que foi realmente testado, o que foi apenas verificado por código e o que não foi testado.
 
-O sistema está tecnicamente homologado. Agora iniciar a preparação para uso REAL.
+NÃO criar funcionalidades. NÃO modificar arquitetura. NÃO alterar dados reais. NÃO fazer deploy destrutivo.
 
-IMPORTANTE: Esta etapa NÃO é para criar novas funcionalidades. É para preparar a aplicação para PRODUÇÃO.
+Esta etapa existe exclusivamente para preencher as evidências que faltaram no relatório, com testes reais de RLS, IDOR, Storage, Financeiro e Integridade de Dados.
 
-STATUS: GO-LIVE READY</p>
+STATUS: EM VALIDAÇÃO DE EVIDÊNCIAS REAL</p>
         </div>
         <div className="flex items-center gap-2 bg-muted p-1 rounded-lg self-start">
           {(["7days", "30days", "month", "90days", "year"] as const).map((p) => (
