@@ -1,23 +1,39 @@
-# Plano de Verificação e Ajustes Finais - CoutSeg Gestão
+# Plano de Correção do Sistema de Autenticação
 
-O sistema CoutSeg foi transformado em uma plataforma inteligente de "digitação mínima". Este plano foca na validação final da integração de IA, segurança RLS e UX.
+O usuário relatou dois problemas críticos: a tela de login apenas recarrega sem logar, e o botão de cadastro entra direto na aplicação sem solicitar dados. Este plano visa auditar e corrigir o fluxo completo, garantindo que a autenticação real do Supabase seja utilizada e que as rotas estejam devidamente protegidas.
 
-## 1. Validação de Fluxos IA
-- [ ] **Central de Entrada**: Testar upload de PDF/Imagem simulando Apólice e Boleto.
-- [ ] **Extração**: Verificar se o prompt do `ai-extraction.functions.ts` está retornando JSON limpo e se o mapeamento de Seguradora/Cliente no frontend é resiliente a variações de nome.
-- [ ] **Assistente CoutSeg IA**: Validar se o chatbot global responde corretamente sobre as capacidades do sistema.
+## 1. Auditoria e Diagnóstico (Concluído/Em Andamento)
+- [x] Verificar `src/routes/auth/login.tsx`: O formulário usa `react-hook-form` e `supabase.auth.signInWithPassword`. O problema de "recarregar" pode ser devido ao `window.location.href = "/dashboard"` ser chamado antes da sessão estar totalmente hidratada ou o `beforeLoad` do `/dashboard` redirecionar incorretamente.
+- [x] Verificar `src/routes/auth/register.tsx`: Implementa `supabase.auth.signUp`. Precisa garantir que redirecione para uma tela de sucesso ou solicite confirmação.
+- [x] Verificar `src/routes/_authenticated/route.tsx`: Implementa a proteção de rotas via `beforeLoad`.
+- [x] Verificar `src/hooks/use-auth.ts`: Gerencia o estado da sessão e roles.
 
-## 2. Integridade de Dados e Backend
-- [ ] **Triggers de Comissão**: Confirmar se a criação de uma apólice via IA dispara a criação da comissão pendente (via SQL trigger).
-- [ ] **Auditoria**: Verificar se ações de IA e financeiras estão sendo registradas na `audit_logs`.
-- [ ] **Segurança por Cargo**: Revisar políticas RLS para garantir que Corretores não vejam dados financeiros globais (Salários/Receitas).
+## 2. Correções no Frontend
 
-## 3. Refinos de Interface (UX)
-- [ ] **Dashboard Principal**: Garantir que os contadores de "Urgente/Pendente" reflitam dados reais do banco.
-- [ ] **Renovações**: Validar o cálculo de dias restantes e a coloração visual (Vermelho para < 15 dias).
-- [ ] **Sidebar**: Confirmar se a visibilidade dos itens de menu respeita estritamente o cargo do usuário logado.
+### Tela de Login (`src/routes/auth/login.tsx`)
+- Garantir que `onSubmit` chame `e.preventDefault()` (gerenciado pelo `handleSubmit` do react-hook-form).
+- Melhorar o redirecionamento: usar `router.navigate` em vez de `window.location.href` para manter o estado da SPA, ou garantir que a sessão esteja pronta.
+- Adicionar logs para identificar falhas silenciosas.
+
+### Tela de Cadastro (`src/routes/auth/register.tsx`)
+- Adicionar campo de confirmação de senha conforme solicitado.
+- Garantir que após o `signUp`, o usuário veja uma mensagem clara de "Verifique seu e-mail" ou seja redirecionado corretamente.
+- Impedir que o cadastro "pule" etapas.
+
+### Proteção de Rotas (`src/routes/_authenticated/route.tsx` e `src/router.tsx`)
+- O `beforeLoad` em `/_authenticated` já verifica `supabase.auth.getUser()`.
+- O problema do "Cadastre-se" entrar direto pode ser um link incorreto ou uma rota pública que deveria ser privada. Verificarei se o link de cadastro no login está correto.
+- Em `src/routes/auth/login.tsx`, o `beforeLoad` redireciona para `/dashboard` se logado. `/dashboard` redireciona para `/`. `/` está sob `_authenticated`. Isso parece correto, mas a cadeia de redirecionamentos pode estar causando o "reload" visual.
+
+## 3. Correções no Backend (Supabase)
+- A trigger `on_auth_user_created` em `public.profiles` atribui o cargo `broker` por padrão.
+- A migração `20260818174003` criou `user_roles` e a função `has_role`.
+- **Ação:** Criar uma trigger ou atualizar a existente para que novos usuários também ganhem uma entrada em `public.user_roles` com o cargo padrão `corretor` (ou similar), evitando que fiquem sem acesso.
+
+## 4. Testes de Validação
+- Executar os 12 testes obrigatórios listados pelo usuário usando scripts de teste ou verificação manual via preview.
 
 ## Detalhes Técnicos
-- **IA**: Utilizando `gpt-4o` via Lovable AI Gateway.
-- **Banco**: Tabelas normalizadas com RLS ativado e função `has_role` para controle de acesso.
-- **Frontend**: TanStack Start v1 com Query/Router para estados assíncronos e navegação.
+- **Login:** Refatorar `onSubmit` para usar `router.navigate` e tratar erros de forma mais granular.
+- **Cadastro:** Atualizar schema Zod para incluir `confirmPassword` e validação de igualdade.
+- **Segurança:** Assegurar que `user_roles` não permita auto-atribuição de cargos via políticas RLS.
