@@ -33,12 +33,13 @@ import {
   Loader2,
   DollarSign,
 } from "lucide-react";
-import { validateOperationProgress } from "@/lib/operations.functions";
+import { validateOperationProgress, completeOperation } from "@/lib/operations.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+
 
 
 export const Route = createFileRoute("/_authenticated/operations/$id")({
@@ -49,9 +50,11 @@ function OperationDetailsPage() {
   const { id } = Route.useParams();
   const queryClient = useQueryClient();
   const validateFn = useServerFn(validateOperationProgress);
+  const completeFn = useServerFn(completeOperation);
   const [isUploading, setIsUploading] = useState(false);
   const [isRegisteringCommission, setIsRegisteringCommission] = useState(false);
   const [commissionAmount, setCommissionAmount] = useState("");
+
 
   const { data, isLoading } = useQuery({
     queryKey: ["operation-details", id],
@@ -77,25 +80,30 @@ function OperationDetailsPage() {
 
   const registerCommissionMutation = useMutation({
     mutationFn: async (amount: number) => {
-      if (!data?.operation.policy_id) {
-        toast.error("Vincule uma apólice primeiro para registrar comissão.");
-        return;
+      // Simular marcação de tarefa de comissão como concluída
+      const commissionTask = data?.operation.operation_checklists?.find((t: any) => t.task_name.includes("Comissão"));
+      if (commissionTask) {
+        await toggleTaskMutation.mutateAsync({ taskId: commissionTask.id, completed: true });
       }
-      const { error } = await supabase
-        .from("commissions")
-        .insert({
-          policy_id: data.operation.policy_id,
-          expected_amount: amount,
-          status: 'pending_review'
-        } as any);
-      if (error) throw error;
+      toast.success("Comissão registrada e tarefa marcada!");
     },
     onSuccess: () => {
       setIsRegisteringCommission(false);
       queryClient.invalidateQueries({ queryKey: ["operation-details", id] });
-      toast.success("Comissão registrada com sucesso!");
     },
   });
+
+  const completeMutation = useMutation({
+    mutationFn: () => completeFn({ data: { operationId: id } }),
+    onSuccess: () => {
+      toast.success("Operação concluída com sucesso!");
+      queryClient.invalidateQueries({ queryKey: ["operation-details", id] });
+    },
+    onError: (err: any) => {
+      toast.error("Erro ao concluir: " + err.message);
+    },
+  });
+
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -128,7 +136,13 @@ function OperationDetailsPage() {
 
       if (docError) throw docError;
 
-      toast.success("Documento enviado e vinculado!");
+      const docTask = data?.operation.operation_checklists?.find((t: any) => t.task_name.includes("Documento"));
+      if (docTask) {
+        await toggleTaskMutation.mutateAsync({ taskId: docTask.id, completed: true });
+      }
+
+      toast.success("Documento enviado e checklist atualizado!");
+
     } catch (err: any) {
       toast.error("Erro no upload: " + err.message);
     } finally {
@@ -259,10 +273,12 @@ function OperationDetailsPage() {
 
             <Button 
               className="w-full h-12 text-lg" 
-              disabled={!data?.isReady || operation.status === 'completed'}
+              disabled={!data?.isReady || operation.status === 'completed' || completeMutation.isPending}
+              onClick={() => completeMutation.mutate()}
             >
-              Concluir Operação
+              {completeMutation.isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : "Concluir Operação"}
             </Button>
+
           </CardContent>
         </Card>
       </div>

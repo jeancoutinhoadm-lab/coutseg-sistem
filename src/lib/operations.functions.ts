@@ -161,6 +161,75 @@ export const validateOperationProgress = createServerFn({ method: "GET" })
   });
 
 /**
+ * Conclui uma operação e gera a apólice final se necessário
+ */
+export const completeOperation = createServerFn({ method: "POST" })
+  .validator((data: unknown) => z.object({ operationId: z.string() }).parse(data))
+  .handler(async ({ data }) => {
+    const { data: authData } = await supabase.auth.getUser();
+    if (!authData.user) throw new Error("Unauthorized");
+
+    // 1. Validar progresso
+    const { operation, isReady } = await validateOperationProgress({ data });
+    if (!isReady) throw new Error("Ainda existem pendências obrigatórias no checklist.");
+
+    // 2. Atualizar status da operação
+    const { error: updateError } = await supabase
+      .from("operations")
+      .update({ 
+        status: 'completed',
+        metadata: { 
+          ...operation.metadata,
+          completed_at: new Date().toISOString(),
+          completed_by: authData.user.id
+        }
+      })
+      .eq("id", data.operationId);
+
+    if (updateError) throw new Error(updateError.message);
+
+    // 3. Se for venda nova ou renovação, e tiver dados mínimos, poderíamos automatizar a criação da apólice
+    // Por enquanto, apenas marcamos como concluído para o operador.
+    
+    return { success: true };
+  });
+
+function getInitialChecklist(type: OperationType) {
+  const common = [
+    { name: "Documento da Apólice (PDF)", required: true },
+    { name: "Conferência de Dados Cadastrais", required: true },
+    { name: "Registro de Comissão Prevista", required: true },
+  ];
+
+  switch (type) {
+    case 'new_sale':
+      return [
+        ...common,
+        { name: "Cotação Aprovada", required: true },
+        { name: "Comprovante de Pagamento (1ª Parcela)", required: false },
+      ];
+    case 'renewal':
+      return [
+        ...common,
+        { name: "Histórico da Apólice Anterior", required: true },
+      ];
+    case 'endorsement':
+      return [
+        { name: "Documento de Endosso", required: true },
+        { name: "Conferência de Alterações", required: true },
+      ];
+    case 'cancellation':
+      return [
+        { name: "Carta de Cancelamento Assinada", required: true },
+        { name: "Cálculo de Restituição", required: false },
+      ];
+    default:
+      return common;
+  }
+}
+
+
+/**
  * Define o checklist inicial por tipo de operação com obrigatoriedade
  */
 function getInitialChecklist(type: OperationType): { name: string; required: boolean }[] {
