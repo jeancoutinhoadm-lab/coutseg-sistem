@@ -4,6 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import {
   TrendingUp,
   DollarSign,
@@ -20,6 +22,7 @@ import {
   Target,
   FileSearch,
 } from "lucide-react";
+
 import { useAuth } from "@/hooks/use-auth";
 import { Link } from "@tanstack/react-router";
 import { getExecutiveDashboardData } from "@/lib/dashboard.functions";
