@@ -512,9 +512,10 @@ function OperationsPage() {
             )}
             
             {step === 2 && (
-              <Button onClick={handleFinishStep2} disabled={!selectedClient}>
-                Próximo
+              <Button onClick={isCreatingClient ? handleFinalSubmit : handleFinishStep2} disabled={!selectedClient && !isCreatingClient}>
+                {isCreatingClient ? "Cadastrar e Continuar" : "Próximo"}
               </Button>
+
             )}
 
             {step === 3 && (
