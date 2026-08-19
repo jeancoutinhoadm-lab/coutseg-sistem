@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -162,9 +162,18 @@ function DocumentsPage() {
 
   return (
     <div className="container mx-auto py-6 space-y-6">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold tracking-tight">Gestão Documental</h1>
-        <p className="text-muted-foreground text-sm uppercase font-semibold">Repositório Interno Seguro - CoutSeg</p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-2">
+          <h1 className="text-3xl font-bold tracking-tight">Gestão Documental</h1>
+          <p className="text-muted-foreground text-sm uppercase font-semibold">Repositório Interno Seguro - CoutSeg</p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" asChild>
+            <Link to="/_authenticated/central-entrada">
+              <History className="w-4 h-4 mr-2" /> Central de Entrada
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <Card>
