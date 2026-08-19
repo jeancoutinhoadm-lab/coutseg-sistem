@@ -8,12 +8,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Upload, FileText, Loader2, CheckCircle2, AlertCircle, RefreshCw, Eye, XCircle, Trash2, Check } from "lucide-react";
+import { Upload, FileText, Loader2, CheckCircle2, AlertCircle, RefreshCw, Eye, XCircle, Trash2, Check, MessageSquare } from "lucide-react";
 import { processDocumentWithIA } from "@/lib/ai-extraction.functions";
 import { extractCommissionReportWithIA } from "@/lib/commission-extraction.functions";
 import { logAudit } from "@/utils/audit";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+
 
 
 export const Route = createFileRoute("/_authenticated/central-entrada")({
@@ -27,6 +30,9 @@ function CentralEntradaPage() {
   const [validationData, setValidationData] = useState<{ status: string; errors: string[] } | null>(null);
   const [currentStep, setCurrentStep] = useState<'idle' | 'uploading' | 'uploaded' | 'processing' | 'processed'>('idle');
   const [lastSavedDoc, setLastSavedDoc] = useState<{ id: string; path: string } | null>(null);
+  const [isReconciliationModalOpen, setIsReconciliationModalOpen] = useState(false);
+  const [reconciliationReason, setReconciliationReason] = useState("");
+
   
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -640,11 +646,17 @@ function CentralEntradaPage() {
                 <div className="flex gap-2 pt-2">
                   <Button 
                     className="flex-1 bg-green-600 hover:bg-green-700 font-bold" 
-                    onClick={() => approveMutation.mutate()}
-                    disabled={approveMutation.isPending || validationData?.status === 'failed'}
+                    onClick={() => {
+                      if (validationData?.status === 'failed') {
+                        setIsReconciliationModalOpen(true);
+                      } else {
+                        approveMutation.mutate();
+                      }
+                    }}
+                    disabled={approveMutation.isPending}
                   >
                     {approveMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
-                    APROVAR E REGISTRAR FINANCEIRO
+                    {validationData?.status === 'failed' ? 'CONCILIAR E APROVAR' : 'APROVAR E REGISTRAR FINANCEIRO'}
                   </Button>
                   <Button 
                     variant="destructive" 
@@ -655,6 +667,7 @@ function CentralEntradaPage() {
                     <XCircle className="h-4 w-4" />
                   </Button>
                 </div>
+
               </div>
 
             )}
@@ -681,6 +694,47 @@ function CentralEntradaPage() {
           </CardContent>
         </Card>
       )}
+
+      <Dialog open={isReconciliationModalOpen} onOpenChange={setIsReconciliationModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-amber-500" />
+              Justificativa de Conciliação
+            </DialogTitle>
+            <DialogDescription>
+              Foram detectadas divergências financeiras ou de contagem. Para prosseguir com a aprovação, descreva o motivo da aceitação destes valores.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Motivo da Divergência (Obrigatório)</Label>
+              <Textarea 
+                placeholder="Ex: Diferença aceitável de centavos, comissão antecipada, estorno validado..."
+                value={reconciliationReason}
+                onChange={(e) => setReconciliationReason(e.target.value)}
+                className="min-h-[100px]"
+              />
+            </div>
+            {validationData?.errors.map((err, i) => (
+              <p key={i} className="text-xs text-red-500">• {err}</p>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsReconciliationModalOpen(false)}>Cancelar</Button>
+            <Button 
+              disabled={!reconciliationReason.trim() || approveMutation.isPending}
+              onClick={() => {
+                approveMutation.mutate();
+                setIsReconciliationModalOpen(false);
+              }}
+            >
+              {approveMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Confirmar e Aprovar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
+
