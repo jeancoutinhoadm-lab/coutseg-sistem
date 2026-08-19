@@ -272,7 +272,7 @@ function CentralEntradaPage() {
         const items = extractedData.items.filter((i: any) => i.status !== 'rejected');
         
         for (const item of items) {
-          const { data, error } = await supabase.rpc('process_commission_item_approval', {
+          const { data: result, error } = await supabase.rpc('process_commission_item_approval', {
             _document_id: lastSavedDoc.id,
             _item: item,
             _user_id: user.id
@@ -281,8 +281,22 @@ function CentralEntradaPage() {
           if (error) {
             console.error("Erro ao processar item:", error);
             toast.error(`Erro no item ${item.policy_number}: ${error.message}`);
+          } else if (validationData?.status === 'failed' && result?.commission_id) {
+            // Se houver divergência, registrar a reconciliação para este item
+            const diff = (Number(item.paid_commission) || 0) - (Number(item.expected_commission) || 0);
+            await supabase.rpc('reconcile_commission', {
+              _commission_id: result.commission_id,
+              _adjustment_amount: diff,
+              _reason: reconciliationReason,
+              _user_id: user.id,
+              _metadata: {
+                document_id: lastSavedDoc.id,
+                validation_errors: validationData.errors
+              }
+            });
           }
         }
+
       } else {
         // Legacy approval for other types
         const { error } = await supabase.rpc('approve_document_extraction', {
