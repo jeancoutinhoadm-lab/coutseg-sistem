@@ -51,6 +51,7 @@ export function CreatePayableForm({ onSuccess }: { onSuccess?: () => void }) {
       due_date: todayStr,
       competence_date: todayStr,
       category_id: "",
+      notes: "",
     },
   });
 
@@ -61,7 +62,7 @@ export function CreatePayableForm({ onSuccess }: { onSuccess?: () => void }) {
       toast.success("Conta a pagar criada com sucesso");
       onSuccess?.();
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error("Erro ao criar payable:", error);
       toast.error("Erro ao criar conta a pagar");
     },
