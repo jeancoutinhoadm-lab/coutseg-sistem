@@ -94,7 +94,12 @@ export function CreatePayableForm({ onSuccess }: { onSuccess?: () => void }) {
               <FormItem>
                 <FormLabel>Valor (R$)</FormLabel>
                 <FormControl>
-                  <Input type="number" step="0.01" {...field} />
+                  <Input 
+                    type="number" 
+                    step="0.01" 
+                    {...field}
+                    onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
