@@ -234,14 +234,17 @@ export const getAuditReport = createServerFn({ method: "GET" })
 
     let query = supabase
       .from("audit_logs")
-      .select(`
-        *,
-        profiles:user_id(full_name)
-      `)
+      .select("*")
       .order("created_at", { ascending: false });
 
     if (startDate) query = query.gte("created_at", startDate);
     if (endDate) query = query.lte("created_at", endDate);
+
+    const { data: logs, error } = await query;
+    if (error) throw error;
+
+    return logs || [];
+  });
 
     const { data: logs, error } = await query;
     if (error) throw error;
