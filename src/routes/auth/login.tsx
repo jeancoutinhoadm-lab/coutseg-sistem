@@ -85,7 +85,12 @@ function LoginPage() {
           <CardDescription>Corretora de Seguros</CardDescription>
         </CardHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)}>
+          <form 
+            onSubmit={(e) => {
+              e.preventDefault();
+              form.handleSubmit(onSubmit)(e);
+            }}
+          >
             <CardContent className="space-y-4">
               <FormField
                 control={form.control}
