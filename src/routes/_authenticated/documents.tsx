@@ -18,7 +18,8 @@ import {
   FileSearch,
   CheckCircle2,
   Clock,
-  XCircle
+  XCircle,
+  Loader2
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
@@ -247,7 +248,7 @@ function DocumentsPage() {
                         {format(new Date(doc.created_at!), "dd/MM/yy HH:mm", { locale: ptBR })}
                       </TableCell>
                       <TableCell>
-                        {getStatusBadge(doc.processing?.[0]?.status)}
+                        {getStatusBadge(doc.processing?.[0]?.status ?? undefined)}
                       </TableCell>
                       <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                         <div className="flex justify-end gap-1">
