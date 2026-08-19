@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
-import { startOfDay, endOfDay, subMonths, startOfMonth, endOfMonth, format } from "date-fns";
+import { subMonths, startOfMonth, endOfMonth } from "date-fns";
 
 const dashboardFilterSchema = z.object({
   period: z.enum(["month", "7days", "30days", "90days", "year"]).default("month"),
@@ -54,7 +54,7 @@ export const getExecutiveDashboardData = createServerFn({ method: "GET" })
     const prevStartStr = prevStart.toISOString();
     const prevEndStr = prevEnd.toISOString();
 
-    // 1. Financeiro: Receita (Commission Receipts)
+    // Helper for revenue calculation
     const getRevenue = async (s: string, e: string) => {
       let query = supabase
         .from("commission_receipts")
@@ -64,13 +64,16 @@ export const getExecutiveDashboardData = createServerFn({ method: "GET" })
       
       if (insurerId) {
         const { data: commIds } = await supabase.from("commissions").select("id").eq("insurer_id" as any, insurerId);
-        if (commIds?.length) query = query.in("commission_id", commIds.map((c: { id: string }) => c.id));
+        if (commIds?.length) {
+          query = query.in("commission_id", commIds.map((c: { id: string }) => c.id));
+        }
       }
       
       const { data: recs } = await query;
       return (recs || []).reduce((acc: number, curr: { amount: number }) => acc + (Number(curr.amount) || 0), 0);
     };
 
+    // Helper for expense calculation
     const getExpenses = async (s: string, e: string) => {
       let query = supabase
         .from("financial_entries")
@@ -90,6 +93,7 @@ export const getExecutiveDashboardData = createServerFn({ method: "GET" })
       getExpenses(prevStartStr, prevEndStr),
     ]);
 
+    // 3. Financeiro: A Receber / A Pagar
     const [{ data: receivables }, { data: payables }] = await Promise.all([
       supabase.from("commissions").select("expected_amount, received_amount, due_date").in("status", ["pending", "partial"]),
       supabase.from("payables").select("amount, due_date").in("status", ["pending", "partial"]),
@@ -97,24 +101,24 @@ export const getExecutiveDashboardData = createServerFn({ method: "GET" })
 
     const todayStr = new Date().toISOString().split("T")[0];
     const overdueReceivables = (receivables || [])
-      .filter((r: { due_date: string | null }) => r.due_date && todayStr && r.due_date < todayStr)
-      .reduce((acc: number, curr: { expected_amount: number; received_amount: number | null }) => acc + (Number(curr.expected_amount) - (Number(curr.received_amount) || 0)), 0);
+      .filter((r: any) => r.due_date && todayStr && r.due_date < todayStr)
+      .reduce((acc: number, curr: any) => acc + (Number(curr.expected_amount) - (Number(curr.received_amount) || 0)), 0);
     
     const totalReceivables = (receivables || [])
-      .reduce((acc: number, curr: { expected_amount: number; received_amount: number | null }) => acc + (Number(curr.expected_amount) - (Number(curr.received_amount) || 0)), 0);
+      .reduce((acc: number, curr: any) => acc + (Number(curr.expected_amount) - (Number(curr.received_amount) || 0)), 0);
 
     const overduePayables = (payables || [])
-      .filter((p: { due_date: string | null }) => p.due_date && todayStr && p.due_date < todayStr)
-      .reduce((acc: number, curr: { amount: number }) => acc + Number(curr.amount), 0);
+      .filter((p: any) => p.due_date && todayStr && p.due_date < todayStr)
+      .reduce((acc: number, curr: any) => acc + Number(curr.amount), 0);
     
-    const totalPayables = (payables || []).reduce((acc: number, curr: { amount: number }) => acc + Number(curr.amount), 0);
+    const totalPayables = (payables || []).reduce((acc: number, curr: any) => acc + Number(curr.amount), 0);
 
+    // 4. Saldo em Contas
     const { data: accounts } = await supabase.from("bank_accounts").select("name, balance").eq("status", "active");
-    const totalBalance = (accounts || []).reduce((acc: number, curr: { balance: number | null }) => acc + (Number(curr.balance) || 0), 0);
-
+    const totalBalance = (accounts || []).reduce((acc: number, curr: any) => acc + (Number(curr.balance) || 0), 0);
 
     // 5. Operacional: IA e Pendências
-    const [{ count: pendingIA }, { count: needsReviewIA }, { count: divergentComms }] = await Promise.all([
+    const [{ count: pendingIACount }, { count: needsReviewIACount }, { count: divergentCommsCount }] = await Promise.all([
       supabase.from("document_processing").select("id", { count: "exact", head: true }).in("status", ["pending", "processing"]),
       supabase.from("document_processing").select("id", { count: "exact", head: true }).eq("status", "needs_review"),
       supabase.from("commissions").select("id", { count: "exact", head: true }).eq("status", "divergent"),
@@ -132,8 +136,7 @@ export const getExecutiveDashboardData = createServerFn({ method: "GET" })
       return count || 0;
     };
 
-
-    const [ren7, ren15, ren30, ren60, ren90, { count: activePolicies }, { count: activeClients }] = await Promise.all([
+    const [ren7, ren15, ren30, ren60, ren90, { count: activePoliciesCount }, { count: activeClientsCount }] = await Promise.all([
       getRenewalCount(7),
       getRenewalCount(15),
       getRenewalCount(30),
@@ -145,17 +148,16 @@ export const getExecutiveDashboardData = createServerFn({ method: "GET" })
 
     // 7. Comercial: Oportunidades
     const { data: opportunities } = await supabase.from("opportunities").select("status, priority");
-    const oppsByStatus = (opportunities || []).reduce((acc: Record<string, number>, curr) => {
+    const oppsByStatus: Record<string, number> = (opportunities || []).reduce((acc: Record<string, number>, curr: any) => {
       if (curr.status) {
         acc[curr.status] = (acc[curr.status] || 0) + 1;
       }
       return acc;
-    }, {} as Record<string, number>);
-
-    const crossSellCount = (opportunities || []).filter((o: { status: string | null }) => o.status === 'cross_sell' as any).length;
+    }, {});
+    const crossSellCount = (opportunities || []).filter((o: any) => o.status === 'cross_sell').length;
 
     // 8. Ranking de Seguradoras
-    const { data: insurerRanking } = await supabase
+    const { data: insurerRankingData } = await supabase
       .from("commission_receipts")
       .select(`
         amount,
@@ -168,17 +170,16 @@ export const getExecutiveDashboardData = createServerFn({ method: "GET" })
       .gte("receipt_date", startStr)
       .lte("receipt_date", endStr);
     
-    const ranking = (insurerRanking || []).reduce((acc: Record<string, number>, curr: any) => {
+    const ranking = (insurerRankingData || []).reduce((acc: Record<string, number>, curr: any) => {
       const name = curr.commissions?.insurers?.name || "Outros";
       acc[name] = (acc[name] || 0) + (Number(curr.amount) || 0);
       return acc;
-    }, {} as Record<string, number>);
+    }, {});
 
     const sortedRanking = Object.entries(ranking)
-      .map(([name, value]) => ({ name, value }))
+      .map(([name, value]) => ({ name, value: Number(value) }))
       .sort((a, b) => b.value - a.value)
       .slice(0, 5);
-
 
     return {
       finance: {
@@ -191,16 +192,16 @@ export const getExecutiveDashboardData = createServerFn({ method: "GET" })
         payables: totalPayables,
         overduePayables,
         totalBalance,
-        bankAccounts: accounts || [],
+        bankAccounts: (accounts || []).map((a: any) => ({ name: a.name, balance: Number(a.balance) })),
       },
       operation: {
-        pendingIA: (pendingIA || 0) + (needsReviewIA || 0),
-        needsReviewIA: needsReviewIA || 0,
-        divergentComms: divergentComms || 0,
+        pendingIA: (pendingIACount || 0) + (needsReviewIACount || 0),
+        needsReviewIA: needsReviewIACount || 0,
+        divergentComms: divergentCommsCount || 0,
       },
       portfolio: {
-        activePolicies: activePolicies || 0,
-        activeClients: activeClients || 0,
+        activePolicies: activePoliciesCount || 0,
+        activeClients: activeClientsCount || 0,
         renewals: {
           ren7, ren15, ren30, ren60, ren90
         }
