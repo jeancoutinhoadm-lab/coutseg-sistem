@@ -15,6 +15,11 @@ import { Plus, Search, Pencil, Trash2, Loader2, Building2 } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
 import { logAudit } from "@/utils/audit";
 
+const maskCNPJ = (value: string) => {
+  return value.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.***.***/$4-$5");
+};
+
+
 export const Route = createFileRoute("/_authenticated/insurers")({
   component: InsurersPage,
   head: () => ({
@@ -143,7 +148,7 @@ function InsurersPage() {
                           {insurer.name}
                         </div>
                       </TableCell>
-                      <TableCell>{insurer.cnpj}</TableCell>
+                      <TableCell>{insurer.cnpj ? maskCNPJ(insurer.cnpj) : "—"}</TableCell>
                       <TableCell>
                         <div className="text-sm">{insurer.email}</div>
                         <div className="text-sm text-muted-foreground">{insurer.phone}</div>
