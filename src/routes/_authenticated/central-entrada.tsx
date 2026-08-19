@@ -24,6 +24,7 @@ function CentralEntradaPage() {
   const [file, setFile] = useState<File | null>(null);
   const [docType, setDocType] = useState<any>("policy");
   const [extractedData, setExtractedData] = useState<any>(null);
+  const [validationData, setValidationData] = useState<{ status: string; errors: string[] } | null>(null);
   const [currentStep, setCurrentStep] = useState<'idle' | 'uploading' | 'uploaded' | 'processing' | 'processed'>('idle');
   const [lastSavedDoc, setLastSavedDoc] = useState<{ id: string; path: string } | null>(null);
   
@@ -46,6 +47,13 @@ function CentralEntradaPage() {
     },
   });
 
+  const calculateHash = async (file: File) => {
+    const arrayBuffer = await file.arrayBuffer();
+    const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  };
+
   // Step 1 & 2: Upload only
   const uploadMutation = useMutation({
     mutationFn: async () => {
@@ -54,6 +62,19 @@ function CentralEntradaPage() {
 
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Usuário não autenticado");
+
+      const fileHash = await calculateHash(file);
+      
+      // Check for duplicate hash
+      const { data: existingDoc } = await supabase
+        .from('documents')
+        .select('id, name')
+        .eq('file_hash', fileHash)
+        .single();
+        
+      if (existingDoc) {
+        toast.info(`Este documento já foi enviado anteriormente: ${existingDoc.name}`);
+      }
 
       const fileExt = file.name.split(".").pop();
       const filePath = `${user.id}/${crypto.randomUUID()}.${fileExt}`;
@@ -72,12 +93,12 @@ function CentralEntradaPage() {
           file_type: file.type,
           size: file.size,
           uploaded_by: user.id,
+          file_hash: fileHash
         })
         .select()
         .single();
 
       if (docError) {
-        // Rollback: delete uploaded file if DB record fails
         await supabase.storage.from("policy_documents").remove([filePath]);
         throw docError;
       }
@@ -155,21 +176,54 @@ function CentralEntradaPage() {
           });
         }
 
+        // Validation Logic
+        let validationStatus: 'success' | 'failed' | 'unknown' = 'success';
+        let validationErrors: string[] = [];
+        
+        if (docType === 'commission_report') {
+          const extractedTotal = result.items.reduce((sum: number, item: any) => sum + (Number(item.paid_commission) || 0), 0);
+          const documentTotal = Number(result.document_total) || 0;
+          const extractedCount = result.items.length;
+          const documentCount = Number(result.document_line_count) || 0;
+          
+          if (documentCount > 0 && extractedCount !== documentCount) {
+            validationStatus = 'failed';
+            validationErrors.push(`Divergência na contagem: Documento indica ${documentCount} linhas, mas foram extraídas ${extractedCount}.`);
+          }
+          
+          if (documentTotal > 0 && Math.abs(extractedTotal - documentTotal) > 0.01) {
+            validationStatus = 'failed';
+            validationErrors.push(`Divergência no total: Documento indica R$ ${documentTotal.toFixed(2)}, mas a soma das linhas é R$ ${extractedTotal.toFixed(2)}.`);
+          }
+
+          if (documentCount === 0 && documentTotal === 0) {
+            validationStatus = 'unknown';
+            validationErrors.push("Não foi possível identificar totais ou contagem no documento para validação automática.");
+          }
+        }
+
         await supabase.from('document_processing')
           .update({ 
             status: 'needs_review',
             extracted_data: result,
             ai_model: result.metadata?.ai_model || 'gpt-4o',
-            ai_prompt_version: 'v2.1-step8',
+            ai_prompt_version: 'v2.2-reliability',
             ai_confidence: result.confidence || {},
             input_tokens: result.metadata?.input_tokens,
             output_tokens: result.metadata?.output_tokens,
             estimated_cost: result.metadata?.estimated_cost,
             execution_duration_ms: result.metadata?.execution_duration_ms,
-            processed_at: new Date().toISOString()
+            processed_at: new Date().toISOString(),
+            document_line_count: result.document_line_count,
+            extracted_line_count: result.items?.length,
+            document_total: result.document_total,
+            extracted_total: result.items?.reduce((sum: number, item: any) => sum + (Number(item.paid_commission) || 0), 0),
+            validation_status: validationStatus,
+            validation_errors: validationErrors
           } as any)
           .eq('document_id', lastSavedDoc.id);
 
+        setValidationData({ status: validationStatus, errors: validationErrors });
         return result;
       } catch (err: any) {
         await supabase.from('document_processing')
@@ -261,6 +315,29 @@ function CentralEntradaPage() {
     const newItems = [...extractedData.items];
     newItems[index] = { ...newItems[index], status };
     setExtractedData({ ...extractedData, items: newItems });
+
+    // Re-validate after status change (rejection/restoration)
+    if (docType === 'commission_report') {
+      const extractedTotal = newItems.filter(i => i.status !== 'rejected').reduce((sum: number, item: any) => sum + (Number(item.paid_commission) || 0), 0);
+      const documentTotal = Number(extractedData.document_total) || 0;
+      const documentCount = Number(extractedData.document_line_count) || 0;
+      const extractedCount = newItems.filter((i: any) => i.status !== 'rejected').length;
+      
+      let validationStatus: 'success' | 'failed' | 'unknown' = 'success';
+      let validationErrors: string[] = [];
+      
+      if (documentCount > 0 && extractedCount !== documentCount) {
+        validationStatus = 'failed';
+        validationErrors.push(`Divergência na contagem: Documento indica ${documentCount} linhas, mas há ${extractedCount} itens para aprovação.`);
+      }
+      
+      if (documentTotal > 0 && Math.abs(extractedTotal - documentTotal) > 0.01) {
+        validationStatus = 'failed';
+        validationErrors.push(`Divergência no total: Documento indica R$ ${documentTotal.toFixed(2)}, mas a soma atual é R$ ${extractedTotal.toFixed(2)}.`);
+      }
+
+      setValidationData({ status: validationStatus, errors: validationErrors });
+    }
   };
 
   const updateItemValue = (index: number, field: string, value: any) => {
@@ -276,6 +353,29 @@ function CentralEntradaPage() {
     }
     
     setExtractedData({ ...extractedData, items: newItems });
+    
+    // Re-validate totals after manual correction
+    if (docType === 'commission_report') {
+      const extractedTotal = newItems.reduce((sum: number, item: any) => sum + (Number(item.paid_commission) || 0), 0);
+      const documentTotal = Number(extractedData.document_total) || 0;
+      const documentCount = Number(extractedData.document_line_count) || 0;
+      const extractedCount = newItems.filter((i: any) => i.status !== 'rejected').length;
+      
+      let validationStatus: 'success' | 'failed' | 'unknown' = 'success';
+      let validationErrors: string[] = [];
+      
+      if (documentCount > 0 && extractedCount !== documentCount) {
+        validationStatus = 'failed';
+        validationErrors.push(`Divergência na contagem: Documento indica ${documentCount} linhas, mas há ${extractedCount} itens para aprovação.`);
+      }
+      
+      if (documentTotal > 0 && Math.abs(extractedTotal - documentTotal) > 0.01) {
+        validationStatus = 'failed';
+        validationErrors.push(`Divergência no total: Documento indica R$ ${documentTotal.toFixed(2)}, mas a soma atual é R$ ${extractedTotal.toFixed(2)}.`);
+      }
+
+      setValidationData({ status: validationStatus, errors: validationErrors });
+    }
   };
 
 
@@ -439,9 +539,21 @@ function CentralEntradaPage() {
 
             {currentStep === 'processed' && extractedData && (
               <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
-                <div className="flex items-center gap-2 p-2 bg-amber-50 border border-amber-100 rounded-md text-amber-700 text-sm">
-                  <AlertCircle className="h-4 w-4" />
-                  <span>Extração concluída! Por favor, revise os dados abaixo.</span>
+                <div className={`flex items-start gap-2 p-3 border rounded-md text-sm ${validationData?.status === 'failed' ? 'bg-red-50 border-red-100 text-red-800' : validationData?.status === 'unknown' ? 'bg-amber-50 border-amber-100 text-amber-800' : 'bg-green-50 border-green-100 text-green-800'}`}>
+                  {validationData?.status === 'failed' ? <AlertCircle className="h-5 w-5 mt-0.5" /> : validationData?.status === 'unknown' ? <AlertCircle className="h-5 w-5 mt-0.5" /> : <CheckCircle2 className="h-5 w-5 mt-0.5" />}
+                  <div className="flex-1">
+                    <p className="font-bold">
+                      {validationData?.status === 'failed' ? "Divergência Crítica Detectada" : 
+                       validationData?.status === 'unknown' ? "Validação Manual Necessária" : 
+                       "Integridade Validada"}
+                    </p>
+                    {validationData?.errors.map((err, i) => (
+                      <p key={i} className="text-xs mt-1">• {err}</p>
+                    ))}
+                    {validationData?.status === 'failed' && (
+                      <p className="text-[10px] mt-2 font-semibold uppercase opacity-70">Aprovação bloqueada até correção dos valores.</p>
+                    )}
+                  </div>
                 </div>
                 
                 {docType === 'commission_report' && extractedData.items ? (
@@ -529,7 +641,7 @@ function CentralEntradaPage() {
                   <Button 
                     className="flex-1 bg-green-600 hover:bg-green-700 font-bold" 
                     onClick={() => approveMutation.mutate()}
-                    disabled={approveMutation.isPending}
+                    disabled={approveMutation.isPending || validationData?.status === 'failed'}
                   >
                     {approveMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
                     APROVAR E REGISTRAR FINANCEIRO
