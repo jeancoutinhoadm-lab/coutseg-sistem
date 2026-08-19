@@ -220,7 +220,10 @@ export const getExecutiveDashboardData = createServerFn({ method: "GET" })
       },
       commercial: {
         opportunities: oppsByStatus,
-        crossSellCount,
+        leads: leadsByStatus,
+        totalEstimatedValue,
+        totalRealizedValue,
+        conversionRate,
         insurerRanking: sortedRanking
       }
     };
