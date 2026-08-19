@@ -245,9 +245,3 @@ export const getAuditReport = createServerFn({ method: "GET" })
 
     return logs || [];
   });
-
-    const { data: logs, error } = await query;
-    if (error) throw error;
-
-    return logs || [];
-  });
