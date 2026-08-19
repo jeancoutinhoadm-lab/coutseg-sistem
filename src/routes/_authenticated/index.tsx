@@ -335,10 +335,11 @@ function DashboardPage() {
                 <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
                   <div 
                     className="h-full bg-primary" 
-                    style={{ width: `${(item.value / commercial.insurerRanking[0].value) * 100}%` }}
+                    style={{ width: `${commercial.insurerRanking[0] ? (item.value / commercial.insurerRanking[0].value) * 100 : 0}%` }}
                   />
                 </div>
               </div>
+
             )) : (
               <p className="text-center text-sm text-muted-foreground py-10">Sem movimentações no período</p>
             )}
