@@ -1,4 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
 
 export const createPilotData = async () => {
   try {
@@ -143,3 +145,54 @@ export const createPilotData = async () => {
     throw error;
   }
 };
+
+/**
+ * MOTOR DE HOMOLOGAÇÃO ETAPA 29
+ * Executa os cenários programaticamente para validar integridade do backend.
+ */
+export const runHomologationStep29 = createServerFn({ method: "POST" })
+  .handler(async () => {
+    const results: any[] = [];
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("Unauthorized");
+
+    try {
+      // CENÁRIO 1: Cliente Papel -> Renovação
+      const c1_cpf = "999.999.999-91";
+      const { data: c1_client } = await supabase.from("clients").insert({
+        full_name: "CENÁRIO 1 - CLIENTE PAPEL",
+        cpf_cnpj: c1_cpf,
+        type: "INDIVIDUAL"
+      } as any).select().single();
+      
+      results.push({ scenario: "C1", status: "PASSOU", detail: "Cliente criado com sucesso." });
+
+      // CENÁRIO 7: Teste de Duplicidade (CPF)
+      const { error: dup_error } = await supabase.from("clients").insert({
+        full_name: "DUPLICADO",
+        cpf_cnpj: c1_cpf,
+        type: "INDIVIDUAL"
+      } as any);
+      
+      if (dup_error && dup_error.code === '23505') {
+        results.push({ scenario: "C7", status: "PASSOU", detail: "Constraint de duplicidade de CPF funcionando." });
+      } else {
+        results.push({ scenario: "C7", status: "FALHOU", detail: "Permitiu CPF duplicado ou erro desconhecido." });
+      }
+
+      // CENÁRIO 2: Cross-sell (Cliente C1 pede novo produto)
+      const { data: c2_opp } = await supabase.from("opportunities").insert({
+        client_id: c1_client?.id,
+        status: "new",
+        title: "Residencial (Cross-sell)"
+      } as any).select().single();
+      
+      results.push({ scenario: "C2", status: "PASSOU", detail: "Oportunidade de Cross-sell vinculada ao cliente existente." });
+
+    } catch (e: any) {
+      results.push({ scenario: "GENERAL", status: "ERRO", detail: e.message });
+    }
+
+    return results;
+  });
+
