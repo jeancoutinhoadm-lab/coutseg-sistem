@@ -24,6 +24,7 @@ function CentralEntradaPage() {
   const [file, setFile] = useState<File | null>(null);
   const [docType, setDocType] = useState<any>("policy");
   const [extractedData, setExtractedData] = useState<any>(null);
+  const [validationData, setValidationData] = useState<{ status: string; errors: string[] } | null>(null);
   const [currentStep, setCurrentStep] = useState<'idle' | 'uploading' | 'uploaded' | 'processing' | 'processed'>('idle');
   const [lastSavedDoc, setLastSavedDoc] = useState<{ id: string; path: string } | null>(null);
   
