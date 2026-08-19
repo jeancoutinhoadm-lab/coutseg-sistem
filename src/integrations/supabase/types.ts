@@ -352,8 +352,12 @@ export type Database = {
           created_at: string | null
           document_id: string | null
           error_message: string | null
+          estimated_cost: number | null
+          execution_duration_ms: number | null
           extracted_data: Json | null
           id: string
+          input_tokens: number | null
+          output_tokens: number | null
           processed_at: string | null
           reviewed_at: string | null
           reviewed_by: string | null
@@ -368,8 +372,12 @@ export type Database = {
           created_at?: string | null
           document_id?: string | null
           error_message?: string | null
+          estimated_cost?: number | null
+          execution_duration_ms?: number | null
           extracted_data?: Json | null
           id?: string
+          input_tokens?: number | null
+          output_tokens?: number | null
           processed_at?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
@@ -384,8 +392,12 @@ export type Database = {
           created_at?: string | null
           document_id?: string | null
           error_message?: string | null
+          estimated_cost?: number | null
+          execution_duration_ms?: number | null
           extracted_data?: Json | null
           id?: string
+          input_tokens?: number | null
+          output_tokens?: number | null
           processed_at?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
@@ -406,6 +418,7 @@ export type Database = {
         Row: {
           client_id: string | null
           created_at: string | null
+          file_hash: string | null
           file_path: string
           file_type: string | null
           id: string
@@ -418,6 +431,7 @@ export type Database = {
         Insert: {
           client_id?: string | null
           created_at?: string | null
+          file_hash?: string | null
           file_path: string
           file_type?: string | null
           id?: string
@@ -430,6 +444,7 @@ export type Database = {
         Update: {
           client_id?: string | null
           created_at?: string | null
+          file_hash?: string | null
           file_path?: string
           file_type?: string | null
           id?: string
@@ -991,12 +1006,24 @@ export type Database = {
         Args: { _processing_id: string }
         Returns: undefined
       }
+      check_commission_duplicate: {
+        Args: {
+          _due_date: string
+          _expected_amount: number
+          _policy_id: string
+        }
+        Returns: string
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
         Returns: boolean
+      }
+      process_commission_item_approval: {
+        Args: { _document_id: string; _item: Json; _user_id: string }
+        Returns: Json
       }
     }
     Enums: {
@@ -1007,6 +1034,11 @@ export type Database = {
         | "financeiro"
         | "gerente"
       claim_status: "open" | "in_progress" | "resolved" | "closed" | "denied"
+      commission_item_status:
+        | "pending_review"
+        | "confirmed"
+        | "corrected"
+        | "rejected"
       document_type:
         | "policy"
         | "bill"
@@ -1162,6 +1194,12 @@ export const Constants = {
         "gerente",
       ],
       claim_status: ["open", "in_progress", "resolved", "closed", "denied"],
+      commission_item_status: [
+        "pending_review",
+        "confirmed",
+        "corrected",
+        "rejected",
+      ],
       document_type: [
         "policy",
         "bill",
