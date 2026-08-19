@@ -153,6 +153,14 @@ function OperationsPage() {
     setFoundClients([]);
     setSelectedClient(null);
     setOpTitle("");
+    setIsCreatingClient(false);
+    setNewClientData({
+      full_name: "",
+      cpf_cnpj: "",
+      phone: "",
+      email: "",
+      address: "",
+    });
   };
 
   const handleStartSearch = () => {
@@ -164,11 +172,11 @@ function OperationsPage() {
   };
 
   const handleCreateNewClient = () => {
-    toast.info("Redirecionando para cadastro de cliente... (em breve integração direta)");
+    setIsCreatingClient(true);
   };
 
   const handleFinishStep2 = () => {
-    if (!selectedClient) {
+    if (!selectedClient && !isCreatingClient) {
       toast.warning("Selecione um cliente ou cadastre um novo.");
       return;
     }
@@ -176,6 +184,15 @@ function OperationsPage() {
   };
 
   const handleFinalSubmit = () => {
+    if (isCreatingClient) {
+      if (!newClientData.full_name) {
+        toast.warning("Nome do cliente é obrigatório.");
+        return;
+      }
+      inlineClientMutation.mutate(newClientData);
+      return;
+    }
+
     if (!opTitle) {
       toast.warning("Dê um título para a operação.");
       return;
@@ -186,6 +203,7 @@ function OperationsPage() {
       clientId: selectedClient.id,
     });
   };
+
 
   const getStatusBadge = (status: string) => {
     switch (status) {
