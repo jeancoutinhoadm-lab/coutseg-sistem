@@ -17,6 +17,15 @@ import { Plus, Search, Pencil, Trash2, Loader2 } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
 import { logAudit } from "@/utils/audit";
 
+const maskCPF = (value: string) => {
+  return value.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.***.***-$4");
+};
+
+const maskCNPJ = (value: string) => {
+  return value.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.***.***/$4-$5");
+};
+
+
 export const Route = createFileRoute("/_authenticated/clients")({
   component: ClientsPage,
   head: () => ({
@@ -162,7 +171,7 @@ function ClientsPage() {
                         <div className="text-sm">{client.email}</div>
                         <div className="text-sm text-muted-foreground">{client.phone}</div>
                       </TableCell>
-                      <TableCell>{client.cpf_cnpj}</TableCell>
+                      <TableCell>{client.cpf_cnpj ? (client.type === 'PJ' ? maskCNPJ(client.cpf_cnpj) : maskCPF(client.cpf_cnpj)) : "—"}</TableCell>
                       <TableCell>
                         <Badge variant={(client as any).status === 'active' ? 'default' : (client as any).status === 'prospect' ? 'outline' : 'secondary'}>
                           {(client as any).status === 'active' ? 'Ativo' : (client as any).status === 'prospect' ? 'Prospect' : 'Inativo'}

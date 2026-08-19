@@ -427,11 +427,23 @@ function PolicyDialog({
         await handleFileUpload(data.id);
       }
       
+      if (!validateDates()) return;
+      
       queryClient.invalidateQueries({ queryKey: ["policies"] });
       onOpenChange(false);
       toast.success("Apólice criada com sucesso");
+
     }
   };
+
+  const validateDates = () => {
+    if (startDate && endDate && new Date(startDate) >= new Date(endDate)) {
+      toast.error("Data de vigência inválida", { description: "A data de fim deve ser posterior à data de início." });
+      return false;
+    }
+    return true;
+  };
+
 
 
   const { data: clients } = useQuery({
