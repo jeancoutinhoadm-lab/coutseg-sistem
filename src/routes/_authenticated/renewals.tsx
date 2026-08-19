@@ -62,7 +62,7 @@ function RenewalsPage() {
       const today = startOfDay(new Date());
       
       if (filter === "today") {
-        query = query.eq("end_date", today.toISOString().split("T")[0]);
+        query = query.eq("end_date", today.toISOString().split("T")[0] as string);
       } else if (filter === "7days") {
         query = query.lte("end_date", addDays(today, 7).toISOString().split("T")[0]).gte("end_date", today.toISOString().split("T")[0]);
       } else if (filter === "15days") {
