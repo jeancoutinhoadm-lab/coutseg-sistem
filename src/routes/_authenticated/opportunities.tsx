@@ -282,7 +282,7 @@ function CRMPage() {
                         </TableCell>
                         <TableCell>{(opp.clients as any)?.full_name || (opp.leads as any)?.full_name}</TableCell>
                         <TableCell>{opp.value_estimated ? `R$ ${Number(opp.value_estimated).toLocaleString('pt-BR')}` : '-'}</TableCell>
-                        <TableCell>{getStatusBadge(opp.status, 'opp')}</TableCell>
+                        <TableCell>{getStatusBadge(opp.status || 'new', 'opp')}</TableCell>
                         <TableCell>
                            <Badge variant={opp.priority === 'high' ? 'destructive' : 'outline'}>
                              {opp.priority}
