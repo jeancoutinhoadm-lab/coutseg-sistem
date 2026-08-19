@@ -419,9 +419,10 @@ function RenewalsPage() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setActionDialogOpen(false)}>Cancelar</Button>
             <Button 
-              disabled={!newAction.action || updateStatusMutation.isPending}
+              disabled={!newAction.action || !selectedPolicy?.id || updateStatusMutation.isPending}
               onClick={() => {
-                const status = newAction.action.split("para ")[1];
+                if (!selectedPolicy?.id) return;
+                const statusLabel = newAction.action.split("para ")[1];
                 // Map label back to enum
                 const statusMap: Record<string, PolicyStatus> = {
                   "Pendente de Contato": "contact_pending" as any,
@@ -432,9 +433,12 @@ function RenewalsPage() {
                   "Renovada": "renewed" as any,
                   "Perdida": "lost" as any
                 };
+                const newStatus = statusMap[statusLabel];
+                if (!newStatus) return;
+                
                 updateStatusMutation.mutate({
                   id: selectedPolicy.id,
-                  status: statusMap[status],
+                  status: newStatus,
                   action: newAction.action,
                   notes: newAction.notes
                 });
