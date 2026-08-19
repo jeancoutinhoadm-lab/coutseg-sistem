@@ -58,6 +58,8 @@ function CentralEntradaPage() {
         .upload(filePath, file);
 
       if (uploadError) throw uploadError;
+      
+      const { data: { user } } = await supabase.auth.getUser();
 
       const { data: doc, error: docError } = await supabase
         .from("documents")
@@ -66,6 +68,7 @@ function CentralEntradaPage() {
           file_path: filePath,
           file_type: file.type,
           size: file.size,
+          uploaded_by: user?.id,
         })
         .select()
         .single();
