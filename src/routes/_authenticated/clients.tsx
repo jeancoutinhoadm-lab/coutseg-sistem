@@ -13,7 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Plus, Search, Pencil, Trash2, Loader2 } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, Loader2, UserCheck } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
 import { logAudit } from "@/utils/audit";
 
@@ -224,6 +224,150 @@ function ClientsPage() {
         onSubmit={(values) => saveMutation.mutate(values)}
         isPending={saveMutation.isPending}
       />
+
+      {editing && (
+        <Card className="mt-8">
+          <CardHeader>
+            <CardTitle className="text-xl flex items-center gap-2">
+              <UserCheck className="h-5 w-5 text-primary" />
+              Visão 360º do Cliente: {editing.full_name}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ClientProductsView clientId={editing.id} />
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+function ClientProductsView({ clientId }: { clientId: string }) {
+  const { data: policies, isLoading: loadingPolicies } = useQuery({
+    queryKey: ["client-policies", clientId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("policies")
+        .select("*, insurers(name), products(name)")
+        .eq("client_id", clientId)
+        .order("end_date", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: opportunities, isLoading: loadingOpps } = useQuery({
+    queryKey: ["client-opportunities", clientId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("opportunities")
+        .select("*")
+        .eq("client_id", clientId);
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  if (loadingPolicies || loadingOpps) return <Skeleton className="h-40 w-full" />;
+
+  const activePolicies = policies?.filter(p => p.status === 'active') || [];
+  const expiredPolicies = policies?.filter(p => p.status === 'expired' || p.status === 'renewed') || [];
+  const nextRenewal = activePolicies.length > 0 
+    ? activePolicies.reduce((prev, curr) => 
+        new Date(prev.end_date || '') < new Date(curr.end_date || '') ? prev : curr
+      ) 
+    : null;
+
+  return (
+    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium text-muted-foreground">Produtos Ativos</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap gap-2">
+            {activePolicies.length > 0 ? (
+              activePolicies.map(p => (
+                <Badge key={p.id} variant="default">{(p as any).products?.name}</Badge>
+              ))
+            ) : (
+              <span className="text-sm text-muted-foreground">Nenhum produto ativo</span>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium text-muted-foreground">Próxima Renovação</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {nextRenewal ? (
+            <div className="space-y-1">
+              <p className="font-bold">{(nextRenewal as any).products?.name}</p>
+              <p className="text-sm text-muted-foreground">
+                {new Date(nextRenewal.end_date || '').toLocaleDateString('pt-BR')}
+              </p>
+            </div>
+          ) : (
+            <span className="text-sm text-muted-foreground">Sem renovações pendentes</span>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium text-muted-foreground">Oportunidades</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            {opportunities?.length ? (
+              opportunities.map(opp => (
+                <div key={opp.id} className="flex items-center justify-between p-2 rounded border text-xs">
+                  <span>{opp.evidence || 'Sem evidência'}</span>
+                  <Badge variant="outline" className="capitalize">{opp.status}</Badge>
+                </div>
+              ))
+            ) : (
+              <span className="text-sm text-muted-foreground">Nenhuma oportunidade identificada</span>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="md:col-span-2 lg:col-span-3">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium text-muted-foreground">Histórico de Apólices</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Ramo</TableHead>
+                <TableHead>Seguradora</TableHead>
+                <TableHead>Vigência</TableHead>
+                <TableHead>Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {policies?.map(p => (
+                <TableRow key={p.id}>
+                  <TableCell className="font-medium">{(p as any).products?.name}</TableCell>
+                  <TableCell>{(p as any).insurers?.name}</TableCell>
+                  <TableCell className="text-xs">
+                    {new Date(p.start_date || '').toLocaleDateString('pt-BR')} a {new Date(p.end_date || '').toLocaleDateString('pt-BR')}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={p.status === 'active' ? 'default' : 'secondary'} className="text-[10px]">
+                      {p.status}
+                    </Badge>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 }

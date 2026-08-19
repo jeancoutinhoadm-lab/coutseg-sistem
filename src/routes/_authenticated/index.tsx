@@ -47,12 +47,14 @@ function DashboardPage() {
         { data: divergentCommissions },
         { count: taskCount },
         { data: activePolicies },
+        { count: opportunitiesCount },
       ] = await Promise.all([
         supabase.from("document_processing").select("*", { count: "exact", head: true }).eq("status", "pending"),
         supabase.from("policies").select("id, policy_number, end_date, clients(full_name)").lte("end_date", next7Days).gte("end_date", today).eq("status", "active"),
         supabase.from("commissions").select("id, expected_amount, reported_amount").eq("status", "divergent"),
         supabase.from("tasks").select("id", { count: "exact", head: true }).eq("status", "pending"),
         supabase.from("policies").select("premium, commission_amount").eq("status", "active"),
+        supabase.from("opportunities").select("id", { count: "exact", head: true }).eq("status", "new"),
       ]);
 
       const totalPremium = (activePolicies ?? []).reduce((sum, p) => sum + (Number(p.premium) || 0), 0);
@@ -63,6 +65,7 @@ function DashboardPage() {
         urgentRenewals: urgentRenewals ?? [],
         divergentCommissions: divergentCommissions ?? [],
         pendingTasks: Number(taskCount) ?? 0,
+        pendingOpportunities: Number(opportunitiesCount) ?? 0,
         totalPremium,
         totalCommission
       };
@@ -108,6 +111,11 @@ function DashboardPage() {
           label: `${stats?.pendingTasks} tarefas para hoje`,
           to: "/tasks",
           active: (stats?.pendingTasks ?? 0) > 0
+        },
+        {
+          label: `${stats?.pendingOpportunities} novas oportunidades comerciais`,
+          to: "/opportunities",
+          active: (stats?.pendingOpportunities ?? 0) > 0
         }
       ]
     },

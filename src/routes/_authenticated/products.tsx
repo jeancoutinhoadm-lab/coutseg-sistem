@@ -8,12 +8,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Plus, Search, Pencil, Trash2, Loader2, Package } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, Loader2, Package, RefreshCw, ArrowRight } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
 import { logAudit } from "@/utils/audit";
 
@@ -202,14 +203,155 @@ function ProductsPage() {
       </Card>
 
       {isAdmin && (
-        <ProductDialog
-          open={dialogOpen}
-          onOpenChange={setDialogOpen}
-          editing={editing}
-          onSubmit={(values) => saveMutation.mutate(values)}
-          isPending={saveMutation.isPending}
-        />
+        <>
+          <ProductDialog
+            open={dialogOpen}
+            onOpenChange={setDialogOpen}
+            editing={editing}
+            onSubmit={(values) => saveMutation.mutate(values)}
+            isPending={saveMutation.isPending}
+          />
+          <Card className="mt-8">
+            <CardHeader>
+              <CardTitle className="text-xl flex items-center gap-2">
+                <RefreshCw className="h-5 w-5 text-primary" />
+                Regras de Cross-sell
+              </CardTitle>
+              <CardDescription>
+                Configure quais produtos sugerir com base nos que o cliente já possui.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <CrossSellRulesManager products={products || []} />
+            </CardContent>
+          </Card>
+        </>
       )}
+    </div>
+  );
+}
+
+function CrossSellRulesManager({ products }: { products: any[] }) {
+  const queryClient = useQueryClient();
+  const [sourceId, setSourceId] = useState("");
+  const [targetId, setTargetId] = useState("");
+  const [description, setDescription] = useState("");
+
+  const { data: rules, isLoading } = useQuery({
+    queryKey: ["cross-sell-rules"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("cross_sell_rules").select("*");
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  const addRuleMutation = useMutation({
+    mutationFn: async () => {
+      const source = products.find(p => p.id === sourceId);
+      const target = products.find(p => p.id === targetId);
+      const id = `${source?.name.toLowerCase()}_to_${target?.name.toLowerCase()}`;
+      
+      const { error } = await supabase.from("cross_sell_rules").insert({
+        id,
+        source_product_id: sourceId,
+        target_product_id: targetId,
+        description: description || `Cross-sell de ${source?.name} para ${target?.name}`,
+        active: true
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["cross-sell-rules"] });
+      setSourceId("");
+      setTargetId("");
+      setDescription("");
+      toast.success("Regra adicionada");
+    }
+  });
+
+  const deleteRuleMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("cross_sell_rules").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["cross-sell-rules"] });
+      toast.success("Regra removida");
+    }
+  });
+
+  return (
+    <div className="space-y-6">
+      <div className="grid gap-4 md:grid-cols-3 items-end border p-4 rounded-lg bg-muted/30">
+        <div className="grid gap-2">
+          <Label>Se o cliente possui...</Label>
+          <Select value={sourceId} onValueChange={setSourceId}>
+            <SelectTrigger>
+              <SelectValue placeholder="Produto origem" />
+            </SelectTrigger>
+            <SelectContent>
+              {products.map(p => (
+                <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="grid gap-2">
+          <Label>Sugerir...</Label>
+          <Select value={targetId} onValueChange={setTargetId}>
+            <SelectTrigger>
+              <SelectValue placeholder="Produto destino" />
+            </SelectTrigger>
+            <SelectContent>
+              {products.map(p => (
+                <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <Button 
+          disabled={!sourceId || !targetId || addRuleMutation.isPending}
+          onClick={() => addRuleMutation.mutate()}
+        >
+          Adicionar Regra
+        </Button>
+      </div>
+
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Origem</TableHead>
+            <TableHead></TableHead>
+            <TableHead>Sugestão</TableHead>
+            <TableHead>Descrição</TableHead>
+            <TableHead className="text-right">Ação</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {rules?.map((rule) => {
+            const source = products.find(p => p.id === rule.source_product_id);
+            const target = products.find(p => p.id === rule.target_product_id);
+            return (
+              <TableRow key={rule.id}>
+                <TableCell className="font-medium">{source?.name}</TableCell>
+                <TableCell><ArrowRight className="h-4 w-4 text-muted-foreground" /></TableCell>
+                <TableCell className="font-medium">{target?.name}</TableCell>
+                <TableCell className="text-sm text-muted-foreground">{rule.description}</TableCell>
+                <TableCell className="text-right">
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    onClick={() => deleteRuleMutation.mutate(rule.id)}
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
     </div>
   );
 }
