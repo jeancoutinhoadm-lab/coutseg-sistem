@@ -111,6 +111,11 @@ function DashboardPage() {
           label: `${stats?.pendingTasks} tarefas para hoje`,
           to: "/tasks",
           active: (stats?.pendingTasks ?? 0) > 0
+        },
+        {
+          label: `${stats?.pendingOpportunities} novas oportunidades comerciais`,
+          to: "/opportunities",
+          active: (stats?.pendingOpportunities ?? 0) > 0
         }
       ]
     },
