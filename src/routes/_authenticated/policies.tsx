@@ -253,15 +253,18 @@ function PoliciesPage() {
         onSubmit={(values) => saveMutation.mutate(values)}
         isPending={saveMutation.isPending}
         onRenew={(policy) => {
-          setEditing(null);
-          // Pass base data for renewal
+          setEditing({
+            ...policy,
+            id: "",
+            policy_number: "",
+            start_date: policy.end_date,
+            end_date: "",
+            renewed_from_policy_id: policy.id,
+            status: "quotation" as any
+          } as any);
           setDialogOpen(true);
-          // We need a way to pass the renewed_from_policy_id to the dialog
-          setTimeout(() => {
-            // This is a hack because PolicyDialog handles its own state
-            // Better to pass a "initialValues" prop to PolicyDialog
-          }, 0);
         }}
+
       />
 
     </div>
