@@ -35,6 +35,7 @@ import {
   TrendingUp,
   CheckSquare,
   Calendar,
+  Wallet,
 } from "lucide-react";
 
 const navItems = [
@@ -50,7 +51,7 @@ const navItems = [
   { title: "Oportunidades", to: "/opportunities", icon: TrendingUp, roles: ["admin", "corretor", "gerente"] },
   { title: "Documentos", to: "/documents", icon: Files, roles: ["admin", "corretor", "administrativo", "gerente"] },
   { title: "Comissões", to: "/commissions", icon: DollarSign, roles: ["admin", "financeiro", "gerente"] },
-  { title: "Financeiro", to: "/financial", icon: TrendingUp, roles: ["admin", "financeiro", "gerente"] },
+  { title: "Financeiro", to: "/financial", icon: Wallet, roles: ["admin", "financeiro", "gerente"] },
   { title: "Tarefas", to: "/tasks", icon: CheckSquare, roles: ["admin", "corretor", "administrativo", "gerente"] },
 ];
 
