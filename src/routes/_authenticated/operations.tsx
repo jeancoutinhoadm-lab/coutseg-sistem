@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,6 +11,7 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -47,10 +48,14 @@ import {
   User,
   History,
   Filter,
+  Check,
+  AlertTriangle,
 } from "lucide-react";
-import { createOperation, searchOperationTarget } from "@/lib/operations.functions";
+import { createOperation, searchOperationTarget, createInlineClient } from "@/lib/operations.functions";
 import { formatDisplayDate } from "@/lib/date-utils";
 import { useServerFn } from "@tanstack/react-start";
+import { cn } from "@/lib/utils";
+
 
 export const Route = createFileRoute("/_authenticated/operations")({
   component: OperationsPage,
