@@ -61,7 +61,7 @@ export const closeFinancialPeriod = createServerFn({ method: "POST" })
         period_month: data.period_month,
         status: "closed",
         closed_at: new Date().toISOString(),
-        closed_by: user?.id,
+        closed_by: user?.id ?? null,
       });
 
     if (error) throw error;
