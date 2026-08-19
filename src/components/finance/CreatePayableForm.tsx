@@ -1,0 +1,159 @@
+import * as React from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { toast } from "sonner";
+import { createPayable, getFinancialCategories } from "@/lib/finance-ops.functions";
+
+const formSchema = z.object({
+  description: z.string().min(2, "Descrição muito curta"),
+  amount: z.string().transform((val) => parseFloat(val)),
+  due_date: z.string(),
+  competence_date: z.string(),
+  category_id: z.string().min(1, "Selecione uma categoria"),
+  notes: z.string().optional(),
+});
+
+export function CreatePayableForm({ onSuccess }: { onSuccess?: () => void }) {
+  const queryClient = useQueryClient();
+  const { data: categories } = useQuery({
+    queryKey: ["financial-categories"],
+    queryFn: () => getFinancialCategories(),
+  });
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      description: "",
+      amount: "0",
+      due_date: new Date().toISOString().split("T")[0],
+      competence_date: new Date().toISOString().split("T")[0],
+      category_id: "",
+      notes: "",
+    },
+  });
+
+  const mutation = useMutation({
+    mutationFn: (data: any) => createPayable({ data }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["financial-summary"] });
+      toast.success("Conta a pagar criada com sucesso");
+      onSuccess?.();
+    },
+    onError: () => {
+      toast.error("Erro ao criar conta a pagar");
+    },
+  });
+
+  function onSubmit(values: z.infer<typeof formSchema>) {
+    mutation.mutate(values);
+  }
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="description"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Descrição</FormLabel>
+              <FormControl>
+                <Input placeholder="Ex: Aluguel Setembro" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="amount"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Valor (R$)</FormLabel>
+                <FormControl>
+                  <Input type="number" step="0.01" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="category_id"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Categoria</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {categories?.filter(c => c.type === 'expense').map((cat) => (
+                      <SelectItem key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="due_date"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Vencimento</FormLabel>
+                <FormControl>
+                  <Input type="date" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="competence_date"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Competência</FormLabel>
+                <FormControl>
+                  <Input type="date" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+        <Button type="submit" className="w-full" disabled={mutation.isPending}>
+          {mutation.isPending ? "Salvando..." : "Criar Lançamento"}
+        </Button>
+      </form>
+    </Form>
+  );
+}
