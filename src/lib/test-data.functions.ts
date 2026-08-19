@@ -17,14 +17,18 @@ export const createPilotData = async () => {
 
     if (clientErr) throw clientErr;
 
-    // 2. Criar Lead/Oportunidade Piloto
+    // 2. Criar Lead Piloto
     const { data: lead, error: leadErr } = await supabase
       .from("leads")
       .insert({
         client_id: client.id,
+        full_name: client.full_name,
+        cpf_cnpj: client.cpf_cnpj,
+        email: client.email,
+        phone: client.phone,
         source: "outros",
         status: "new",
-        description: "Lead Piloto de Teste Operacional"
+        notes: "Lead Piloto de Teste Operacional"
       })
       .select()
       .single();
