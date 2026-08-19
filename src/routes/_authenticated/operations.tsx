@@ -46,11 +46,11 @@ import {
   FileText,
   User,
   History,
-  LayoutGrid,
   Filter,
 } from "lucide-react";
 import { createOperation, searchOperationTarget } from "@/lib/operations.functions";
 import { formatDisplayDate } from "@/lib/date-utils";
+import { useServerFn } from "@tanstack/react-start";
 
 export const Route = createFileRoute("/_authenticated/operations")({
   component: OperationsPage,
@@ -66,6 +66,8 @@ function OperationsPage() {
   const [opTitle, setOpTitle] = useState("");
 
   const queryClient = useQueryClient();
+  const searchFn = useServerFn(searchOperationTarget);
+  const createFn = useServerFn(createOperation);
 
   // Listar operações existentes
   const { data: operations, isLoading } = useQuery({
@@ -74,9 +76,14 @@ function OperationsPage() {
       const { data, error } = await supabase
         .from("operations")
         .select(`
-          *,
-          clients (full_name, cpf_cnpj),
-          responsible:auth.users!responsible_id (email)
+          id,
+          type,
+          status,
+          title,
+          created_at,
+          client_id,
+          responsible_id,
+          clients (full_name, cpf_cnpj)
         `)
         .order("created_at", { ascending: false });
 
@@ -86,7 +93,7 @@ function OperationsPage() {
   });
 
   const searchMutation = useMutation({
-    mutationFn: searchOperationTarget,
+    mutationFn: (query: string) => searchFn({ data: { query } }),
     onSuccess: (data) => {
       setFoundClients(data);
       if (data.length === 0) {
@@ -96,7 +103,7 @@ function OperationsPage() {
   });
 
   const createOpMutation = useMutation({
-    mutationFn: createOperation,
+    mutationFn: (variables: any) => createFn({ data: variables }),
     onSuccess: () => {
       toast.success("Operação iniciada com sucesso!");
       setIsNewOpModalOpen(false);
@@ -122,12 +129,11 @@ function OperationsPage() {
       toast.warning("Digite pelo menos 3 caracteres para buscar.");
       return;
     }
-    searchMutation.mutate({ query: searchQuery });
+    searchMutation.mutate(searchQuery);
   };
 
   const handleCreateNewClient = () => {
     toast.info("Redirecionando para cadastro de cliente... (em breve integração direta)");
-    // Aqui no futuro abriria um mini-form de cadastro rápido
   };
 
   const handleFinishStep2 = () => {
@@ -193,7 +199,6 @@ function OperationsPage() {
         </Button>
       </div>
 
-      {/* Grid de Resumo */}
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -219,7 +224,6 @@ function OperationsPage() {
         </Card>
       </div>
 
-      {/* Tabela de Operações */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -239,7 +243,6 @@ function OperationsPage() {
                 <TableHead>Data</TableHead>
                 <TableHead>Operação</TableHead>
                 <TableHead>Cliente</TableHead>
-                <TableHead>Responsável</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
@@ -247,18 +250,18 @@ function OperationsPage() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-10">
+                  <TableCell colSpan={5} className="text-center py-10">
                     Carregando operações...
                   </TableCell>
                 </TableRow>
               ) : operations?.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">
+                  <TableCell colSpan={5} className="text-center py-10 text-muted-foreground">
                     Nenhuma operação registrada.
                   </TableCell>
                 </TableRow>
               ) : (
-                operations?.map((op) => (
+                operations?.map((op: any) => (
                   <TableRow key={op.id}>
                     <TableCell className="text-xs">
                       {formatDisplayDate(op.created_at, "dd/MM/yy HH:mm")}
@@ -273,14 +276,11 @@ function OperationsPage() {
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-col">
-                        <span>{(op.clients as any)?.full_name || "-"}</span>
+                        <span>{op.clients?.full_name || "-"}</span>
                         <span className="text-[10px] text-muted-foreground">
-                          {(op.clients as any)?.cpf_cnpj || "-"}
+                          {op.clients?.cpf_cnpj || "-"}
                         </span>
                       </div>
-                    </TableCell>
-                    <TableCell className="text-xs">
-                      {(op.responsible as any)?.email?.split("@")[0] || "Sistema"}
                     </TableCell>
                     <TableCell>{getStatusBadge(op.status)}</TableCell>
                     <TableCell className="text-right">
@@ -297,7 +297,6 @@ function OperationsPage() {
         </CardContent>
       </Card>
 
-      {/* Modal Wizard: Nova Operação */}
       <Dialog open={isNewOpModalOpen} onOpenChange={setIsNewOpModalOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
