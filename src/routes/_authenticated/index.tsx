@@ -446,7 +446,8 @@ function formatCurrency(value?: number) {
   }).format(value);
 }
 
-function BusinessIntelligence() {
+
+export function BusinessIntelligence() {
   const [question, setQuestion] = useState("");
   const [isAsking, setIsAsking] = useState(false);
   const [chat, setChat] = useState<{q: string, a: string}[]>([]);
