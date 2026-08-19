@@ -36,41 +36,10 @@ function DashboardPage() {
   const { role } = useAuth();
   
   const { data: stats, isLoading } = useQuery({
-    queryKey: ["dashboard-stats"],
-    queryFn: async () => {
-      const today = new Date().toISOString().split("T")[0];
-      const next7Days = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
-
-      const [
-        { count: pendingDocs },
-        { data: urgentRenewals },
-        { data: divergentCommissions },
-        { count: taskCount },
-        { data: activePolicies },
-        { count: opportunitiesCount },
-      ] = await Promise.all([
-        supabase.from("document_processing").select("*", { count: "exact", head: true }).eq("status", "pending"),
-        supabase.from("policies").select("id, policy_number, end_date, clients(full_name)").lte("end_date", next7Days).gte("end_date", today).eq("status", "active"),
-        supabase.from("commissions").select("id, expected_amount, reported_amount").eq("status", "divergent"),
-        supabase.from("tasks").select("id", { count: "exact", head: true }).eq("status", "pending"),
-        supabase.from("policies").select("premium, commission_amount").eq("status", "active"),
-        supabase.from("opportunities").select("id", { count: "exact", head: true }).eq("status", "new"),
-      ]);
-
-      const totalPremium = (activePolicies ?? []).reduce((sum, p) => sum + (Number(p.premium) || 0), 0);
-      const totalCommission = (activePolicies ?? []).reduce((sum, p) => sum + (Number(p.commission_amount) || 0), 0);
-
-      return {
-        pendingDocs: pendingDocs ?? 0,
-        urgentRenewals: urgentRenewals ?? [],
-        divergentCommissions: divergentCommissions ?? [],
-        pendingTasks: Number(taskCount) ?? 0,
-        pendingOpportunities: Number(opportunitiesCount) ?? 0,
-        totalPremium,
-        totalCommission
-      };
-    },
+    queryKey: ["executive-dashboard"],
+    queryFn: () => getExecutiveDashboardData({ period: "month" }),
   });
+
 
   if (isLoading) {
     return (
