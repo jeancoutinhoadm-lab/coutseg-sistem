@@ -352,7 +352,7 @@ function OperationsPage() {
             <DialogTitle>Nova Operação</DialogTitle>
             <DialogDescription>
               {step === 1 && "Selecione o tipo de operação que deseja realizar."}
-              {step === 2 && "Busque o cliente pelo CPF/CNPJ, Telefone ou Nome."}
+              {step === 2 && (isCreatingClient ? "Preencha os dados do novo cliente." : "Busque o cliente pelo CPF/CNPJ, Telefone ou Nome.")}
               {step === 3 && "Confirme os detalhes finais para iniciar."}
             </DialogDescription>
           </DialogHeader>
