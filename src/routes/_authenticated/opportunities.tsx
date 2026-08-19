@@ -231,7 +231,7 @@ function CRMPage() {
                       </TableCell>
                       <TableCell>{lead.source || 'Manual'}</TableCell>
                       <TableCell>{(lead.brokers as any)?.full_name || '-'}</TableCell>
-                      <TableCell>{getStatusBadge(lead.status, 'lead')}</TableCell>
+                      <TableCell>{getStatusBadge(lead.status || 'new', 'lead')}</TableCell>
                       <TableCell className="text-right">
                         {lead.status !== 'converted' && (
                           <Button 
