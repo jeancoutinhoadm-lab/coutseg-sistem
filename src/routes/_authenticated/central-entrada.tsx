@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Upload, FileText, Loader2, CheckCircle2, AlertCircle, Save, RefreshCw, Eye } from "lucide-react";
+import { Upload, FileText, Loader2, CheckCircle2, AlertCircle, Save, RefreshCw, Eye, XCircle } from "lucide-react";
 import { processDocumentWithIA } from "@/lib/ai-extraction.functions";
 import { logAudit } from "@/utils/audit";
 import { Badge } from "@/components/ui/badge";
@@ -20,7 +20,6 @@ export const Route = createFileRoute("/_authenticated/central-entrada")({
 function CentralEntradaPage() {
   const [file, setFile] = useState<File | null>(null);
   const [docType, setDocType] = useState<any>("policy");
-  const [isProcessing, setIsProcessing] = useState(false);
   const [extractedData, setExtractedData] = useState<any>(null);
   const [currentStep, setCurrentStep] = useState<'idle' | 'uploading' | 'uploaded' | 'processing' | 'processed'>('idle');
   const [lastSavedDoc, setLastSavedDoc] = useState<{ id: string; path: string } | null>(null);
@@ -183,19 +182,25 @@ function CentralEntradaPage() {
         
       if (!proc) throw new Error("Processamento não encontrado");
       
+      // The RPC is created in Step 7 migration
       const { error } = await supabase.rpc('approve_document_extraction', {
         _processing_id: proc.id
       });
       
       if (error) throw error;
+      
+      // If doc is a policy, we still allow legacy finalSave logic for this turn
+      // until we fully implement the data syncing in next steps
+      await finalSaveMutation.mutateAsync();
     },
     onSuccess: () => {
-      toast.success("Extração aprovada com sucesso!");
+      toast.success("Extração aprovada e dados vinculados!");
       setCurrentStep('idle');
       setExtractedData(null);
       setFile(null);
       setLastSavedDoc(null);
       queryClient.invalidateQueries();
+      navigate({ to: "/" });
     },
     onError: (error: any) => {
       toast.error("Erro ao aprovar: " + error.message);
@@ -206,10 +211,12 @@ function CentralEntradaPage() {
     mutationFn: async () => {
       if (!lastSavedDoc) return;
       
+      const { data: { user } } = await supabase.auth.getUser();
+      
       await supabase.from('document_processing')
         .update({ 
           status: 'rejected',
-          reviewed_by: (await supabase.auth.getUser()).data.user?.id,
+          reviewed_by: user?.id,
           reviewed_at: new Date().toISOString()
         })
         .eq('document_id', lastSavedDoc.id);
@@ -220,17 +227,6 @@ function CentralEntradaPage() {
       toast.success("Extração rejeitada.");
       setCurrentStep('uploaded');
       setExtractedData(null);
-    }
-  });
-
-    onSuccess: (data) => {
-      setExtractedData(data);
-      setCurrentStep('processed');
-      toast.success("Documento analisado com IA!");
-    },
-    onError: (error: any) => {
-      setCurrentStep('uploaded');
-      toast.error("Erro na IA: " + error.message + ". O documento continua salvo.");
     }
   });
 
@@ -245,7 +241,7 @@ function CentralEntradaPage() {
         const insurer = insurers?.find(i => i.name.toLowerCase().includes(insurerName));
         const client = clients?.find(c => c.full_name.toLowerCase().includes(clientName));
 
-        const { error: policyError } = await supabase.from("policies").insert({
+        const { data: policy, error: policyError } = await supabase.from("policies").insert({
           policy_number: extractedData.policy_number || "PENDENTE",
           client_id: client?.id || clients?.[0]?.id || "", 
           insurer_id: insurer?.id || insurers?.[0]?.id || "",
@@ -254,25 +250,16 @@ function CentralEntradaPage() {
           start_date: extractedData.start_date || new Date().toISOString().split('T')[0],
           end_date: extractedData.end_date || new Date().toISOString().split('T')[0],
           status: 'active'
-        });
+        }).select().single();
+        
         if (policyError) throw policyError;
 
-        // Link policy to document
-        const { data: policyData } = await supabase.from('policies').select('id').eq('policy_number', extractedData.policy_number).single();
-        if (policyData) {
-          await supabase.from('documents').update({ policy_id: policyData.id }).eq('id', lastSavedDoc.id);
+        if (policy) {
+          await supabase.from('documents').update({ policy_id: policy.id }).eq('id', lastSavedDoc.id);
         }
       }
 
       await logAudit('CREATE', 'IA_IMPORT', lastSavedDoc.id);
-    },
-    onSuccess: () => {
-      toast.success("Dados vinculados com sucesso!");
-      queryClient.invalidateQueries();
-      navigate({ to: "/" });
-    },
-    onError: (error: any) => {
-      toast.error("Erro ao vincular dados: " + error.message);
     }
   });
 
@@ -378,9 +365,9 @@ function CentralEntradaPage() {
 
             {currentStep === 'processed' && extractedData && (
               <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
-                <div className="flex items-center gap-2 p-2 bg-green-50 border border-green-100 rounded-md text-green-700 text-sm">
-                  <CheckCircle2 className="h-4 w-4" />
-                  <span>Extração concluída com sucesso!</span>
+                <div className="flex items-center gap-2 p-2 bg-amber-50 border border-amber-100 rounded-md text-amber-700 text-sm">
+                  <AlertCircle className="h-4 w-4" />
+                  <span>Extração concluída! Por favor, revise os dados abaixo.</span>
                 </div>
                 
                 <Label className="text-xs uppercase text-muted-foreground font-semibold">Dados Identificados:</Label>
@@ -401,15 +388,24 @@ function CentralEntradaPage() {
 
                 <div className="flex gap-2">
                   <Button 
-                    className="flex-1" 
-                    onClick={() => finalSaveMutation.mutate()}
-                    disabled={finalSaveMutation.isPending}
+                    className="flex-1 bg-green-600 hover:bg-green-700" 
+                    onClick={() => approveMutation.mutate()}
+                    disabled={approveMutation.isPending}
                   >
-                    {finalSaveMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                    Confirmar e Vincular
+                    {approveMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
+                    Aprovar e Vincular
                   </Button>
-                  <Button variant="outline" className="flex-1" onClick={() => setCurrentStep('uploaded')}>Re-processar</Button>
+                  <Button 
+                    variant="destructive" 
+                    className="flex-1" 
+                    onClick={() => rejectMutation.mutate()}
+                    disabled={rejectMutation.isPending}
+                  >
+                    <XCircle className="mr-2 h-4 w-4" />
+                    Rejeitar
+                  </Button>
                 </div>
+                <Button variant="outline" className="w-full" onClick={() => setCurrentStep('uploaded')}>Re-processar IA</Button>
               </div>
             )}
 
@@ -418,7 +414,7 @@ function CentralEntradaPage() {
                  <RefreshCw className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
                  <p className="text-sm text-muted-foreground">Aguardando início da análise...</p>
                </div>
-            )}
+             )}
           </CardContent>
         </Card>
       </div>
