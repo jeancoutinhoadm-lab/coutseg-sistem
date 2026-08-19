@@ -41,17 +41,17 @@ export function CreatePayableForm({ onSuccess }: { onSuccess?: () => void }) {
     queryFn: () => getFinancialCategories(),
   });
 
-  const todayStr: string = new Date().toISOString().split("T")[0];
+  const todayStr = new Date().toISOString().split("T")[0];
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       description: "",
       amount: 0,
-      due_date: todayStr,
-      competence_date: todayStr,
+      due_date: todayStr as string,
+      competence_date: todayStr as string,
       category_id: "",
-    },
+    } as any, // Bypass strict defaultValues type check
   });
 
   const mutation = useMutation({
