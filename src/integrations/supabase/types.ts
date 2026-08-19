@@ -289,6 +289,53 @@ export type Database = {
           },
         ]
       }
+      commission_reconciliations: {
+        Row: {
+          adjustment_amount: number | null
+          commission_id: string | null
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          new_status: string | null
+          previous_status: string | null
+          reason: string
+          reconciliation_date: string | null
+          user_id: string | null
+        }
+        Insert: {
+          adjustment_amount?: number | null
+          commission_id?: string | null
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          new_status?: string | null
+          previous_status?: string | null
+          reason: string
+          reconciliation_date?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          adjustment_amount?: number | null
+          commission_id?: string | null
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          new_status?: string | null
+          previous_status?: string | null
+          reason?: string
+          reconciliation_date?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commission_reconciliations_commission_id_fkey"
+            columns: ["commission_id"]
+            isOneToOne: false
+            referencedRelation: "commissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       commissions: {
         Row: {
           created_at: string | null
@@ -299,6 +346,7 @@ export type Database = {
           policy_id: string | null
           received_amount: number | null
           received_date: string | null
+          reported_amount: number | null
           statement_document_id: string | null
           status: string | null
         }
@@ -311,6 +359,7 @@ export type Database = {
           policy_id?: string | null
           received_amount?: number | null
           received_date?: string | null
+          reported_amount?: number | null
           statement_document_id?: string | null
           status?: string | null
         }
@@ -323,6 +372,7 @@ export type Database = {
           policy_id?: string | null
           received_amount?: number | null
           received_date?: string | null
+          reported_amount?: number | null
           statement_document_id?: string | null
           status?: string | null
         }
@@ -1041,6 +1091,15 @@ export type Database = {
       }
       process_commission_item_approval: {
         Args: { _document_id: string; _item: Json; _user_id: string }
+        Returns: Json
+      }
+      reconcile_commission: {
+        Args: {
+          _adjustment_amount?: number
+          _commission_id: string
+          _new_status: string
+          _reason: string
+        }
         Returns: Json
       }
     }
