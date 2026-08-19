@@ -50,7 +50,7 @@ function DashboardPage() {
       ] = await Promise.all([
         supabase.from("document_processing").select("*", { count: "exact", head: true }).eq("status", "pending"),
         supabase.from("policies").select("id, policy_number, end_date, clients(full_name)").lte("end_date", next7Days).gte("end_date", today).eq("status", "active"),
-        supabase.from("commissions").select("id, expected_amount, received_amount").eq("status", "divergent"),
+        supabase.from("commissions").select("id, expected_amount, reported_amount").eq("status", "divergent"),
         supabase.from("tasks").select("id", { count: "exact", head: true }).eq("status", "pending"),
         supabase.from("policies").select("premium, commission_amount").eq("status", "active"),
       ]);
