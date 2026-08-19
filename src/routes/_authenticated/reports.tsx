@@ -26,7 +26,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format, subMonths, startOfMonth, endOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth, type AppRole } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
 
 // Este é um componente de navegação para os relatórios
@@ -45,11 +45,11 @@ function ReportsCentral() {
   const [activeCategory, setActiveCategory] = useState<string>("finance");
 
   const categories = [
-    { id: "finance", label: "Financeiro", icon: DollarSign, roles: ["admin", "financeiro", "gerente"] },
-    { id: "commercial", label: "Comercial", icon: TrendingUp, roles: ["admin", "gerente", "corretor"] },
-    { id: "portfolio", label: "Carteira", icon: Users, roles: ["admin", "gerente", "administrativo"] },
-    { id: "operational", label: "Operacional", icon: Activity, roles: ["admin", "gerente", "administrativo"] },
-    { id: "audit", label: "Auditoria", icon: ShieldCheck, roles: ["admin"] },
+    { id: "finance", label: "Financeiro", icon: DollarSign, roles: ["admin", "financeiro", "gerente"] as AppRole[] },
+    { id: "commercial", label: "Comercial", icon: TrendingUp, roles: ["admin", "gerente", "corretor"] as AppRole[] },
+    { id: "portfolio", label: "Carteira", icon: Users, roles: ["admin", "gerente", "administrativo"] as AppRole[] },
+    { id: "operational", label: "Operacional", icon: Activity, roles: ["admin", "gerente", "administrativo"] as AppRole[] },
+    { id: "audit", label: "Auditoria", icon: ShieldCheck, roles: ["admin"] as AppRole[] },
   ];
 
   const reports = {
