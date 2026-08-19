@@ -349,6 +349,7 @@ export type Database = {
         Row: {
           created_at: string | null
           divergence_amount: number | null
+          divergence_justification: string | null
           due_date: string | null
           expected_amount: number
           id: string
@@ -362,6 +363,7 @@ export type Database = {
         Insert: {
           created_at?: string | null
           divergence_amount?: number | null
+          divergence_justification?: string | null
           due_date?: string | null
           expected_amount: number
           id?: string
@@ -375,6 +377,7 @@ export type Database = {
         Update: {
           created_at?: string | null
           divergence_amount?: number | null
+          divergence_justification?: string | null
           due_date?: string | null
           expected_amount?: number
           id?: string
@@ -859,6 +862,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      financial_periods: {
+        Row: {
+          closed_at: string | null
+          closed_by: string | null
+          created_at: string | null
+          id: string
+          period_month: string
+          reopened_at: string | null
+          reopened_by: string | null
+          reopening_reason: string | null
+          status: string
+        }
+        Insert: {
+          closed_at?: string | null
+          closed_by?: string | null
+          created_at?: string | null
+          id?: string
+          period_month: string
+          reopened_at?: string | null
+          reopened_by?: string | null
+          reopening_reason?: string | null
+          status: string
+        }
+        Update: {
+          closed_at?: string | null
+          closed_by?: string | null
+          created_at?: string | null
+          id?: string
+          period_month?: string
+          reopened_at?: string | null
+          reopened_by?: string | null
+          reopening_reason?: string | null
+          status?: string
+        }
+        Relationships: []
       }
       insurer_aliases: {
         Row: {
@@ -1535,6 +1574,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_period_open: { Args: { check_date: string }; Returns: boolean }
       process_commission_item_approval: {
         Args: { _document_id: string; _item: Json; _user_id: string }
         Returns: Json

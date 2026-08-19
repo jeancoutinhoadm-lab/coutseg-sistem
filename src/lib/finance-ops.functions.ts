@@ -133,14 +133,18 @@ export const reverseEntry = createServerFn({ method: "POST" })
     if (!entry) throw new Error("Lançamento não encontrado");
 
     // Estorno: Criar lançamento de sinal oposto
-    const reversalData = {
-      ...entry,
-      id: undefined,
+    const reversalData: any = {
+      type: 'adjustment',
       amount: -Number(entry.amount),
       entry_date: new Date().toISOString().split('T')[0],
+      bank_account_id: entry.bank_account_id,
+      category_id: entry.category_id,
       notes: `ESTORNO: ${data.reason} (Ref: ${entry.id})`,
-      created_at: undefined,
+      user_id: (await supabase.auth.getUser()).data.user?.id,
     };
+
+    if (entry.payable_id) reversalData.payable_id = entry.payable_id;
+    if (entry.cost_center_id) reversalData.cost_center_id = entry.cost_center_id;
 
     const { error: reversalError } = await supabase
       .from("financial_entries")
@@ -160,15 +164,18 @@ export const reverseEntry = createServerFn({ method: "POST" })
     const { data: account } = await supabase
       .from("bank_accounts")
       .select("balance")
-      .eq("id", entry.bank_account_id)
+      .eq("id", entry.bank_account_id!)
       .single();
 
     if (account) {
+      const entryAmount = Number(entry.amount);
+      const currentBalance = Number(account.balance) || 0;
       const multiplier = entry.type === 'income' ? -1 : 1;
+      
       await supabase
         .from("bank_accounts")
-        .update({ balance: (Number(account.balance) || 0) + (Number(entry.amount) * multiplier) })
-        .eq("id", entry.bank_account_id);
+        .update({ balance: currentBalance + (entryAmount * multiplier) })
+        .eq("id", entry.bank_account_id!);
     }
 
     return { success: true };
