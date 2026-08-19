@@ -17,6 +17,7 @@ export interface CommissionReportItem {
   broker_name: string | null;
   due_date?: string | null;
   payment_date?: string | null;
+  parcel_number?: string | null;
   status: 'pending_review' | 'confirmed' | 'corrected' | 'rejected';
   matched_policy_id?: string | null;
   matched_client_id?: string | null;
@@ -97,15 +98,20 @@ Retorne um JSON estruturado seguindo este schema:
       "paid_commission": 0.00,
       "due_date": "YYYY-MM-DD",
       "payment_date": "YYYY-MM-DD",
-      "broker_name": "Nome do corretor"
+      "broker_name": "Nome do corretor",
+      "parcel_number": "Número da parcela (ex: 1/12)"
     }
   ]
 }
 
 Regras:
-1. Valores monetários devem ser números (1234.56). Use null se não encontrar.
-2. Datas devem ser YYYY-MM-DD.
-3. Responda apenas o JSON puro, sem markdown.`;
+1. 'expected_commission' é o valor que a seguradora diz que deveria pagar.
+2. 'paid_commission' é o valor que a seguradora efetivamente pagou nesta linha.
+3. Se houver estorno, o 'paid_commission' deve ser negativo.
+4. 'parcel_number' ajuda a diferenciar pagamentos da mesma apólice.
+5. Valores monetários devem ser números (1234.56). Use null se não encontrar.
+6. Datas devem ser YYYY-MM-DD.
+7. Responda apenas o JSON puro, sem markdown.`;
 
 
     const startTime = Date.now();
