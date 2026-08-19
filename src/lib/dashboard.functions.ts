@@ -65,7 +65,8 @@ export const getExecutiveDashboardData = createServerFn({ method: "GET" })
       if (insurerId) {
         // Nested filter via commissions
         const { data: commIds } = await supabase.from("commissions").select("id").eq("insurer_id" as any, insurerId);
-        if (commIds?.length) query = query.in("commission_id", commIds.map(c => c.id));
+        if (commIds?.length) query = query.in("commission_id", commIds.map((c: { id: string }) => c.id));
+
       }
       
       const { data: recs } = await query;
