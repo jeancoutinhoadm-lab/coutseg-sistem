@@ -103,6 +103,9 @@ function DashboardPage() {
 
   return (
     <div className="space-y-8 pb-10">
+      {/* Inteligência da CoutSeg */}
+      <BusinessIntelligence />
+
       {/* Header & Filtros */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
