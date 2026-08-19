@@ -1,36 +1,40 @@
 import { createServerFn } from "@tanstack/react-start";
-import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 
 export const getFinancialSummary = createServerFn({ method: "GET" })
   .handler(async () => {
-    // Buscar saldos das contas
+    // 1. Saldo em Contas (Bancos)
     const { data: accounts } = await supabase
       .from("bank_accounts")
       .select("balance")
       .eq("status", "active");
+    
+    const totalBalance = (accounts || []).reduce((acc, curr) => acc + (Number(curr.balance) || 0), 0);
 
-    const totalBalance = accounts?.reduce((acc, curr) => acc + (curr.balance || 0), 0) || 0;
-
-    // Buscar contas a pagar pendentes
-    const { data: payables } = await supabase
-      .from("payables")
-      .select("amount")
-      .eq("status", "pending");
-
-    const totalPayables = payables?.reduce((acc, curr) => acc + (curr.amount || 0), 0) || 0;
-
-    // Buscar comissões a receber (pendentes/parciais)
+    // 2. Contas a Receber (Comissões pendentes e parciais)
+    // Usamos o módulo de comissões existente conforme instrução
     const { data: commissions } = await supabase
       .from("commissions")
       .select("expected_amount, received_amount")
       .in("status", ["pending", "partial"]);
+    
+    const totalReceivables = (commissions || []).reduce((acc, curr) => {
+      const expected = Number(curr.expected_amount) || 0;
+      const received = Number(curr.received_amount) || 0;
+      return acc + (expected - received);
+    }, 0);
 
-    const totalReceivables = commissions?.reduce((acc, curr) => acc + (curr.expected_amount - (curr.received_amount || 0)), 0) || 0;
+    // 3. Contas a Pagar (Despesas internas pendentes e parciais)
+    const { data: payables } = await supabase
+      .from("payables")
+      .select("amount")
+      .in("status", ["pending", "partial"]);
+    
+    const totalPayables = (payables || []).reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
 
     return {
       totalBalance,
-      totalPayables,
       totalReceivables,
+      totalPayables,
     };
   });
