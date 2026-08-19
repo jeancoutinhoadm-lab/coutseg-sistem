@@ -1110,6 +1110,42 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          created_at: string | null
+          id: string
+          message: string
+          origin_id: string | null
+          origin_table: string | null
+          read_at: string | null
+          title: string
+          type: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          message: string
+          origin_id?: string | null
+          origin_table?: string | null
+          read_at?: string | null
+          title: string
+          type: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          message?: string
+          origin_id?: string | null
+          origin_table?: string | null
+          read_at?: string | null
+          title?: string
+          type?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       opportunities: {
         Row: {
           broker_id: string | null
@@ -1684,50 +1720,106 @@ export type Database = {
           },
         ]
       }
+      task_history: {
+        Row: {
+          changed_by: string | null
+          created_at: string | null
+          field: string
+          id: string
+          new_value: string | null
+          old_value: string | null
+          task_id: string | null
+        }
+        Insert: {
+          changed_by?: string | null
+          created_at?: string | null
+          field: string
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          task_id?: string | null
+        }
+        Update: {
+          changed_by?: string | null
+          created_at?: string | null
+          field?: string
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          task_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_history_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tasks: {
         Row: {
           client_id: string | null
+          commission_id: string | null
           completed_at: string | null
           created_at: string | null
+          creator_id: string | null
           description: string | null
+          document_id: string | null
           due_date: string | null
           id: string
+          lead_id: string | null
           opportunity_id: string | null
           origin: string | null
+          payable_id: string | null
           policy_id: string | null
           priority: string | null
           status: string | null
           title: string
+          updated_at: string | null
           user_id: string | null
         }
         Insert: {
           client_id?: string | null
+          commission_id?: string | null
           completed_at?: string | null
           created_at?: string | null
+          creator_id?: string | null
           description?: string | null
+          document_id?: string | null
           due_date?: string | null
           id?: string
+          lead_id?: string | null
           opportunity_id?: string | null
           origin?: string | null
+          payable_id?: string | null
           policy_id?: string | null
           priority?: string | null
           status?: string | null
           title: string
+          updated_at?: string | null
           user_id?: string | null
         }
         Update: {
           client_id?: string | null
+          commission_id?: string | null
           completed_at?: string | null
           created_at?: string | null
+          creator_id?: string | null
           description?: string | null
+          document_id?: string | null
           due_date?: string | null
           id?: string
+          lead_id?: string | null
           opportunity_id?: string | null
           origin?: string | null
+          payable_id?: string | null
           policy_id?: string | null
           priority?: string | null
           status?: string | null
           title?: string
+          updated_at?: string | null
           user_id?: string | null
         }
         Relationships: [
@@ -1739,10 +1831,38 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "tasks_commission_id_fkey"
+            columns: ["commission_id"]
+            isOneToOne: false
+            referencedRelation: "commissions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "tasks_opportunity_id_fkey"
             columns: ["opportunity_id"]
             isOneToOne: false
             referencedRelation: "opportunities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_payable_id_fkey"
+            columns: ["payable_id"]
+            isOneToOne: false
+            referencedRelation: "payables"
             referencedColumns: ["id"]
           },
           {
