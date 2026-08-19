@@ -108,8 +108,8 @@ function DashboardPage() {
 
       {/* Alertas e Operação */}
       <div className="grid gap-6 md:grid-cols-3">
-        <Card className="border-l-4 border-l-red-500 hover:shadow-md transition-all cursor-pointer group" asChild>
-          <Link to="/renewals">
+        <Link to="/renewals" className="block">
+          <Card className="border-l-4 border-l-red-500 hover:shadow-md transition-all cursor-pointer group h-full">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-bold tracking-widest text-red-600">CRÍTICO: RENOVAÇÕES</CardTitle>
               <Calendar className="h-5 w-5 text-red-500 group-hover:scale-110 transition-transform" />
@@ -121,11 +121,11 @@ function DashboardPage() {
                 Ver Central <ArrowRight className="ml-1 h-3 w-3" />
               </div>
             </CardContent>
-          </Link>
-        </Card>
+          </Card>
+        </Link>
 
-        <Card className="border-l-4 border-l-amber-500 hover:shadow-md transition-all cursor-pointer group" asChild>
-          <Link to="/central-entrada">
+        <Link to="/central-entrada" className="block">
+          <Card className="border-l-4 border-l-amber-500 hover:shadow-md transition-all cursor-pointer group h-full">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-bold tracking-widest text-amber-600">IA: CONFERÊNCIA</CardTitle>
               <FileSearch className="h-5 w-5 text-amber-500 group-hover:scale-110 transition-transform" />
@@ -137,11 +137,11 @@ function DashboardPage() {
                 Processar Agora <ArrowRight className="ml-1 h-3 w-3" />
               </div>
             </CardContent>
-          </Link>
-        </Card>
+          </Card>
+        </Link>
 
-        <Card className="border-l-4 border-l-blue-500 hover:shadow-md transition-all cursor-pointer group" asChild>
-          <Link to="/commissions">
+        <Link to="/commissions" className="block">
+          <Card className="border-l-4 border-l-blue-500 hover:shadow-md transition-all cursor-pointer group h-full">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-bold tracking-widest text-blue-600">FINANCEIRO: DIVERGÊNCIA</CardTitle>
               <AlertCircle className="h-5 w-5 text-blue-500 group-hover:scale-110 transition-transform" />
@@ -153,9 +153,10 @@ function DashboardPage() {
                 Auditar <ArrowRight className="ml-1 h-3 w-3" />
               </div>
             </CardContent>
-          </Link>
-        </Card>
+          </Card>
+        </Link>
       </div>
+
 
       {/* Financeiro Executivo */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
