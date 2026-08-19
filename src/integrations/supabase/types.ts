@@ -351,10 +351,14 @@ export type Database = {
           attempts: number | null
           created_at: string | null
           document_id: string | null
+          document_line_count: number | null
+          document_total: number | null
           error_message: string | null
           estimated_cost: number | null
           execution_duration_ms: number | null
           extracted_data: Json | null
+          extracted_line_count: number | null
+          extracted_total: number | null
           id: string
           input_tokens: number | null
           output_tokens: number | null
@@ -363,6 +367,8 @@ export type Database = {
           reviewed_by: string | null
           status: string | null
           type: Database["public"]["Enums"]["document_type"] | null
+          validation_errors: Json | null
+          validation_status: string | null
         }
         Insert: {
           ai_confidence?: Json | null
@@ -371,10 +377,14 @@ export type Database = {
           attempts?: number | null
           created_at?: string | null
           document_id?: string | null
+          document_line_count?: number | null
+          document_total?: number | null
           error_message?: string | null
           estimated_cost?: number | null
           execution_duration_ms?: number | null
           extracted_data?: Json | null
+          extracted_line_count?: number | null
+          extracted_total?: number | null
           id?: string
           input_tokens?: number | null
           output_tokens?: number | null
@@ -383,6 +393,8 @@ export type Database = {
           reviewed_by?: string | null
           status?: string | null
           type?: Database["public"]["Enums"]["document_type"] | null
+          validation_errors?: Json | null
+          validation_status?: string | null
         }
         Update: {
           ai_confidence?: Json | null
@@ -391,10 +403,14 @@ export type Database = {
           attempts?: number | null
           created_at?: string | null
           document_id?: string | null
+          document_line_count?: number | null
+          document_total?: number | null
           error_message?: string | null
           estimated_cost?: number | null
           execution_duration_ms?: number | null
           extracted_data?: Json | null
+          extracted_line_count?: number | null
+          extracted_total?: number | null
           id?: string
           input_tokens?: number | null
           output_tokens?: number | null
@@ -403,6 +419,8 @@ export type Database = {
           reviewed_by?: string | null
           status?: string | null
           type?: Database["public"]["Enums"]["document_type"] | null
+          validation_errors?: Json | null
+          validation_status?: string | null
         }
         Relationships: [
           {
