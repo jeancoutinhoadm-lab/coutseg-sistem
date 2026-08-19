@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { parseSafeDate, getAuditTimestamp } from "./date-utils";
 
 export type OperationType = 'new_sale' | 'renewal' | 'endorsement' | 'cancellation' | 'update';
+export type OperationStatus = 'draft' | 'in_progress' | 'pending_docs' | 'review' | 'completed' | 'cancelled';
 
 const createOperationSchema = z.object({
   type: z.enum(['new_sale', 'renewal', 'endorsement', 'cancellation', 'update']),
@@ -51,8 +52,8 @@ export const createOperation = createServerFn({ method: "POST" })
         .insert(
           initialChecklist.map(task => ({
             operation_id: operation.id,
-            task_name: task,
-            required: true,
+            task_name: task.name,
+            required: task.required,
             is_completed: false
           }))
         );
@@ -88,43 +89,143 @@ export const searchOperationTarget = createServerFn({ method: "GET" })
   });
 
 /**
- * Define o checklist inicial por tipo de operação
+ * Cria um novo cliente inline durante a operação
  */
-function getInitialChecklist(type: OperationType): string[] {
+export const createInlineClient = createServerFn({ method: "POST" })
+  .validator((data: unknown) => z.object({
+    full_name: z.string().min(1),
+    cpf_cnpj: z.string().optional(),
+    phone: z.string().optional(),
+    email: z.string().email().optional(),
+    address: z.string().optional(),
+    broker_id: z.string().optional(),
+  }).parse(data))
+  .handler(async ({ data }) => {
+    const { data: authData } = await supabase.auth.getUser();
+    if (!authData.user) throw new Error("Unauthorized");
+
+    // Verificar duplicidade
+    if (data.cpf_cnpj) {
+      const { data: existing } = await supabase
+        .from("clients")
+        .select("id, full_name")
+        .eq("cpf_cnpj", data.cpf_cnpj)
+        .maybeSingle();
+      
+      if (existing) throw new Error(`CPF/CNPJ já cadastrado para o cliente: ${existing.full_name}`);
+    }
+
+    const { data: client, error } = await supabase
+      .from("clients")
+      .insert({
+        full_name: data.full_name,
+        cpf_cnpj: data.cpf_cnpj || null,
+        phone: data.phone || null,
+        email: data.email || null,
+        address: data.address || null,
+        broker_id: data.broker_id || null,
+        status: 'active'
+      } as any)
+      .select()
+      .single();
+
+    if (error) throw new Error(error.message);
+    return client;
+  });
+
+/**
+ * Atualiza o checklist dinamicamente e valida pendências
+ */
+export const validateOperationProgress = createServerFn({ method: "GET" })
+  .validator((data: unknown) => z.object({ operationId: z.string() }).parse(data))
+  .handler(async ({ data }) => {
+    const { data: operation, error: opError } = await supabase
+      .from("operations")
+      .select(`
+        *,
+        operation_checklists (*)
+      `)
+      .eq("id", data.operationId)
+      .single();
+
+    if (opError) throw new Error(opError.message);
+
+    const pendingRequired = operation.operation_checklists?.filter(item => item.required && !item.is_completed) || [];
+    const isReady = pendingRequired.length === 0;
+
+    return {
+      operation,
+      isReady,
+      pendingRequired
+    };
+  });
+
+/**
+ * Conclui uma operação e gera a apólice final se necessário
+ */
+export const completeOperation = createServerFn({ method: "POST" })
+  .validator((data: unknown) => z.object({ operationId: z.string() }).parse(data))
+  .handler(async ({ data }) => {
+    const { data: authData } = await supabase.auth.getUser();
+    if (!authData.user) throw new Error("Unauthorized");
+
+    // 1. Validar progresso
+    const { operation, isReady } = await validateOperationProgress({ data });
+    if (!isReady) throw new Error("Ainda existem pendências obrigatórias no checklist.");
+
+    // 2. Atualizar status da operação
+    const { error: updateError } = await supabase
+      .from("operations")
+      .update({ 
+        status: 'completed',
+        metadata: { 
+          ...(operation.metadata as Record<string, any> || {}),
+          completed_at: new Date().toISOString(),
+          completed_by: authData.user.id
+        }
+
+      })
+      .eq("id", data.operationId);
+
+    if (updateError) throw new Error(updateError.message);
+
+    // 3. Se for venda nova ou renovação, e tiver dados mínimos, poderíamos automatizar a criação da apólice
+    // Por enquanto, apenas marcamos como concluído para o operador.
+    
+    return { success: true };
+  });
+
+function getInitialChecklist(type: OperationType): { name: string; required: boolean }[] {
+  const common = [
+    { name: "Documento da Apólice (PDF)", required: true },
+    { name: "Conferência de Dados Cadastrais", required: true },
+    { name: "Registro de Comissão Prevista", required: true },
+  ];
+
   switch (type) {
     case 'new_sale':
       return [
-        "Cliente confirmado",
-        "Oportunidade registrada",
-        "Cotação apresentada",
-        "Apólice emitida",
-        "Documento anexado",
-        "Comissão configurada"
+        ...common,
+        { name: "Cotação Aprovada", required: true },
+        { name: "Comprovante de Pagamento (1ª Parcela)", required: false },
       ];
     case 'renewal':
       return [
-        "Cliente confirmado",
-        "Apólice anterior localizada",
-        "Nova vigência definida",
-        "Prêmio atualizado",
-        "Nova apólice emitida",
-        "Documento anexado"
+        ...common,
+        { name: "Histórico da Apólice Anterior", required: true },
       ];
     case 'endorsement':
       return [
-        "Apólice original identificada",
-        "Motivo do endosso registrado",
-        "Alterações conferidas",
-        "Documento do endosso anexado"
+        { name: "Documento de Endosso", required: true },
+        { name: "Conferência de Alterações", required: true },
       ];
     case 'cancellation':
       return [
-        "Motivo do cancelamento",
-        "Data do distrato",
-        "Confirmação da seguradora",
-        "Ajuste financeiro (se houver)"
+        { name: "Carta de Cancelamento Assinada", required: true },
+        { name: "Cálculo de Restituição", required: false },
       ];
     default:
-      return ["Conferência de dados"];
+      return common;
   }
 }
+

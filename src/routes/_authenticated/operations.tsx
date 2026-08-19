@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,6 +11,7 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -47,10 +48,14 @@ import {
   User,
   History,
   Filter,
+  Check,
+  AlertTriangle,
 } from "lucide-react";
-import { createOperation, searchOperationTarget } from "@/lib/operations.functions";
+import { createOperation, searchOperationTarget, createInlineClient } from "@/lib/operations.functions";
 import { formatDisplayDate } from "@/lib/date-utils";
 import { useServerFn } from "@tanstack/react-start";
+import { cn } from "@/lib/utils";
+
 
 export const Route = createFileRoute("/_authenticated/operations")({
   component: OperationsPage,
@@ -64,10 +69,20 @@ function OperationsPage() {
   const [foundClients, setFoundClients] = useState<any[]>([]);
   const [selectedClient, setSelectedClient] = useState<any>(null);
   const [opTitle, setOpTitle] = useState("");
+  const [isCreatingClient, setIsCreatingClient] = useState(false);
+  const [newClientData, setNewClientData] = useState({
+    full_name: "",
+    cpf_cnpj: "",
+    phone: "",
+    email: "",
+    address: "",
+  });
 
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const searchFn = useServerFn(searchOperationTarget);
   const createFn = useServerFn(createOperation);
+  const createClientFn = useServerFn(createInlineClient);
 
   // Listar operações existentes
   const { data: operations, isLoading } = useQuery({
@@ -102,18 +117,34 @@ function OperationsPage() {
     },
   });
 
+  const inlineClientMutation = useMutation({
+    mutationFn: (variables: any) => createClientFn({ data: variables }),
+    onSuccess: (client) => {
+      toast.success("Cliente cadastrado!");
+      setSelectedClient(client);
+      setIsCreatingClient(false);
+      setStep(3);
+    },
+    onError: (err: any) => {
+      toast.error("Erro ao cadastrar cliente: " + err.message);
+    },
+  });
+
   const createOpMutation = useMutation({
     mutationFn: (variables: any) => createFn({ data: variables }),
-    onSuccess: () => {
+    onSuccess: (op) => {
       toast.success("Operação iniciada com sucesso!");
       setIsNewOpModalOpen(false);
       resetModal();
       queryClient.invalidateQueries({ queryKey: ["operations-list"] });
+      // Redirecionar para detalhes da operação (próximo passo do plano)
+      // navigate({ to: "/operations/$id", params: { id: op.id } });
     },
     onError: (err: any) => {
       toast.error("Erro ao iniciar operação: " + err.message);
     },
   });
+
 
   const resetModal = () => {
     setStep(1);
@@ -122,6 +153,14 @@ function OperationsPage() {
     setFoundClients([]);
     setSelectedClient(null);
     setOpTitle("");
+    setIsCreatingClient(false);
+    setNewClientData({
+      full_name: "",
+      cpf_cnpj: "",
+      phone: "",
+      email: "",
+      address: "",
+    });
   };
 
   const handleStartSearch = () => {
@@ -133,11 +172,11 @@ function OperationsPage() {
   };
 
   const handleCreateNewClient = () => {
-    toast.info("Redirecionando para cadastro de cliente... (em breve integração direta)");
+    setIsCreatingClient(true);
   };
 
   const handleFinishStep2 = () => {
-    if (!selectedClient) {
+    if (!selectedClient && !isCreatingClient) {
       toast.warning("Selecione um cliente ou cadastre um novo.");
       return;
     }
@@ -145,6 +184,15 @@ function OperationsPage() {
   };
 
   const handleFinalSubmit = () => {
+    if (isCreatingClient) {
+      if (!newClientData.full_name) {
+        toast.warning("Nome do cliente é obrigatório.");
+        return;
+      }
+      inlineClientMutation.mutate(newClientData);
+      return;
+    }
+
     if (!opTitle) {
       toast.warning("Dê um título para a operação.");
       return;
@@ -155,6 +203,7 @@ function OperationsPage() {
       clientId: selectedClient.id,
     });
   };
+
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -262,7 +311,13 @@ function OperationsPage() {
                 </TableRow>
               ) : (
                 operations?.map((op: any) => (
-                  <TableRow key={op.id}>
+                    <TableRow 
+                      key={op.id} 
+                      className="cursor-pointer hover:bg-muted/50"
+                      onClick={() => navigate({ to: "/operations/$id", params: { id: op.id } } as any)}
+                    >
+
+
                     <TableCell className="text-xs">
                       {formatDisplayDate(op.created_at, "dd/MM/yy HH:mm")}
                     </TableCell>
@@ -303,7 +358,7 @@ function OperationsPage() {
             <DialogTitle>Nova Operação</DialogTitle>
             <DialogDescription>
               {step === 1 && "Selecione o tipo de operação que deseja realizar."}
-              {step === 2 && "Busque o cliente pelo CPF/CNPJ, Telefone ou Nome."}
+              {step === 2 && (isCreatingClient ? "Preencha os dados do novo cliente." : "Busque o cliente pelo CPF/CNPJ, Telefone ou Nome.")}
               {step === 3 && "Confirme os detalhes finais para iniciar."}
             </DialogDescription>
           </DialogHeader>
@@ -334,7 +389,7 @@ function OperationsPage() {
               </div>
             )}
 
-            {step === 2 && (
+            {step === 2 && !isCreatingClient && (
               <div className="space-y-4">
                 <div className="flex gap-2">
                   <Input
@@ -371,13 +426,60 @@ function OperationsPage() {
                   ))}
 
                   {searchMutation.isSuccess && foundClients.length === 0 && (
-                    <Button variant="outline" className="w-full" onClick={handleCreateNewClient}>
-                      Cadastrar Novo Cliente
-                    </Button>
+                    <div className="text-center py-4 space-y-2">
+                      <p className="text-sm text-muted-foreground">Cliente não encontrado</p>
+                      <Button variant="outline" className="w-full" onClick={handleCreateNewClient}>
+                        <Plus className="mr-2 h-4 w-4" /> Cadastrar Cliente
+                      </Button>
+                    </div>
                   )}
                 </div>
               </div>
             )}
+
+            {step === 2 && isCreatingClient && (
+              <div className="grid gap-4">
+                <div className="grid gap-2">
+                  <Label>Nome Completo *</Label>
+                  <Input 
+                    value={newClientData.full_name}
+                    onChange={(e) => setNewClientData({...newClientData, full_name: e.target.value})}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label>CPF/CNPJ</Label>
+                    <Input 
+                      value={newClientData.cpf_cnpj}
+                      onChange={(e) => setNewClientData({...newClientData, cpf_cnpj: e.target.value})}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Telefone</Label>
+                    <Input 
+                      value={newClientData.phone}
+                      onChange={(e) => setNewClientData({...newClientData, phone: e.target.value})}
+                    />
+                  </div>
+                </div>
+                <div className="grid gap-2">
+                  <Label>Email</Label>
+                  <Input 
+                    type="email"
+                    value={newClientData.email}
+                    onChange={(e) => setNewClientData({...newClientData, email: e.target.value})}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Endereço</Label>
+                  <Input 
+                    value={newClientData.address}
+                    onChange={(e) => setNewClientData({...newClientData, address: e.target.value})}
+                  />
+                </div>
+              </div>
+            )}
+
 
             {step === 3 && (
               <div className="space-y-4">
@@ -407,17 +509,19 @@ function OperationsPage() {
 
           <DialogFooter className="flex justify-between sm:justify-between">
             {step > 1 ? (
-              <Button variant="ghost" onClick={() => setStep(step - 1)}>
+              <Button variant="ghost" onClick={() => isCreatingClient ? setIsCreatingClient(false) : setStep(step - 1)}>
                 Voltar
               </Button>
+
             ) : (
               <div />
             )}
             
             {step === 2 && (
-              <Button onClick={handleFinishStep2} disabled={!selectedClient}>
-                Próximo
+              <Button onClick={isCreatingClient ? handleFinalSubmit : handleFinishStep2} disabled={!selectedClient && !isCreatingClient}>
+                {isCreatingClient ? "Cadastrar e Continuar" : "Próximo"}
               </Button>
+
             )}
 
             {step === 3 && (
@@ -432,6 +536,3 @@ function OperationsPage() {
   );
 }
 
-function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(" ");
-}

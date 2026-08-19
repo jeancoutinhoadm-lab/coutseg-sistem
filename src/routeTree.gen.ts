@@ -30,6 +30,7 @@ import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedTasksRouteImport } from './routes/_authenticated/tasks'
 import { Route as AuthLoginRouteImport } from './routes/auth/login'
 import { Route as AuthRegisterRouteImport } from './routes/auth/register'
+import { Route as AuthenticatedOperationsIdRouteImport } from './routes/_authenticated/operations.$id'
 
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
@@ -138,6 +139,12 @@ const AuthRegisterRoute = AuthRegisterRouteImport.update({
   path: '/auth/register',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedOperationsIdRoute =
+  AuthenticatedOperationsIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => AuthenticatedOperationsRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
@@ -150,7 +157,7 @@ export interface FileRoutesByFullPath {
   '/documents': typeof AuthenticatedDocumentsRoute
   '/financial': typeof AuthenticatedFinancialRoute
   '/insurers': typeof AuthenticatedInsurersRoute
-  '/operations': typeof AuthenticatedOperationsRoute
+  '/operations': typeof AuthenticatedOperationsRouteWithChildren
   '/opportunities': typeof AuthenticatedOpportunitiesRoute
   '/policies': typeof AuthenticatedPoliciesRoute
   '/products': typeof AuthenticatedProductsRoute
@@ -160,6 +167,7 @@ export interface FileRoutesByFullPath {
   '/tasks': typeof AuthenticatedTasksRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
+  '/operations/$id': typeof AuthenticatedOperationsIdRoute
 }
 export interface FileRoutesByTo {
   '/dashboard': typeof DashboardRoute
@@ -171,7 +179,7 @@ export interface FileRoutesByTo {
   '/documents': typeof AuthenticatedDocumentsRoute
   '/financial': typeof AuthenticatedFinancialRoute
   '/insurers': typeof AuthenticatedInsurersRoute
-  '/operations': typeof AuthenticatedOperationsRoute
+  '/operations': typeof AuthenticatedOperationsRouteWithChildren
   '/opportunities': typeof AuthenticatedOpportunitiesRoute
   '/policies': typeof AuthenticatedPoliciesRoute
   '/products': typeof AuthenticatedProductsRoute
@@ -182,6 +190,7 @@ export interface FileRoutesByTo {
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
   '/': typeof AuthenticatedIndexRoute
+  '/operations/$id': typeof AuthenticatedOperationsIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -195,7 +204,7 @@ export interface FileRoutesById {
   '/_authenticated/documents': typeof AuthenticatedDocumentsRoute
   '/_authenticated/financial': typeof AuthenticatedFinancialRoute
   '/_authenticated/insurers': typeof AuthenticatedInsurersRoute
-  '/_authenticated/operations': typeof AuthenticatedOperationsRoute
+  '/_authenticated/operations': typeof AuthenticatedOperationsRouteWithChildren
   '/_authenticated/opportunities': typeof AuthenticatedOpportunitiesRoute
   '/_authenticated/policies': typeof AuthenticatedPoliciesRoute
   '/_authenticated/products': typeof AuthenticatedProductsRoute
@@ -206,6 +215,7 @@ export interface FileRoutesById {
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/operations/$id': typeof AuthenticatedOperationsIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -230,6 +240,7 @@ export interface FileRouteTypes {
     | '/tasks'
     | '/auth/login'
     | '/auth/register'
+    | '/operations/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/dashboard'
@@ -252,6 +263,7 @@ export interface FileRouteTypes {
     | '/auth/login'
     | '/auth/register'
     | '/'
+    | '/operations/$id'
   id:
     | '__root__'
     | '/_authenticated'
@@ -275,6 +287,7 @@ export interface FileRouteTypes {
     | '/auth/login'
     | '/auth/register'
     | '/_authenticated/'
+    | '/_authenticated/operations/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -433,8 +446,29 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRegisterRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/operations/$id': {
+      id: '/_authenticated/operations/$id'
+      path: '/$id'
+      fullPath: '/operations/$id'
+      preLoaderRoute: typeof AuthenticatedOperationsIdRouteImport
+      parentRoute: typeof AuthenticatedOperationsRoute
+    }
   }
 }
+
+interface AuthenticatedOperationsRouteChildren {
+  AuthenticatedOperationsIdRoute: typeof AuthenticatedOperationsIdRoute
+}
+
+const AuthenticatedOperationsRouteChildren: AuthenticatedOperationsRouteChildren =
+  {
+    AuthenticatedOperationsIdRoute: AuthenticatedOperationsIdRoute,
+  }
+
+const AuthenticatedOperationsRouteWithChildren =
+  AuthenticatedOperationsRoute._addFileChildren(
+    AuthenticatedOperationsRouteChildren,
+  )
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedBrokersRoute: typeof AuthenticatedBrokersRoute
@@ -445,7 +479,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDocumentsRoute: typeof AuthenticatedDocumentsRoute
   AuthenticatedFinancialRoute: typeof AuthenticatedFinancialRoute
   AuthenticatedInsurersRoute: typeof AuthenticatedInsurersRoute
-  AuthenticatedOperationsRoute: typeof AuthenticatedOperationsRoute
+  AuthenticatedOperationsRoute: typeof AuthenticatedOperationsRouteWithChildren
   AuthenticatedOpportunitiesRoute: typeof AuthenticatedOpportunitiesRoute
   AuthenticatedPoliciesRoute: typeof AuthenticatedPoliciesRoute
   AuthenticatedProductsRoute: typeof AuthenticatedProductsRoute
@@ -465,7 +499,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDocumentsRoute: AuthenticatedDocumentsRoute,
   AuthenticatedFinancialRoute: AuthenticatedFinancialRoute,
   AuthenticatedInsurersRoute: AuthenticatedInsurersRoute,
-  AuthenticatedOperationsRoute: AuthenticatedOperationsRoute,
+  AuthenticatedOperationsRoute: AuthenticatedOperationsRouteWithChildren,
   AuthenticatedOpportunitiesRoute: AuthenticatedOpportunitiesRoute,
   AuthenticatedPoliciesRoute: AuthenticatedPoliciesRoute,
   AuthenticatedProductsRoute: AuthenticatedProductsRoute,
