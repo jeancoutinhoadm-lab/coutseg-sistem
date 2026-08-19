@@ -222,8 +222,9 @@ function CentralEntradaPage() {
           status: 'rejected',
           reviewed_by: user?.id || null,
           reviewed_at: new Date().toISOString()
-        })
+        } as any)
         .eq('document_id', lastSavedDoc.id);
+
 
         
       await logAudit('UPDATE', 'IA_REJECTED', lastSavedDoc.id);
