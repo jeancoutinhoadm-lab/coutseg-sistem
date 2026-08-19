@@ -51,7 +51,6 @@ export function CreatePayableForm({ onSuccess }: { onSuccess?: () => void }) {
       due_date: today,
       competence_date: today,
       category_id: "",
-      notes: "",
     },
   });
 
