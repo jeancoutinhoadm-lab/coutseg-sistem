@@ -46,6 +46,7 @@ import {
   Calendar,
   Wallet,
   BarChartHorizontal,
+  Settings,
 } from "lucide-react";
 
 const navItems = [
@@ -64,6 +65,7 @@ const navItems = [
   { title: "Financeiro", to: "/financial", icon: Wallet, roles: ["admin", "financeiro", "gerente"] },
   { title: "Tarefas", to: "/tasks", icon: CheckSquare, roles: ["admin", "corretor", "administrativo", "gerente"] },
   { title: "Relatórios", to: "/reports", icon: BarChartHorizontal, roles: ["admin", "gerente", "financeiro", "administrativo", "corretor"] },
+  { title: "Configurações", to: "/settings", icon: Settings, roles: ["admin", "gerente", "administrativo", "financeiro", "corretor"] },
 ];
 
 export const Route = createFileRoute("/_authenticated")({
