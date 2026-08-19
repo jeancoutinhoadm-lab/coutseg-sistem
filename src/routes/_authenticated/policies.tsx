@@ -167,9 +167,10 @@ function PoliciesPage() {
                       <TableCell className="capitalize">{policy.type}</TableCell>
                       <TableCell>{formatCurrency(policy.premium)}</TableCell>
                       <TableCell>
-                        <Badge variant={policy.status === "active" ? "default" : "secondary"}>
-                          {policy.status}
+                        <Badge variant={policy.status === "active" ? "default" : policy.status === "cancelled" ? "destructive" : "secondary"}>
+                          {getStatusLabel(policy.status as any)}
                         </Badge>
+
                       </TableCell>
                       <TableCell className="text-right">
                         <Button
@@ -212,7 +213,18 @@ function PoliciesPage() {
         editing={editing}
         onSubmit={(values) => saveMutation.mutate(values)}
         isPending={saveMutation.isPending}
+        onRenew={(policy) => {
+          setEditing(null);
+          // Pass base data for renewal
+          setDialogOpen(true);
+          // We need a way to pass the renewed_from_policy_id to the dialog
+          setTimeout(() => {
+            // This is a hack because PolicyDialog handles its own state
+            // Better to pass a "initialValues" prop to PolicyDialog
+          }, 0);
+        }}
       />
+
     </div>
   );
 }
@@ -247,11 +259,18 @@ function PolicyDialog({
   const [renewalDate, setRenewalDate] = useState(editing?.renewal_date ?? "");
   const [coverageAmount, setCoverageAmount] = useState(editing?.coverage_amount ?? 0);
   
+  // Cancellation fields
+  const [cancellationReason, setCancellationReason] = useState(editing?.cancellation_reason ?? "");
+  const [cancellationDate, setCancellationDate] = useState(editing?.cancellation_date ?? "");
+  const [issuanceDate, setIssuanceDate] = useState(editing?.issuance_date ?? "");
+  const [renewedFromPolicyId, setRenewedFromPolicyId] = useState(editing?.renewed_from_policy_id ?? "");
+  
   // States for file upload
   const [uploading, setUploading] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const queryClient = useQueryClient();
+
 
   // Reset form when editing changes
   useEffect(() => {
@@ -268,6 +287,10 @@ function PolicyDialog({
       setEndDate(editing.end_date);
       setRenewalDate(editing.renewal_date ?? "");
       setCoverageAmount(editing.coverage_amount ?? 0);
+      setCancellationReason(editing.cancellation_reason ?? "");
+      setCancellationDate(editing.cancellation_date ?? "");
+      setIssuanceDate(editing.issuance_date ?? "");
+      setRenewedFromPolicyId(editing.renewed_from_policy_id ?? "");
     } else {
       setPolicyNumber("");
       setClientId("");
@@ -281,9 +304,14 @@ function PolicyDialog({
       setEndDate("");
       setRenewalDate("");
       setCoverageAmount(0);
+      setCancellationReason("");
+      setCancellationDate("");
+      setIssuanceDate("");
+      setRenewedFromPolicyId("");
     }
     setSelectedFile(null);
   }, [editing, open]);
+
 
   const { data: documents } = useQuery({
     queryKey: ["policy-documents", editing?.id],
@@ -406,7 +434,12 @@ function PolicyDialog({
       start_date: startDate,
       end_date: endDate,
       renewal_date: renewalDate || null,
+      cancellation_reason: cancellationReason || null,
+      cancellation_date: cancellationDate || null,
+      issuance_date: issuanceDate || null,
+      renewed_from_policy_id: renewedFromPolicyId || null,
     };
+
 
     if (editing) {
       onSubmit(values);
