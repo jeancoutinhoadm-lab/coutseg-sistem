@@ -64,7 +64,7 @@ function CRMPage() {
     queryKey: ["leads", statusFilter, search],
     queryFn: async () => {
       let query = supabase.from("leads").select("*, brokers(full_name)");
-      if (statusFilter !== "all") query = query.eq("status", statusFilter);
+      if (statusFilter !== "all") query = query.eq("status", statusFilter as any);
       if (search) query = query.ilike("full_name", `%${search}%`);
       const { data, error } = await query.order("created_at", { ascending: false });
       if (error) throw error;
