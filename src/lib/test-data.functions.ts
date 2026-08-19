@@ -8,22 +8,22 @@ export const createPilotData = async () => {
     // 1. Garantir Seguradora e Produto Mestre
     const { data: insurer } = await supabase
       .from("insurers")
-      .upsert({ name: "PORTO SEGURO (PILOTO)", active: true }, { onConflict: 'name' })
+      .upsert({ name: "PORTO SEGURO (PILOTO)", active: true } as any, { onConflict: 'name' })
       .select().single();
 
     const { data: product } = await supabase
       .from("products")
-      .upsert({ name: "AUTOMÓVEL (PILOTO)", category: "AUTO", active: true }, { onConflict: 'name' })
+      .upsert({ name: "AUTOMÓVEL (PILOTO)", category: "AUTO", active: true } as any, { onConflict: 'name' })
       .select().single();
 
     const { data: category } = await supabase
       .from("financial_categories")
-      .upsert({ name: "COMISSÃO (PILOTO)", type: "income" }, { onConflict: 'name' })
+      .upsert({ name: "COMISSÃO (PILOTO)", type: "income" } as any, { onConflict: 'name' })
       .select().single();
 
     const { data: account } = await supabase
       .from("bank_accounts")
-      .upsert({ name: "CONTA CORRENTE (PILOTO)", status: "active" }, { onConflict: 'name' })
+      .upsert({ name: "CONTA CORRENTE (PILOTO)", status: "active" } as any, { onConflict: 'name' })
       .select().single();
 
     // 2. Criar Cliente Piloto
@@ -36,7 +36,7 @@ export const createPilotData = async () => {
         phone: "(11) 99999-9999",
         type: "INDIVIDUAL",
         status: "active"
-      }, { onConflict: 'cpf_cnpj' })
+      } as any, { onConflict: 'cpf_cnpj' })
       .select()
       .single();
 
