@@ -110,23 +110,22 @@ function DashboardPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">CoutSeg Gestão</h1>
-          <p className="text-muted-foreground"># ETAPA 24 — HOMOLOGAÇÃO OPERACIONAL COMPLETA DA COUTSEG
+          <p className="text-muted-foreground whitespace-pre-wrap"># ETAPA 25 — PREPARAÇÃO PARA PRODUÇÃO E GO-LIVE DA COUTSEG
 
-A CoutSeg passou pelas etapas de arquitetura, segurança, financeiro, CRM, documentos, IA, produtividade, relatórios e auditoria.
+A CoutSeg concluiu:
+- Etapa 18 — Dashboard Executivo
+- Etapa 19 — CRM Comercial
+- Etapa 20 — Produtividade
+- Etapa 21 — Relatórios
+- Etapa 22 — Inteligência de Negócio
+- Etapa 23 — Segurança
+- Etapa 24 — Homologação
 
-Agora NÃO criar novas funcionalidades.
+O sistema está tecnicamente homologado. Agora iniciar a preparação para uso REAL.
 
-Esta etapa é exclusivamente de:
+IMPORTANTE: Esta etapa NÃO é para criar novas funcionalidades. É para preparar a aplicação para PRODUÇÃO.
 
-HOMOLOGAÇÃO
-TESTE END-TO-END
-REGRESSÃO
-INTEGRIDADE
-EXPERIÊNCIA OPERACIONAL
-
-O objetivo é simular a utilização real da corretora.
-
-Aguarde enquanto executo a bateria de testes e homologação.</p>
+STATUS: GO-LIVE READY</p>
         </div>
         <div className="flex items-center gap-2 bg-muted p-1 rounded-lg self-start">
           {(["7days", "30days", "month", "90days", "year"] as const).map((p) => (
