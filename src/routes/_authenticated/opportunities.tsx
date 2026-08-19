@@ -27,7 +27,7 @@ import type { Database } from "@/integrations/supabase/types";
 
 type OpportunityStatus = "new" | "contacted" | "quoting" | "negotiating" | "won" | "lost" | "deferred" | "rejected";
 
-export const Route = createFileRoute("/_authenticated/opportunities" as any)({
+export const Route = createFileRoute("/_authenticated/opportunities")({
   component: OpportunitiesPage,
   head: () => ({
     meta: [
