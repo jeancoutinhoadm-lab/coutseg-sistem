@@ -16,12 +16,22 @@ const payableSchema = z.object({
 export const createPayable = createServerFn({ method: "POST" })
   .validator((data: unknown) => payableSchema.parse(data))
   .handler(async ({ data }) => {
+    const insertData: any = {
+      description: data.description,
+      amount: data.amount,
+      due_date: data.due_date,
+      competence_date: data.competence_date,
+      category_id: data.category_id,
+      status: "pending",
+    };
+    
+    if (data.cost_center_id) insertData.cost_center_id = data.cost_center_id;
+    if (data.notes) insertData.notes = data.notes;
+    if (data.document_id) insertData.document_id = data.document_id;
+
     const { data: payable, error } = await supabase
       .from("payables")
-      .insert({
-        ...data,
-        status: "pending",
-      })
+      .insert(insertData)
       .select()
       .single();
 
@@ -47,27 +57,30 @@ export const recordPayment = createServerFn({ method: "POST" })
 
     if (!payable) throw new Error("Payable not found");
 
+    const entryData: any = {
+      type: "expense",
+      amount: data.amount,
+      entry_date: data.payment_date,
+      bank_account_id: data.bank_account_id,
+      category_id: payable.category_id,
+      payable_id: data.payable_id,
+    };
+    
+    if (payable.cost_center_id) entryData.cost_center_id = payable.cost_center_id;
+    if (data.reference_number) entryData.reference_number = data.reference_number;
+    if (data.notes) entryData.notes = data.notes;
+
     // 1. Criar lançamento financeiro (Fluxo de Caixa)
     const { error: entryError } = await supabase
       .from("financial_entries")
-      .insert({
-        type: "expense",
-        amount: data.amount,
-        entry_date: data.payment_date,
-        bank_account_id: data.bank_account_id,
-        category_id: payable.category_id,
-        cost_center_id: payable.cost_center_id,
-        payable_id: data.payable_id,
-        reference_number: data.reference_number,
-        notes: data.notes,
-      });
+      .insert(entryData);
 
     if (entryError) throw entryError;
 
     // 2. Atualizar status do contas a pagar
     const { error: updateError } = await supabase
       .from("payables")
-      .update({ status: "paid" })
+      .update({ status: "paid" as any })
       .eq("id", data.payable_id);
 
     if (updateError) throw updateError;
