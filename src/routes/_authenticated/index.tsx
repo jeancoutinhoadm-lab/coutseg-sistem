@@ -109,8 +109,45 @@ function DashboardPage() {
       {/* Header & Filtros */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">DASHBOARD GERENCIAL</h1>
-          <p className="text-muted-foreground">Como está a CoutSeg hoje?</p>
+          <h1 className="text-3xl font-bold tracking-tight">CoutSeg Gestão</h1>
+          <p className="text-muted-foreground"># ETAPA 23 — AUDITORIA FINAL DE SEGURANÇA, PRIVACIDADE E PREPARAÇÃO PARA PRODUÇÃO
+
+A CoutSeg possui atualmente:
+
+- Cadastro Mestre
+- Clientes
+- Leads
+- CRM
+- Oportunidades
+- Cotações
+- Apólices
+- Renovações
+- Cross-sell
+- Documentos
+- Storage privado
+- IA de documentos
+- IA de inteligência de negócio
+- Comissões
+- Conciliação
+- Contas a receber
+- Contas a pagar
+- Caixa
+- Fechamento mensal
+- Tarefas
+- Atividades
+- Notificações
+- Dashboard
+- Relatórios
+- Insights
+- RBAC
+- RLS
+- Auditoria
+
+O sistema está se aproximando de uma utilização real.
+
+Esta etapa NÃO é para criar funcionalidades.
+
+É uma AUDITORIA DE SEGURANÇA E PRODUÇÃO.</p>
         </div>
         <div className="flex items-center gap-2 bg-muted p-1 rounded-lg self-start">
           {(["7days", "30days", "month", "90days", "year"] as const).map((p) => (
