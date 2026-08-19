@@ -40,16 +40,16 @@ import {
 const navItems = [
   { title: "Dashboard", to: "/", icon: LayoutDashboard, roles: ["admin", "corretor", "administrativo", "financeiro", "gerente"] },
   { title: "Central de Entrada", to: "/central-entrada", icon: Inbox, roles: ["admin", "administrativo", "corretor"] },
-  { title: "Clientes", to: "/clients", icon: Users, roles: ["admin", "corretor", "administrativo", "gerente"] },
+  { title: "Clientes", to: "/clients", icon: Users, roles: ["admin", "corretor", "administrativo", "gerente", "financeiro"] },
   { title: "Produtos", to: "/products", icon: Package, roles: ["admin", "corretor", "administrativo", "gerente"] },
-  { title: "Apólices", to: "/policies", icon: FileText, roles: ["admin", "corretor", "administrativo", "gerente"] },
+  { title: "Apólices", to: "/policies", icon: FileText, roles: ["admin", "corretor", "administrativo", "gerente", "financeiro"] },
   { title: "Seguradoras", to: "/insurers", icon: Building2, roles: ["admin", "administrativo", "gerente", "corretor"] },
   { title: "Corretores", to: "/brokers", icon: UserCog, roles: ["admin", "gerente"] },
   { title: "Sinistros", to: "/claims", icon: AlertTriangle, roles: ["admin", "corretor", "administrativo", "gerente"] },
   { title: "Renovações", to: "/renewals", icon: CalendarClock, roles: ["admin", "corretor", "administrativo", "gerente"] },
   { title: "Documentos", to: "/documents", icon: Files, roles: ["admin", "corretor", "administrativo", "gerente"] },
-  { title: "Comissões", to: "/commissions", icon: DollarSign, roles: ["admin", "financeiro", "administrativo"] },
-  { title: "Financeiro", to: "/financial", icon: TrendingUp, roles: ["admin", "financeiro"] },
+  { title: "Comissões", to: "/commissions", icon: DollarSign, roles: ["admin", "financeiro", "gerente"] },
+  { title: "Financeiro", to: "/financial", icon: TrendingUp, roles: ["admin", "financeiro", "gerente"] },
   { title: "Tarefas", to: "/tasks", icon: CheckSquare, roles: ["admin", "corretor", "administrativo", "gerente"] },
 ];
 
