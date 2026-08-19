@@ -1,4 +1,4 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { z } from "zod";
@@ -17,6 +17,10 @@ const registerSchema = z.object({
   fullName: z.string().min(2, "Digite seu nome completo"),
   email: z.string().email("Digite um e-mail válido"),
   password: z.string().min(6, "A senha deve ter pelo menos 6 caracteres"),
+  confirmPassword: z.string().min(6, "A senha deve ter pelo menos 6 caracteres"),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "As senhas não coincidem",
+  path: ["confirmPassword"],
 });
 
 type RegisterForm = z.infer<typeof registerSchema>;
@@ -32,21 +36,22 @@ export const Route = createFileRoute("/auth/register")({
   beforeLoad: async () => {
     const { data } = await supabase.auth.getUser();
     if (data.user) {
-      throw redirect({ to: "/dashboard" });
+      throw redirect({ to: "/" });
     }
   },
 });
 
 function RegisterPage() {
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
   const form = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
-    defaultValues: { fullName: "", email: "", password: "" },
+    defaultValues: { fullName: "", email: "", password: "", confirmPassword: "" },
   });
 
   const onSubmit = async (values: RegisterForm) => {
     setLoading(true);
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email: values.email,
       password: values.password,
       options: {
@@ -54,14 +59,23 @@ function RegisterPage() {
       },
     });
     setLoading(false);
+    
     if (error) {
       toast.error("Erro ao criar conta", { description: error.message });
       return;
     }
+
     await logAudit('CREATE', 'USER', undefined, null, { email: values.email, fullName: values.fullName });
-    toast.success("Conta criada", {
-      description: "Verifique seu e-mail para confirmar o cadastro.",
-    });
+    
+    if (data.session) {
+      toast.success("Conta criada com sucesso!");
+      navigate({ to: "/" });
+    } else {
+      toast.success("Conta criada", {
+        description: "Verifique seu e-mail para confirmar o cadastro antes de entrar.",
+      });
+      navigate({ to: "/auth/login" });
+    }
   };
 
   return (
@@ -109,6 +123,19 @@ function RegisterPage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Senha</FormLabel>
+                    <FormControl>
+                      <Input type="password" placeholder="••••••" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="confirmPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Confirmar Senha</FormLabel>
                     <FormControl>
                       <Input type="password" placeholder="••••••" {...field} />
                     </FormControl>

@@ -1,4 +1,4 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { z } from "zod";
@@ -40,6 +40,7 @@ export const Route = createFileRoute("/auth/login")({
 
 function LoginPage() {
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
   const form = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: "", password: "" },
@@ -57,7 +58,8 @@ function LoginPage() {
       return;
     }
     await logAudit('LOGIN', 'USER');
-    window.location.href = "/dashboard";
+    toast.success("Login realizado com sucesso");
+    navigate({ to: "/" });
   };
 
   const signInWithGoogle = async () => {
