@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
+import { createOperationalTask } from "@/lib/tasks.functions";
 
 type PolicyStatus = Database["public"]["Enums"]["policy_status"];
 type Priority = "urgent" | "high" | "normal" | "low";
@@ -316,6 +317,37 @@ function RenewalsPage() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            title="Gerar Tarefa"
+                            onClick={async () => {
+                              try {
+                                const res = await createOperationalTask({
+                                  data: {
+                                    title: `Renovação: ${r.policy_number} - ${(r.clients as any)?.full_name}`,
+                                    description: `Trabalhar renovação da apólice ${(r.insurers as any)?.name}. Vencimento: ${format(new Date(r.end_date + "T12:00:00"), "dd/MM/yyyy")}`,
+                                    due_date: r.end_date,
+                                    priority: getPriority(r.end_date) === 'urgent' ? 'URGENT' : getPriority(r.end_date) === 'high' ? 'HIGH' : 'MEDIUM',
+                                    user_id: r.responsible_user_id || undefined,
+                                    client_id: r.client_id,
+                                    policy_id: r.id,
+                                    origin: 'renewal',
+                                    origin_id: r.id
+                                  }
+                                });
+                                if (res.status === 'already_exists') {
+                                  toast.info("Tarefa de renovação já existe.");
+                                } else {
+                                  toast.success("Tarefa de renovação gerada!");
+                                }
+                              } catch (e: any) {
+                                toast.error("Erro ao gerar tarefa: " + e.message);
+                              }
+                            }}
+                          >
+                            <CalendarClock className="h-4 w-4" />
+                          </Button>
                           <Button 
                             variant="ghost" 
                             size="icon" 

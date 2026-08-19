@@ -261,6 +261,19 @@ function DocumentsPage() {
                       </TableCell>
                       <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                         <div className="flex justify-end gap-1">
+                          {doc.processing?.[0]?.status === 'needs_review' && (
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8 text-amber-600" 
+                              title="Revisar Extração"
+                              asChild
+                            >
+                              <Link to="/documents">
+                                <AlertCircle className="h-4 w-4" />
+                              </Link>
+                            </Button>
+                          )}
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleView(doc)}>
                             <ExternalLink className="h-4 w-4" />
                           </Button>

@@ -155,6 +155,35 @@ function DashboardPage() {
             </CardContent>
           </Card>
         </Link>
+        <Link to="/tasks" className="block">
+          <Card className={cn(
+            "border-l-4 hover:shadow-md transition-all cursor-pointer group h-full",
+            (operation as any).overdueTasks > 0 ? "border-l-red-600 bg-red-50/10" : "border-l-indigo-500"
+          )}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className={cn(
+                "text-sm font-bold tracking-widest",
+                (operation as any).overdueTasks > 0 ? "text-red-700" : "text-indigo-600"
+              )}>
+                EQUIPE: PRODUTIVIDADE
+              </CardTitle>
+              <Clock className={cn(
+                "h-5 w-5 group-hover:scale-110 transition-transform",
+                (operation as any).overdueTasks > 0 ? "text-red-600" : "text-indigo-500"
+              )} />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{(operation as any).overdueTasks || 0}</div>
+              <p className="text-xs text-muted-foreground mt-1">Tarefas atrasadas hoje</p>
+              <div className={cn(
+                "mt-4 flex items-center text-xs font-medium",
+                (operation as any).overdueTasks > 0 ? "text-red-700" : "text-indigo-600"
+              )}>
+                Ver Gestão <ArrowRight className="ml-1 h-3 w-3" />
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
       </div>
 
 
