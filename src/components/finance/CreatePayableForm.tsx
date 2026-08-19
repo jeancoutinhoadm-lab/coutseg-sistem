@@ -41,15 +41,15 @@ export function CreatePayableForm({ onSuccess }: { onSuccess?: () => void }) {
     queryFn: () => getFinancialCategories(),
   });
 
-  const today = new Date().toISOString().split("T")[0];
+  const todayStr = new Date().toISOString().split("T")[0];
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       description: "",
       amount: 0,
-      due_date: today,
-      competence_date: today,
+      due_date: todayStr,
+      competence_date: todayStr,
       category_id: "",
     },
   });
