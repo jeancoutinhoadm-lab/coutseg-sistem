@@ -64,8 +64,8 @@ function TasksPage() {
           client:clients(full_name),
           opportunity:opportunities(notes),
           lead:leads(full_name),
-          responsible:profiles!tasks_user_id_fkey(full_name),
-          creator:profiles!tasks_creator_id_fkey(full_name)
+          responsible:profiles!tasks_user_id_profiles_fkey(full_name),
+          creator:profiles!tasks_creator_id_profiles_fkey(full_name)
         `);
 
       if (view === "my") {
