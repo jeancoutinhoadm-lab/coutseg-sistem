@@ -2,11 +2,9 @@ import * as pdfjs from 'pdfjs-dist';
 
 // Define the worker source
 if (typeof window !== 'undefined' && 'Worker' in window) {
-  // We point to the local node_modules worker file which Vite will bundle
-  pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-    'pdfjs-dist/build/pdf.worker.min.mjs',
-    import.meta.url
-  ).toString();
+  // Use a reliable worker source. 
+  // For Vite development, this is often the most stable way to load the worker.
+  pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
 }
 
 /**
@@ -38,7 +36,9 @@ export async function convertPdfToImages(file: File, maxPages: number = 3): Prom
     }).promise;
     
     const base64 = canvas.toDataURL('image/png').split(',')[1];
-    images.push({ base64, mimeType: 'image/png' });
+    if (base64) {
+      images.push({ base64, mimeType: 'image/png' });
+    }
   }
   
   return images;
@@ -52,14 +52,7 @@ export async function getFileForIA(file: File): Promise<{ base64: string; mimeTy
     const images = await convertPdfToImages(file, 3);
     if (images.length === 0) throw new Error("Não foi possível converter o PDF em imagem.");
     
-    // If multiple pages, we could concatenate them, but usually the first page is enough for most data.
-    // However, the instructions say "converte a primeira página (ou as até 3 primeiras páginas)".
-    // For now, let's return the first page to keep the server functions compatible with single image input.
-    // If the server function supports multiple, we'd change it. 
-    // Since current processDocumentWithIA takes one image, we'll return the first one or a stitched one.
-    
     if (images.length > 1) {
-      // Stitch images vertically
       return stitchImages(images);
     }
     
@@ -67,14 +60,23 @@ export async function getFileForIA(file: File): Promise<{ base64: string; mimeTy
   }
 
   // Regular image processing
-  const base64 = await new Promise<string>((resolve) => {
+  const base64Result = await new Promise<string | ArrayBuffer | null>((resolve) => {
     const reader = new FileReader();
-    reader.onloadend = () => resolve(reader.result as string);
+    reader.onloadend = () => resolve(reader.result);
     reader.readAsDataURL(file);
   });
   
+  if (typeof base64Result !== 'string') {
+    throw new Error("Falha ao ler arquivo de imagem");
+  }
+
+  const base64Data = base64Result.split(',')[1];
+  if (!base64Data) {
+    throw new Error("Dados da imagem inválidos");
+  }
+  
   return {
-    base64: base64.split(',')[1],
+    base64: base64Data,
     mimeType: file.type
   };
 }
@@ -99,23 +101,37 @@ async function stitchImages(images: { base64: string; mimeType: string }[]): Pro
           const ctx = canvas.getContext('2d');
           
           if (!ctx) {
-            resolve(images[0]); // Fallback
+            resolve(images[0]);
             return;
           }
           
           let currentY = 0;
           loadedImages.forEach(img => {
-            ctx.drawImage(img, 0, currentY);
-            currentY += img.height;
+            if (img) {
+              ctx.drawImage(img, 0, currentY);
+              currentY += img.height;
+            }
           });
           
-          resolve({
-            base64: canvas.toDataURL('image/png').split(',')[1],
-            mimeType: 'image/png'
-          });
+          const stitchedBase64 = canvas.toDataURL('image/png').split(',')[1];
+          if (stitchedBase64) {
+            resolve({
+              base64: stitchedBase64,
+              mimeType: 'image/png'
+            });
+          } else {
+            resolve(images[0]);
+          }
+        }
+      };
+      img.onerror = () => {
+        loadedCount++;
+        if (loadedCount === images.length) {
+          resolve(images[0]);
         }
       };
       img.src = `data:image/png;base64,${imgData.base64}`;
     });
   });
 }
+
