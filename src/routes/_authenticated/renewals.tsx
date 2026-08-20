@@ -57,7 +57,7 @@ function RenewalsPage() {
     queryFn: async () => {
       let query = supabase
         .from("policies")
-        .select("*, clients(full_name), insurers(name), profiles:responsible_user_id(full_name)")
+        .select("*, clients(full_name), insurers(name), profiles:profiles!policies_responsible_user_id_profiles_fkey(full_name)")
         .order("end_date", { ascending: true });
 
       const today = startOfDay(new Date());
