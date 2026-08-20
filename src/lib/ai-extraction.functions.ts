@@ -81,7 +81,7 @@ export const processDocumentWithIA = createServerFn({ method: "POST" })
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'gpt-4o',
+          model: 'google/gemini-2.0-flash-lite-preview-02-05',
           messages: [
             {
               role: 'user',

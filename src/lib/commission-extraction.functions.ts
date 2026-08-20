@@ -124,7 +124,7 @@ Regras:
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'gpt-4o',
+          model: 'google/gemini-2.0-flash-lite-preview-02-05',
           messages: [
             {
               role: 'user',
@@ -170,7 +170,7 @@ Regras:
         input_tokens: result.usage?.prompt_tokens,
         output_tokens: result.usage?.completion_tokens,
         execution_duration_ms: endTime - startTime,
-        ai_model: 'gpt-4o'
+        ai_model: 'google/gemini-2.0-flash-lite-preview-02-05'
       };
 
       return extracted;
