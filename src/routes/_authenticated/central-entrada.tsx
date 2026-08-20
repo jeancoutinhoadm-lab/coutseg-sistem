@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { getFileForIA } from "@/utils/pdf-converter";
 
 
 
@@ -149,13 +150,7 @@ function CentralEntradaPage() {
         } as any)
         .eq('document_id', lastSavedDoc.id);
 
-      const base64 = await new Promise<string>((resolve) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result as string);
-        reader.readAsDataURL(file);
-      });
-
-      const imageBase64 = base64.split(',')[1];
+      const { base64: imageBase64, mimeType: iaMimeType } = await getFileForIA(file);
       if (!imageBase64) throw new Error("Falha ao preparar dados para IA");
 
       try {
@@ -166,7 +161,7 @@ function CentralEntradaPage() {
           result = await extractCommissionReportWithIA({
             data: {
               image: imageBase64,
-              mimeType: file.type || 'application/octet-stream',
+              mimeType: iaMimeType,
               documentId: lastSavedDoc.id
             }
           });
@@ -175,7 +170,7 @@ function CentralEntradaPage() {
           result = await processDocumentWithIA({
             data: {
               image: imageBase64,
-              mimeType: file.type || 'application/octet-stream',
+              mimeType: iaMimeType,
               documentType: docType,
               simulationMode: true
             }

@@ -1,4 +1,5 @@
 import { processDocumentWithIA } from "@/lib/ai-extraction.functions";
+import { getFileForIA } from "./pdf-converter";
 
 export interface ExtractedPolicyData {
   policy_number?: string;
@@ -15,22 +16,16 @@ export interface ExtractedPolicyData {
 }
 
 export async function extractPolicyData(file: File): Promise<ExtractedPolicyData> {
-  const base64 = await new Promise<string>((resolve) => {
-    const reader = new FileReader();
-    reader.onloadend = () => resolve(reader.result as string);
-    reader.readAsDataURL(file);
-  });
-
-  const imageBase64 = base64.split(',')[1];
-  if (!imageBase64) throw new Error("Falha ao processar arquivo");
+  const { base64: imageBase64, mimeType } = await getFileForIA(file);
 
   const result = await processDocumentWithIA({
     data: {
       image: imageBase64,
-      mimeType: file.type || 'application/octet-stream',
+      mimeType: mimeType,
       documentType: 'policy'
     }
   });
   
   return result as ExtractedPolicyData;
 }
+
