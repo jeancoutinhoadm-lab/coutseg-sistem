@@ -49,18 +49,7 @@ export async function convertPdfToImages(file: File, maxPages: number = 3): Prom
  * Helper to get first image from PDF or the file itself if it's already an image.
  */
 export async function getFileForIA(file: File): Promise<{ base64: string; mimeType: string }> {
-  if (file.type === 'application/pdf') {
-    const images = await convertPdfToImages(file, 3);
-    if (images.length === 0) throw new Error("Não foi possível converter o PDF em imagem.");
-    
-    if (images.length > 1) {
-      return stitchImages(images);
-    }
-    
-    return images[0]!;
-  }
-
-  // Regular image processing
+  // Send the original PDF or image to the backend; Gemini reads PDFs natively.
   const base64Result = await new Promise<string | ArrayBuffer | null>((resolve) => {
     const reader = new FileReader();
     reader.onloadend = () => resolve(reader.result);
@@ -78,7 +67,7 @@ export async function getFileForIA(file: File): Promise<{ base64: string; mimeTy
   
   return {
     base64: base64Data,
-    mimeType: file.type
+    mimeType: file.type || 'application/octet-stream'
   };
 }
 

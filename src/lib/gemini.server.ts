@@ -172,7 +172,11 @@ export async function callGemini(request: GeminiRequest): Promise<GeminiResult> 
       );
     }
 
-    return { text, model: GEMINI_MODEL, usage: payload.usageMetadata };
+    return {
+      text,
+      model: GEMINI_MODEL,
+      ...(payload.usageMetadata ? { usage: payload.usageMetadata } : {}),
+    };
   } catch (error) {
     if (error instanceof Error && error.name === "AbortError") {
       throw new Error("A API Gemini excedeu o tempo limite de processamento.");
