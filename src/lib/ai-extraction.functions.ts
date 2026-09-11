@@ -8,7 +8,6 @@ const nullableNumber = { type: "number", nullable: true };
 const extractionSchemas = {
   policy: {
     type: "object",
-    additionalProperties: false,
     properties: {
       policy_number: nullableString,
       client_name: nullableString,
@@ -26,7 +25,6 @@ const extractionSchemas = {
   },
   bill: {
     type: "object",
-    additionalProperties: false,
     properties: {
       provider_name: nullableString,
       amount: nullableNumber,
@@ -38,7 +36,6 @@ const extractionSchemas = {
   },
   commission_report: {
     type: "object",
-    additionalProperties: false,
     properties: {
       insurer_name: nullableString,
       statement_date: nullableString,
@@ -47,8 +44,7 @@ const extractionSchemas = {
         type: "array",
         items: {
           type: "object",
-          additionalProperties: false,
-          properties: {
+                properties: {
             policy_number: nullableString,
             client_name: nullableString,
             amount: nullableNumber,
@@ -62,7 +58,6 @@ const extractionSchemas = {
   },
   other: {
     type: "object",
-    additionalProperties: false,
     properties: { description: { type: "string" } },
     required: ["description"],
   },

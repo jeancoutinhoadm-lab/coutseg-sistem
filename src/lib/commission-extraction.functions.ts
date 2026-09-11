@@ -6,13 +6,11 @@ const nullableString = { type: "string", nullable: true };
 const nullableNumber = { type: "number", nullable: true };
 const commissionReportSchema = {
   type: "object",
-  additionalProperties: false,
   properties: {
     document_type: { type: "string", enum: ["commission_report"] },
     insurer: {
       type: "object",
-      additionalProperties: false,
-      properties: { name: nullableString },
+        properties: { name: nullableString },
       required: ["name"],
     },
     competence: nullableString,
@@ -24,8 +22,7 @@ const commissionReportSchema = {
       type: "array",
       items: {
         type: "object",
-        additionalProperties: false,
-        properties: {
+            properties: {
           policy_number: nullableString,
           client_name: nullableString,
           client_document: nullableString,
