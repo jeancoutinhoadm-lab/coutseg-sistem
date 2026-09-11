@@ -206,7 +206,7 @@ function CentralEntradaPage() {
           .update({ 
             status: 'needs_review',
             extracted_data: result,
-            ai_model: result.metadata?.ai_model || 'gemini-2.5-flash',
+            ai_model: result.metadata?.ai_model || 'gemini-3.1-flash-lite',
             ai_prompt_version: 'v2.2-reliability',
             ai_confidence: result.confidence || {},
             input_tokens: result.metadata?.input_tokens,

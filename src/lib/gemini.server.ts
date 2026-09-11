@@ -1,4 +1,4 @@
-const GEMINI_MODEL = "gemini-2.5-flash";
+const GEMINI_MODEL = "gemini-3.1-flash-lite";
 const GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta";
 const MAX_PDF_BYTES = 50 * 1024 * 1024;
 const MAX_IMAGE_BYTES = 20 * 1024 * 1024;
@@ -75,9 +75,10 @@ function validateFile(file: NonNullable<GeminiRequest["file"]>) {
   }
 }
 
-function safeGeminiError(status: number, providerStatus?: string) {
+function safeGeminiError(status: number, providerStatus?: string, providerMessage?: string) {
+  const invalidKey = /api key not valid|api_key_invalid/i.test(providerMessage ?? "");
+  if (status === 401 || invalidKey) return new Error("A chave da API Gemini é inválida.");
   if (status === 400) return new Error("O arquivo ou pedido enviado para a IA é inválido.");
-  if (status === 401) return new Error("A chave da API Gemini é inválida.");
   if (status === 403) return new Error("A API Gemini recusou o acesso. Verifique as permissões da chave.");
   if (status === 404 || providerStatus === "NOT_FOUND") {
     return new Error("O modelo Gemini configurado não está disponível para esta chave.");
@@ -151,7 +152,7 @@ export async function callGemini(request: GeminiRequest): Promise<GeminiResult> 
         status: response.status,
         providerStatus: payload.error?.status,
       });
-      throw safeGeminiError(response.status, payload.error?.status);
+      throw safeGeminiError(response.status, payload.error?.status, payload.error?.message);
     }
 
     const text = payload.candidates?.[0]?.content?.parts

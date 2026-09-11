@@ -523,7 +523,9 @@ export function BusinessIntelligence() {
       setChat(prev => [...prev, { q: question, a: answer }]);
       setQuestion("");
     } catch (err) {
-      toast.error("Erro ao consultar IA");
+      toast.error("Erro ao consultar IA", {
+        description: err instanceof Error ? err.message : "A API Gemini não respondeu.",
+      });
     } finally {
       setIsAsking(false);
     }

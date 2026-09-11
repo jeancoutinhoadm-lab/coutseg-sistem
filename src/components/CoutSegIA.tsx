@@ -23,7 +23,10 @@ export function CoutSegIA() {
       const result = await askCoutSegIA({ data: { message: userMsg } });
       setMessages(prev => [...prev, { role: 'ai', text: result.text }]);
     } catch (error) {
-      setMessages(prev => [...prev, { role: 'ai', text: "Desculpe, tive um problema ao processar sua pergunta." }]);
+      setMessages(prev => [...prev, {
+        role: 'ai',
+        text: error instanceof Error ? error.message : "A API Gemini não respondeu.",
+      }]);
     } finally {
       setIsLoading(false);
     }
