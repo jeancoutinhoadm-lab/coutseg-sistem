@@ -16,7 +16,7 @@ describe('askBusinessIA Resilience Tests', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env['LOVABLE_API_KEY'] = mockApiKey;
+    process.env['GEMINI_API_KEY'] = mockApiKey;
     global.fetch = vi.fn();
   });
 
@@ -26,7 +26,7 @@ describe('askBusinessIA Resilience Tests', () => {
       status: 200,
       headers: new Headers({ 'content-type': 'application/json' }),
       json: async () => ({
-        choices: [{ message: { content: 'Resposta de teste' } }]
+        candidates: [{ content: { parts: [{ text: 'Resposta de teste' }] } }]
       }),
     });
 
@@ -34,7 +34,7 @@ describe('askBusinessIA Resilience Tests', () => {
     expect(result.answer).toBe('Resposta de teste');
   });
 
-  it('deve tratar erro HTTP 500 do Gateway', async () => {
+  it('deve tratar erro HTTP 500 do Gemini', async () => {
     (global.fetch as any).mockResolvedValue({
       ok: false,
       status: 500,
@@ -43,19 +43,19 @@ describe('askBusinessIA Resilience Tests', () => {
     });
 
     await expect(processBusinessIA({ question: 'Teste?' }))
-      .rejects.toThrow("O serviço de Inteligência Artificial está temporariamente indisponível");
+      .rejects.toThrow("A API Gemini retornou um erro (500)");
   });
 
-  it('deve tratar especificamente erro Cloudflare 1016', async () => {
+  it('deve tratar erro 503 do Gemini', async () => {
     (global.fetch as any).mockResolvedValue({
       ok: false,
-      status: 502,
-      headers: new Headers({ 'content-type': 'text/html' }),
-      text: async () => '<html>error code: 1016 Origin DNS Error</html>',
+      status: 503,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      text: async () => JSON.stringify({ error: { status: 'UNAVAILABLE' } }),
     });
 
     await expect(processBusinessIA({ question: 'Teste?' }))
-      .rejects.toThrow("O serviço de Inteligência Artificial está temporariamente indisponível");
+      .rejects.toThrow("O modelo Gemini está temporariamente indisponível");
   });
 
   it('deve tratar resposta não-JSON (HTML) como erro', async () => {
@@ -67,7 +67,7 @@ describe('askBusinessIA Resilience Tests', () => {
     });
 
     await expect(processBusinessIA({ question: 'Teste?' }))
-      .rejects.toThrow("O serviço de IA retornou um formato inesperado.");
+      .rejects.toThrow("A API Gemini retornou uma resposta inválida.");
   });
 
   it('deve tratar timeout da requisição', async () => {
@@ -78,13 +78,13 @@ describe('askBusinessIA Resilience Tests', () => {
     });
 
     await expect(processBusinessIA({ question: 'Teste?' }))
-      .rejects.toThrow("A IA demorou muito para responder");
+      .rejects.toThrow("A API Gemini excedeu o tempo limite");
   });
 
   it('deve tratar erro de rede genérico', async () => {
     (global.fetch as any).mockRejectedValue(new Error('Network connection lost'));
 
     await expect(processBusinessIA({ question: 'Teste?' }))
-      .rejects.toThrow("Falha na análise da IA.");
+      .rejects.toThrow("Network connection lost");
   });
 });

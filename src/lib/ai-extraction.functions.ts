@@ -91,7 +91,7 @@ export const processDocumentWithIA = createServerFn({ method: "POST" })
       other: `Descreva o conteúdo deste documento de forma estruturada em JSON.`
     };
 
-    const result = await callGeminiJson<Record<string, unknown>>({
+    const result = await callGeminiJson<any>({
       prompt: prompts[data.documentType],
       file: { base64: data.image, mimeType: data.mimeType },
       responseSchema: extractionSchemas[data.documentType],

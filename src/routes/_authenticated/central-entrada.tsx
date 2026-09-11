@@ -166,7 +166,7 @@ function CentralEntradaPage() {
             }
           });
         } else {
-          // Legacy/Simulation for other types
+          // Real extraction for policies, bills and other documents
           result = await processDocumentWithIA({
             data: {
               image: imageBase64,
