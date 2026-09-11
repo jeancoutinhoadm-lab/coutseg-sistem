@@ -2,8 +2,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { callGeminiJson } from "./gemini.server";
 
-const nullableString = { type: ["string", "null"] };
-const nullableNumber = { type: ["number", "null"] };
+const nullableString = { type: "string", nullable: true };
+const nullableNumber = { type: "number", nullable: true };
 
 const extractionSchemas = {
   policy: {

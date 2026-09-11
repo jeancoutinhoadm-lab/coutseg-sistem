@@ -25,7 +25,7 @@ describe('askBusinessIA Resilience Tests', () => {
       ok: true,
       status: 200,
       headers: new Headers({ 'content-type': 'application/json' }),
-      json: async () => ({
+      text: async () => JSON.stringify({
         candidates: [{ content: { parts: [{ text: 'Resposta de teste' }] } }]
       }),
     });
@@ -39,7 +39,7 @@ describe('askBusinessIA Resilience Tests', () => {
       ok: false,
       status: 500,
       headers: new Headers({ 'content-type': 'text/plain' }),
-      text: async () => 'Internal Server Error',
+      text: async () => JSON.stringify({ error: { status: 'INTERNAL' } }),
     });
 
     await expect(processBusinessIA({ question: 'Teste?' }))

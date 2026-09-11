@@ -547,7 +547,7 @@ function CentralEntradaPage() {
               onClick={() => processMutation.mutate()}
             >
               {processMutation.isPending ? (
-                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Analisando com GPT-4o...</>
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Analisando com Gemini...</>
               ) : currentStep === 'processed' ? (
                 <><CheckCircle2 className="mr-2 h-4 w-4" /> Análise Concluída</>
               ) : (
