@@ -177,8 +177,12 @@ Regras:
 
       // Adicionar Metadados
       extracted.metadata = {
-        input_tokens: result.usage?.promptTokenCount,
-        output_tokens: result.usage?.candidatesTokenCount,
+        ...(result.usage?.promptTokenCount !== undefined
+          ? { input_tokens: result.usage.promptTokenCount }
+          : {}),
+        ...(result.usage?.candidatesTokenCount !== undefined
+          ? { output_tokens: result.usage.candidatesTokenCount }
+          : {}),
         execution_duration_ms: endTime - startTime,
         ai_model: result.model
       };
