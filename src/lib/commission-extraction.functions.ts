@@ -1,5 +1,47 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { callGeminiJson } from "./gemini.server";
+
+const nullableString = { type: "string", nullable: true };
+const nullableNumber = { type: "number", nullable: true };
+const commissionReportSchema = {
+  type: "object",
+  properties: {
+    document_type: { type: "string", enum: ["commission_report"] },
+    insurer: {
+      type: "object",
+        properties: { name: nullableString },
+      required: ["name"],
+    },
+    competence: nullableString,
+    payment_date: nullableString,
+    report_reference: nullableString,
+    document_line_count: nullableNumber,
+    document_total: nullableNumber,
+    items: {
+      type: "array",
+      items: {
+        type: "object",
+            properties: {
+          policy_number: nullableString,
+          client_name: nullableString,
+          client_document: nullableString,
+          product: nullableString,
+          premium: nullableNumber,
+          commission_rate: nullableNumber,
+          expected_commission: nullableNumber,
+          paid_commission: nullableNumber,
+          due_date: nullableString,
+          payment_date: nullableString,
+          broker_name: nullableString,
+          parcel_number: nullableString,
+        },
+        required: ["policy_number", "client_name", "client_document", "product", "premium", "commission_rate", "expected_commission", "paid_commission", "due_date", "payment_date", "broker_name", "parcel_number"],
+      },
+    },
+  },
+  required: ["document_type", "insurer", "competence", "payment_date", "report_reference", "document_line_count", "document_total", "items"],
+} as const;
 
 /**
  * Interface para os itens extraídos do relatório de comissão
@@ -60,12 +102,6 @@ export const extractCommissionReportWithIA = createServerFn({ method: "POST" })
     }).parse(data)
   )
   .handler(async ({ data }) => {
-    const apiKey = process.env['LOVABLE_API_KEY'];
-
-    if (!apiKey) {
-      throw new Error("Configuração de IA (LOVABLE_API_KEY) ausente.");
-    }
-
     const prompt = `Você é um sistema de extração de dados financeiros de seguros de ALTA PRECISÃO.
 Leia exclusivamente o documento fornecido (Relatório de Comissões).
 Extraia somente informações presentes no documento.
@@ -117,45 +153,16 @@ Regras:
     const startTime = Date.now();
 
     try {
-      const response = await fetch('https://api.lovable.ai/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'google/gemini-2.5-flash-lite',
-          messages: [
-            {
-              role: 'user',
-              content: [
-                { type: 'text', text: prompt },
-                {
-                  type: 'image_url',
-                  image_url: { url: `data:${data.mimeType};base64,${data.image}` },
-                },
-              ],
-            },
-          ],
-          temperature: 0,
-        }),
+      const result = await callGeminiJson<CommissionReportData>({
+        prompt,
+        file: { base64: data.image, mimeType: data.mimeType },
+        responseSchema: commissionReportSchema,
       });
-
-      if (!response.ok) {
-        throw new Error(`Erro no provedor de IA: ${response.status}`);
-      }
-
-      const result = await response.json();
       const endTime = Date.now();
-      
-      const content = result.choices[0].message.content;
-      let extracted: CommissionReportData;
+      const extracted = result.data;
 
-      try {
-        const cleanedContent = content.replace(/```json|```/g, '').trim();
-        extracted = JSON.parse(cleanedContent);
-      } catch (e) {
-        throw new Error("Falha ao parsear JSON da IA.");
+      if (!Array.isArray(extracted.items)) {
+        throw new Error("A API Gemini retornou um relatório sem itens válidos.");
       }
 
       // Normalização Básica e Cálculo de Diferença
@@ -167,15 +174,21 @@ Regras:
 
       // Adicionar Metadados
       extracted.metadata = {
-        input_tokens: result.usage?.prompt_tokens,
-        output_tokens: result.usage?.completion_tokens,
+        ...(result.usage?.promptTokenCount !== undefined
+          ? { input_tokens: result.usage.promptTokenCount }
+          : {}),
+        ...(result.usage?.candidatesTokenCount !== undefined
+          ? { output_tokens: result.usage.candidatesTokenCount }
+          : {}),
         execution_duration_ms: endTime - startTime,
-        ai_model: 'google/gemini-2.5-flash-lite'
+        ai_model: result.model
       };
 
       return extracted;
     } catch (error: any) {
-      console.error("Erro na extração IA:", error);
+      console.error("Erro na extração IA", {
+        message: error instanceof Error ? error.message : "Erro desconhecido",
+      });
       throw new Error(error.message || "Falha na extração com IA.");
     }
   });
