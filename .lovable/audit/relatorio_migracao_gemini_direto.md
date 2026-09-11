@@ -15,7 +15,21 @@ Implementado tratamento para chave ausente/inválida, 401, 403, 404/modelo indis
 
 ## Validação
 - Teste direto de texto: HTTP 200, resposta `GEMINI_DIRETO_OK`, 22 tokens.
+- Teste direto de JSON estruturado: HTTP 200, resposta validada `{"category":"internet","amount":150}`.
 - Testes de resiliência: 6/6 passaram.
 - Busca global: nenhuma referência de IA restante a `LOVABLE_API_KEY`, `api.lovable.ai`, `ai.gateway.lovable.dev`, `simulationMode` ou variáveis públicas Gemini em `src`.
 - A secret `LOVABLE_API_KEY` permaneceu cadastrada e não foi removida.
 - Nenhuma mudança de RLS, RBAC, Storage, service role ou banco foi realizada.
+
+## Arquivos alterados
+- `src/lib/gemini.server.ts`
+- `src/lib/ai-extraction.functions.ts`
+- `src/lib/commission-extraction.functions.ts`
+- `src/lib/ai.functions.ts`
+- `src/lib/business-ai.functions.ts`
+- `src/lib/chat.functions.ts`
+- `src/utils/pdf-converter.ts`
+- `src/routes/_authenticated/central-entrada.tsx`
+- `src/routes/_authenticated/index.tsx`
+- `src/components/CoutSegIA.tsx`
+- `src/lib/business-ai.resilience.test.ts`
