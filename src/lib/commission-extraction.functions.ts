@@ -90,7 +90,7 @@ export interface CommissionReportData {
  * Server function para extração real de relatórios de comissão via IA
  */
 export const extractCommissionReportWithIA = createServerFn({ method: "POST" })
-  .inputValidator((data: { 
+  .validator((data: {
     image: string; 
     mimeType: string;
     documentId: string;

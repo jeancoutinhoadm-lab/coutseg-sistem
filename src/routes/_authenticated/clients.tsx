@@ -91,15 +91,18 @@ function ClientsPage() {
     },
   });
 
-  const deleteMutation = useMutation({
+  const deactivateMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("clients").delete().eq("id", id);
+      const { error } = await supabase
+        .from("clients")
+        .update({ status: "inactive" } as any)
+        .eq("id", id);
       if (error) throw error;
-      await logAudit('DELETE', 'CLIENT', id);
+      await logAudit('UPDATE', 'CLIENT_DEACTIVATED', id, null, { status: 'inactive' });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["clients"] });
-      toast.success("Cliente removido");
+      toast.success("Cliente inativado");
     },
   });
 
@@ -193,11 +196,12 @@ function ClientsPage() {
                           variant="ghost"
                           size="icon"
                           onClick={() => {
-                            if (confirm("Excluir cliente?")) {
-                              deleteMutation.mutate(client.id);
+                            if (confirm("Inativar cliente? O histórico e as apólices serão preservados.")) {
+                              deactivateMutation.mutate(client.id);
                             }
                           }}
-                          disabled={deleteMutation.isPending}
+                          title="Inativar cliente"
+                          disabled={deactivateMutation.isPending || (client as any).status === 'inactive'}
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>

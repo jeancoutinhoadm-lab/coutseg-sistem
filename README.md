@@ -24,3 +24,10 @@ cd <repository-name>
 npm i
 npm run dev
 ```
+
+## Vercel
+
+The build is configured for the Vercel Nitro preset. Configure the environment
+variables from `.env.example` in Vercel before deploying. `GEMINI_API_KEY` and
+`SUPABASE_SERVICE_ROLE_KEY` are server-only variables and must never use the
+`VITE_` prefix.

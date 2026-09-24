@@ -18,7 +18,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Plus, Search, Pencil, Trash2, Loader2, AlertTriangle } from "lucide-react";
+import { Archive, Plus, Search, Pencil, Loader2, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { Database } from "@/integrations/supabase/types";
@@ -46,6 +46,7 @@ function ClaimsPage() {
       const { data, error } = await supabase
         .from("claims")
         .select("*, policies(policy_number, clients(full_name))")
+        .is("deleted_at" as never, null)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
@@ -75,15 +76,18 @@ function ClaimsPage() {
     },
   });
 
-  const deleteMutation = useMutation({
+  const archiveMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("claims").delete().eq("id", id);
+      const { error } = await supabase
+        .from("claims")
+        .update({ deleted_at: new Date().toISOString() } as never)
+        .eq("id", id);
       if (error) throw error;
-      await logAudit('DELETE', 'CLAIM', id);
+      await logAudit("UPDATE", "CLAIM", id, { deleted_at: null }, { deleted_at: new Date().toISOString() });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["claims"] });
-      toast.success("Sinistro removido");
+      toast.success("Sinistro arquivado");
     },
   });
 
@@ -186,10 +190,10 @@ function ClaimsPage() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => deleteMutation.mutate(claim.id)}
-                          disabled={deleteMutation.isPending}
+                          onClick={() => archiveMutation.mutate(claim.id)}
+                          disabled={archiveMutation.isPending}
                         >
-                          <Trash2 className="h-4 w-4 text-destructive" />
+                          <Archive className="h-4 w-4 text-destructive" />
                         </Button>
                       </TableCell>
                     </TableRow>

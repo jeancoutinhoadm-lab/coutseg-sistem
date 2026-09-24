@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Plus, Search, Pencil, Trash2, Loader2, Building2 } from "lucide-react";
+import { Archive, Plus, Search, Pencil, Loader2, Building2 } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
 import { logAudit } from "@/utils/audit";
 
@@ -68,15 +68,15 @@ function InsurersPage() {
     },
   });
 
-  const deleteMutation = useMutation({
+  const archiveMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("insurers").delete().eq("id", id);
+      const { error } = await supabase.from("insurers").update({ active: false }).eq("id", id);
       if (error) throw error;
-      await logAudit('DELETE', 'INSURER', id);
+      await logAudit("UPDATE", "INSURER", id, { active: true }, { active: false });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["insurers"] });
-      toast.success("Seguradora removida");
+      toast.success("Seguradora inativada");
     },
   });
 
@@ -170,10 +170,10 @@ function InsurersPage() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => deleteMutation.mutate(insurer.id)}
-                          disabled={deleteMutation.isPending}
+                          onClick={() => archiveMutation.mutate(insurer.id)}
+                          disabled={archiveMutation.isPending}
                         >
-                          <Trash2 className="h-4 w-4 text-destructive" />
+                          <Archive className="h-4 w-4 text-destructive" />
                         </Button>
                       </TableCell>
                     </TableRow>

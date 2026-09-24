@@ -28,10 +28,16 @@ export const getFinancialSummary = createServerFn({ method: "GET" })
     // 3. Contas a Pagar (Despesas internas pendentes e parciais)
     const { data: payables } = await supabase
       .from("payables")
-      .select("amount")
+      .select("id, amount, financial_entries(amount)")
       .in("status", ["pending", "partial"]);
-    
-    const totalPayables = (payables || []).reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
+
+    const totalPayables = (payables || []).reduce((acc, curr) => {
+      const paid = (curr.financial_entries || []).reduce(
+        (sum, entry) => sum + Math.abs(Number(entry.amount) || 0),
+        0,
+      );
+      return acc + Math.max(0, (Number(curr.amount) || 0) - paid);
+    }, 0);
 
     return {
       totalBalance,

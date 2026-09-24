@@ -70,15 +70,15 @@ function ProductsPage() {
     },
   });
 
-  const deleteMutation = useMutation({
+  const archiveMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("products").delete().eq("id", id);
+      const { error } = await supabase.from("products").update({ active: false }).eq("id", id);
       if (error) throw error;
-      await logAudit('DELETE', 'PRODUCT', id);
+      await logAudit("UPDATE", "PRODUCT", id, { active: true }, { active: false });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
-      toast.success("Produto removido");
+      toast.success("Produto inativado");
     },
   });
 
@@ -177,11 +177,11 @@ function ProductsPage() {
                             variant="ghost"
                             size="icon"
                             onClick={() => {
-                              if (confirm("Deseja realmente excluir este produto?")) {
-                                deleteMutation.mutate(product.id);
+                              if (confirm("Deseja inativar este produto? O histórico será preservado.")) {
+                                archiveMutation.mutate(product.id);
                               }
                             }}
-                            disabled={deleteMutation.isPending}
+                            disabled={archiveMutation.isPending}
                           >
                             <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
@@ -270,14 +270,14 @@ function CrossSellRulesManager({ products }: { products: any[] }) {
     }
   });
 
-  const deleteRuleMutation = useMutation({
+  const archiveRuleMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("cross_sell_rules").delete().eq("id", id);
+      const { error } = await supabase.from("cross_sell_rules").update({ active: false }).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["cross-sell-rules"] });
-      toast.success("Regra removida");
+      toast.success("Regra inativada");
     }
   });
 
@@ -342,7 +342,7 @@ function CrossSellRulesManager({ products }: { products: any[] }) {
                   <Button 
                     variant="ghost" 
                     size="icon"
-                    onClick={() => deleteRuleMutation.mutate(rule.id)}
+                    onClick={() => archiveRuleMutation.mutate(rule.id)}
                   >
                     <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>

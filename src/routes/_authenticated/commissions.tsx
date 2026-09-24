@@ -69,7 +69,7 @@ function CommissionsPage() {
                     {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(c.expected_amount)}
                   </TableCell>
                   <TableCell className="text-right font-mono text-sm">
-                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(c.reported_amount || 0)}
+                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(c.received_amount ?? c.reported_amount ?? 0)}
                   </TableCell>
                   <TableCell className={`text-right font-mono text-sm font-bold ${Number(c.divergence_amount) !== 0 ? 'text-red-500' : 'text-green-600'}`}>
                     {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(c.divergence_amount || 0)}
@@ -90,7 +90,7 @@ function CommissionsPage() {
 
               {commissions?.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-10 text-muted-foreground">
+                  <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">
                     Nenhuma comissão registrada.
                   </TableCell>
                 </TableRow>

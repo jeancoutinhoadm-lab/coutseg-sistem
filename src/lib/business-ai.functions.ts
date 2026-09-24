@@ -18,7 +18,7 @@ export async function processBusinessIA(data: { question: string }) {
   const [finances, production, claims, crm] = await Promise.all([
     supabase.from("financial_entries").select("type, amount, entry_date").limit(100),
     supabase.from("policies").select("type, premium, insurer_id").limit(100),
-    supabase.from("claims").select("status").limit(50),
+    supabase.from("claims").select("status, deleted_at").limit(50),
     supabase.from("opportunities").select("status, value_estimated").limit(50),
   ]);
 
@@ -29,12 +29,12 @@ export async function processBusinessIA(data: { question: string }) {
       return acc;
     }, {}),
     production_count: production.data?.length,
-    claims_status: claims.data?.reduce((acc: any, curr) => {
+    claims_status: claims.data?.filter((curr) => !(curr as { deleted_at?: string | null }).deleted_at).reduce((acc: any, curr) => {
       const status = curr.status || 'unknown';
       acc[status] = (acc[status] || 0) + 1;
       return acc;
     }, {}),
-    crm_active: crm.data?.filter(o => o.status === 'open').length,
+    crm_active: crm.data?.filter(o => ["new", "contacted", "quoting", "negotiating", "deferred"].includes(o.status || "")).length,
   };
 
   // 2. Chamar LLM com restrições severas

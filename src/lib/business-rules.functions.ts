@@ -35,6 +35,7 @@ export const runDeterministicInsights = createServerFn({ method: "POST" })
           .from("policies")
           .select("type")
           .eq("client_id", client.id)
+          .is("deleted_at", null)
           .not("status", "eq", "cancelled");
 
         const types = new Set(policies?.map(p => p.type.toLowerCase()) || []);
@@ -57,10 +58,10 @@ export const runDeterministicInsights = createServerFn({ method: "POST" })
     const thirtyDaysFromNow = subDays(new Date(), -30).toISOString();
     const { data: upcomingRenewals } = await supabase
       .from("policies")
-      .select("id, policy_number, client_id, clients(full_name), end_date")
+        .select("id, policy_number, client_id, clients(full_name), end_date")
       .lte("end_date", thirtyDaysFromNow)
       .gt("end_date", new Date().toISOString())
-      .not("status", "eq", "cancelled");
+        .not("status", "eq", "cancelled");
 
     if (upcomingRenewals) {
       for (const policy of upcomingRenewals) {
@@ -108,7 +109,7 @@ export const runDeterministicInsights = createServerFn({ method: "POST" })
     const { data: staleOpps } = await supabase
       .from("opportunities")
       .select("id, notes, updated_at, products(name)")
-      .eq("status", "open")
+      .in("status", ["new", "contacted", "quoting", "negotiating", "deferred"])
       .lte("updated_at", subDays(new Date(), 10).toISOString());
 
     if (staleOpps) {

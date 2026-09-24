@@ -4,6 +4,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { 
   CheckCircle2, 
@@ -28,9 +30,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/use-auth";
 import { useServerFn } from "@tanstack/react-start";
-import { updateTaskStatus, transferTask } from "@/lib/tasks.functions";
+import { createOperationalTask, updateTaskStatus, transferTask } from "@/lib/tasks.functions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 type TaskStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
 type TaskPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
@@ -49,10 +52,15 @@ function TasksPage() {
   const { user, role, hasRole } = useAuth();
   const [view, setView] = useState<"my" | "team">(hasRole(['admin', 'gerente']) ? "team" : "my");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [createOpen, setCreateOpen] = useState(false);
+  const [newTitle, setNewTitle] = useState("");
+  const [newDueDate, setNewDueDate] = useState("");
+  const [newPriority, setNewPriority] = useState<TaskPriority>("MEDIUM");
   const queryClient = useQueryClient();
   
   const updateStatusFn = useServerFn(updateTaskStatus);
   const transferFn = useServerFn(transferTask);
+  const createTaskFn = useServerFn(createOperationalTask);
 
   const { data: tasks, isLoading } = useQuery({
     queryKey: ["tasks", view, statusFilter],
@@ -108,6 +116,26 @@ function TasksPage() {
     },
   });
 
+  const createMutation = useMutation({
+    mutationFn: () => createTaskFn({
+      data: {
+        title: newTitle.trim(),
+        due_date: newDueDate || undefined,
+        priority: newPriority,
+        user_id: user?.id,
+      },
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      setCreateOpen(false);
+      setNewTitle("");
+      setNewDueDate("");
+      setNewPriority("MEDIUM");
+      toast.success("Tarefa criada!");
+    },
+    onError: (err: Error) => toast.error("Erro ao criar tarefa", { description: err.message }),
+  });
+
   const getPriorityBadge = (priority: string | null) => {
     const config: Record<string, string> = {
       URGENT: 'bg-red-100 text-red-700 border-red-200',
@@ -151,7 +179,7 @@ function TasksPage() {
           <p className="text-muted-foreground">Quem, O que e Quando precisa ser feito.</p>
         </div>
         <div className="flex gap-2">
-          <Button>
+          <Button onClick={() => setCreateOpen(true)}>
             <Plus className="mr-2 h-4 w-4" /> Nova Tarefa
           </Button>
         </div>
@@ -201,6 +229,35 @@ function TasksPage() {
           />
         </TabsContent>
       </Tabs>
+
+      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Nova tarefa</DialogTitle></DialogHeader>
+          <div className="grid gap-4 py-2">
+            <div className="grid gap-2">
+              <Label htmlFor="task-title">Título *</Label>
+              <Input id="task-title" value={newTitle} onChange={(event) => setNewTitle(event.target.value)} autoFocus />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="task-due-date">Prazo</Label>
+              <Input id="task-due-date" type="date" value={newDueDate} onChange={(event) => setNewDueDate(event.target.value)} />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="task-priority">Prioridade</Label>
+              <select id="task-priority" className="h-10 rounded-md border bg-background px-3 text-sm" value={newPriority} onChange={(event) => setNewPriority(event.target.value as TaskPriority)}>
+                <option value="LOW">Baixa</option>
+                <option value="MEDIUM">Média</option>
+                <option value="HIGH">Alta</option>
+                <option value="URGENT">Urgente</option>
+              </select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCreateOpen(false)}>Cancelar</Button>
+            <Button disabled={!newTitle.trim() || createMutation.isPending} onClick={() => createMutation.mutate()}>Criar tarefa</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -18,6 +18,13 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Textarea } from "@/components/ui/textarea";
 import { getFileForIA } from "@/utils/pdf-converter";
 
+const MAX_DOCUMENT_BYTES = 10 * 1024 * 1024;
+const ALLOWED_DOCUMENT_TYPES = new Set([
+  "application/pdf",
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+]);
 
 
 export const Route = createFileRoute("/_authenticated/central-entrada")({
@@ -65,6 +72,12 @@ function CentralEntradaPage() {
   const uploadMutation = useMutation({
     mutationFn: async () => {
       if (!file) throw new Error("Selecione um arquivo");
+      if (!ALLOWED_DOCUMENT_TYPES.has(file.type)) {
+        throw new Error("Envie um arquivo PDF, JPG, PNG ou WebP");
+      }
+      if (file.size > MAX_DOCUMENT_BYTES) {
+        throw new Error("O arquivo deve ter no máximo 10 MB");
+      }
       setCurrentStep('uploading');
 
       const { data: { user } } = await supabase.auth.getUser();
@@ -80,7 +93,7 @@ function CentralEntradaPage() {
         .single();
         
       if (existingDoc) {
-        toast.info(`Este documento já foi enviado anteriormente: ${existingDoc.name}`);
+        throw new Error(`Este documento já foi enviado anteriormente: ${existingDoc.name}`);
       }
 
       const fileExt = file.name.split(".").pop();
@@ -266,10 +279,9 @@ function CentralEntradaPage() {
         const items = extractedData.items.filter((i: any) => i.status !== 'rejected');
         
         for (const item of items) {
-          const { data: result, error } = await supabase.rpc('process_commission_item_approval', {
+          const { data: result, error } = await supabase.rpc('approve_commission_report_item' as any, {
             _document_id: lastSavedDoc.id,
-            _item: item as any,
-            _user_id: user.id
+            _item: item as any
           });
           
           if (error) {
@@ -280,11 +292,10 @@ function CentralEntradaPage() {
             if (res.commission_id) {
               // Se houver divergência, registrar a reconciliação para este item
               const diff = (Number(item.paid_commission) || 0) - (Number(item.expected_commission) || 0);
-              await supabase.rpc('reconcile_commission' as any, {
+              await supabase.rpc('reconcile_commission_authenticated' as any, {
                 _commission_id: res.commission_id,
                 _adjustment_amount: diff,
                 _reason: reconciliationReason,
-                _user_id: user.id,
                 _metadata: {
                   document_id: lastSavedDoc.id,
                   validation_errors: validationData.errors
@@ -457,7 +468,18 @@ function CentralEntradaPage() {
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]);
+      const selectedFile = e.target.files[0];
+      if (!ALLOWED_DOCUMENT_TYPES.has(selectedFile.type)) {
+        toast.error("Envie um arquivo PDF, JPG, PNG ou WebP");
+        e.target.value = "";
+        return;
+      }
+      if (selectedFile.size > MAX_DOCUMENT_BYTES) {
+        toast.error("O arquivo deve ter no máximo 10 MB");
+        e.target.value = "";
+        return;
+      }
+      setFile(selectedFile);
       setExtractedData(null);
       setLastSavedDoc(null);
       setCurrentStep('idle');
@@ -501,9 +523,9 @@ function CentralEntradaPage() {
                     type="file" 
                     className="max-w-xs" 
                     onChange={handleFileUpload}
-                    accept="application/pdf,image/*"
+                    accept="application/pdf,image/jpeg,image/png,image/webp"
                   />
-                  <p className="text-xs text-muted-foreground mt-2">PDF, PNG, JPG (Máx. 5MB)</p>
+                  <p className="text-xs text-muted-foreground mt-2">PDF, PNG, JPG ou WebP (máx. 10 MB)</p>
                 </>
               ) : (
                 <div className="text-center">

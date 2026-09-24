@@ -35,6 +35,7 @@ import { convertLeadToOpportunity, markOpportunityAsLost } from "@/lib/crm.funct
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { useAuth } from "@/hooks/use-auth";
 
 type OpportunityStatus = "new" | "contacted" | "quoting" | "negotiating" | "won" | "lost" | "deferred";
 type LeadStatus = "new" | "contacted" | "qualified" | "converted" | "lost" | "rejected";
@@ -50,12 +51,17 @@ export const Route = createFileRoute("/_authenticated/opportunities")({
 });
 
 function CRMPage() {
+  const { user, role } = useAuth();
   const [activeTab, setActiveTab] = useState<"leads" | "opportunities">("opportunities");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedOpportunity, setSelectedOpportunity] = useState<any>(null);
   const [isLossModalOpen, setIsLossModalOpen] = useState(false);
   const [lossReason, setLossReason] = useState("");
+  const [isLeadModalOpen, setIsLeadModalOpen] = useState(false);
+  const [leadName, setLeadName] = useState("");
+  const [leadEmail, setLeadEmail] = useState("");
+  const [leadPhone, setLeadPhone] = useState("");
   
   const queryClient = useQueryClient();
   const convertLead = useServerFn(convertLeadToOpportunity);
@@ -128,6 +134,41 @@ function CRMPage() {
     }
   });
 
+  const { data: ownBroker } = useQuery({
+    queryKey: ["current-broker", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("brokers").select("id").eq("user_id", user!.id).maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: role === "corretor" && !!user?.id,
+  });
+
+  const createLeadMutation = useMutation({
+    mutationFn: async () => {
+      if (role === "corretor" && !ownBroker) throw new Error("Seu usuário não possui um corretor vinculado.");
+      const { error } = await supabase.from("leads").insert({
+        full_name: leadName.trim(),
+        email: leadEmail.trim() || null,
+        phone: leadPhone.trim() || null,
+        source: "manual",
+        status: "new",
+        broker_id: role === "corretor" ? ownBroker!.id : null,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["leads"] });
+      setIsLeadModalOpen(false);
+      setLeadName("");
+      setLeadEmail("");
+      setLeadPhone("");
+      setActiveTab("leads");
+      toast.success("Lead cadastrado.");
+    },
+    onError: (err: Error) => toast.error("Erro ao cadastrar lead", { description: err.message }),
+  });
+
   const getStatusBadge = (status: string, type: 'lead' | 'opp') => {
     const variants: Record<string, any> = {
       new: { label: "Novo", color: "bg-blue-100 text-blue-700" },
@@ -156,7 +197,7 @@ function CRMPage() {
             <TrendingUp className="mr-2 h-4 w-4" />
             Relatórios
           </Button>
-          <Button>
+          <Button onClick={() => setIsLeadModalOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
             Novo Lead
           </Button>
@@ -424,6 +465,32 @@ function CRMPage() {
             <Button variant="destructive" onClick={() => lossMutation.mutate()} disabled={!lossReason || lossMutation.isPending}>
               Confirmar Perda
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={isLeadModalOpen} onOpenChange={setIsLeadModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Novo lead</DialogTitle>
+            <DialogDescription>Registre o contato para acompanhamento comercial.</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-2">
+            <div className="grid gap-2">
+              <Label htmlFor="lead-name">Nome *</Label>
+              <Input id="lead-name" value={leadName} onChange={(event) => setLeadName(event.target.value)} autoFocus />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="lead-email">E-mail</Label>
+              <Input id="lead-email" type="email" value={leadEmail} onChange={(event) => setLeadEmail(event.target.value)} />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="lead-phone">Telefone</Label>
+              <Input id="lead-phone" value={leadPhone} onChange={(event) => setLeadPhone(event.target.value)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsLeadModalOpen(false)}>Cancelar</Button>
+            <Button disabled={!leadName.trim() || createLeadMutation.isPending} onClick={() => createLeadMutation.mutate()}>Cadastrar lead</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -40,6 +40,13 @@ import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+const MAX_DOCUMENT_BYTES = 10 * 1024 * 1024;
+const ALLOWED_DOCUMENT_TYPES = new Set([
+  "application/pdf",
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+]);
 
 
 export const Route = createFileRoute("/_authenticated/operations/$id")({
@@ -108,11 +115,28 @@ function OperationDetailsPage() {
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+    if (!ALLOWED_DOCUMENT_TYPES.has(file.type)) {
+      toast.error("Envie um arquivo PDF, JPG, PNG ou WebP");
+      event.target.value = "";
+      return;
+    }
+    if (file.size > MAX_DOCUMENT_BYTES) {
+      toast.error("O arquivo deve ter no máximo 10 MB");
+      event.target.value = "";
+      return;
+    }
 
     setIsUploading(true);
     try {
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+      if (userError) throw userError;
+      if (!user) throw new Error("Usuário não autenticado");
+
       const fileExt = file.name.split('.').pop();
-      const filePath = `operations/${id}/${crypto.randomUUID()}.${fileExt}`;
+      const filePath = `${user.id}/operations/${id}/${crypto.randomUUID()}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
         .from("policy_documents")
@@ -127,14 +151,19 @@ function OperationDetailsPage() {
           name: file.name,
           file_path: filePath,
           file_type: file.type,
+          mime_type: file.type,
           size: file.size,
           client_id: data?.operation.client_id,
           policy_id: data?.operation.policy_id,
+          uploaded_by: user.id,
         } as any)
         .select()
         .single();
 
-      if (docError) throw docError;
+      if (docError) {
+        await supabase.storage.from("policy_documents").remove([filePath]);
+        throw docError;
+      }
 
       const docTask = data?.operation.operation_checklists?.find((t: any) => t.task_name.includes("Documento"));
       if (docTask) {

@@ -141,7 +141,7 @@ export const getProductionReport = createServerFn({ method: "GET" })
     const { startDate, endDate } = data;
 
     // Produção por Seguradora
-    const { data: insurerData } = await supabase
+    let insurerQuery = supabase
       .from("policies")
       .select(`
         id,
@@ -151,9 +151,12 @@ export const getProductionReport = createServerFn({ method: "GET" })
         commissions(expected_amount)
       `)
       .is("deleted_at", null);
+    if (startDate) insurerQuery = insurerQuery.gte("created_at", startDate);
+    if (endDate) insurerQuery = insurerQuery.lte("created_at", endDate);
+    const { data: insurerData } = await insurerQuery;
 
     // Produção por Produto
-    const { data: productData } = await supabase
+    let productQuery = supabase
       .from("policies")
       .select(`
         id,
@@ -163,6 +166,9 @@ export const getProductionReport = createServerFn({ method: "GET" })
         commissions(expected_amount)
       `)
       .is("deleted_at", null);
+    if (startDate) productQuery = productQuery.gte("created_at", startDate);
+    if (endDate) productQuery = productQuery.lte("created_at", endDate);
+    const { data: productData } = await productQuery;
 
     return {
       byInsurer: insurerData || [],
@@ -178,10 +184,21 @@ export const getCRMReport = createServerFn({ method: "GET" })
   .handler(async ({ data }) => {
     const { startDate, endDate, brokerId } = data;
 
-    const [leads, opps] = await Promise.all([
-      supabase.from("leads").select("*"),
-      supabase.from("opportunities").select("*, products(name), clients(full_name)")
-    ]);
+    let leadsQuery = supabase.from("leads").select("*");
+    let opportunitiesQuery = supabase.from("opportunities").select("*, products(name), clients(full_name)");
+    if (startDate) {
+      leadsQuery = leadsQuery.gte("created_at", startDate);
+      opportunitiesQuery = opportunitiesQuery.gte("created_at", startDate);
+    }
+    if (endDate) {
+      leadsQuery = leadsQuery.lte("created_at", endDate);
+      opportunitiesQuery = opportunitiesQuery.lte("created_at", endDate);
+    }
+    if (brokerId) {
+      leadsQuery = leadsQuery.eq("broker_id", brokerId);
+      opportunitiesQuery = opportunitiesQuery.eq("broker_id", brokerId);
+    }
+    const [leads, opps] = await Promise.all([leadsQuery, opportunitiesQuery]);
 
     return {
       leads: leads.data || [],
@@ -204,6 +221,8 @@ export const getProductivityReport = createServerFn({ method: "GET" })
       `);
 
     if (brokerId) query = query.eq("user_id", brokerId);
+    if (startDate) query = query.gte("created_at", startDate);
+    if (endDate) query = query.lte("created_at", endDate);
 
     const { data: tasks, error } = await query;
     if (error) throw error;

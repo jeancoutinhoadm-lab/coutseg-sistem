@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Plus, Search, Pencil, Trash2, Loader2, UserCog } from "lucide-react";
+import { Archive, Plus, Search, Pencil, Loader2, UserCog } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
 import { logAudit } from "@/utils/audit";
 
@@ -63,15 +63,15 @@ function BrokersPage() {
     },
   });
 
-  const deleteMutation = useMutation({
+  const archiveMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("brokers").delete().eq("id", id);
+      const { error } = await supabase.from("brokers").update({ active: false }).eq("id", id);
       if (error) throw error;
-      await logAudit('DELETE', 'BROKER', id);
+      await logAudit("UPDATE", "BROKER", id, { active: true }, { active: false });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["brokers"] });
-      toast.success("Corretor removido");
+      toast.success("Corretor inativado");
     },
   });
 
@@ -165,10 +165,10 @@ function BrokersPage() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => deleteMutation.mutate(broker.id)}
-                          disabled={deleteMutation.isPending}
+                          onClick={() => archiveMutation.mutate(broker.id)}
+                          disabled={archiveMutation.isPending}
                         >
-                          <Trash2 className="h-4 w-4 text-destructive" />
+                          <Archive className="h-4 w-4 text-destructive" />
                         </Button>
                       </TableCell>
                     </TableRow>

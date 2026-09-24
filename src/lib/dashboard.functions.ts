@@ -63,9 +63,15 @@ export const getExecutiveDashboardData = createServerFn({ method: "GET" })
         .lte("receipt_date", e);
       
       if (insurerId) {
-        const { data: commIds } = await supabase.from("commissions").select("id").eq("insurer_id" as any, insurerId);
-        if (commIds?.length) {
-          query = query.in("commission_id", commIds.map((c: { id: string }) => c.id));
+        const { data: policies } = await supabase.from("policies").select("id").eq("insurer_id", insurerId);
+        if (policies?.length) {
+          const { data: commissions } = await supabase
+            .from("commissions")
+            .select("id")
+            .in("policy_id", policies.map((policy) => policy.id));
+          query = query.in("commission_id", (commissions || []).map((commission) => commission.id));
+        } else {
+          query = query.in("commission_id", []);
         }
       }
       
@@ -75,7 +81,7 @@ export const getExecutiveDashboardData = createServerFn({ method: "GET" })
 
     // Helper for expense calculation
     const getExpenses = async (s: string, e: string) => {
-      let query = supabase
+      const query = supabase
         .from("financial_entries")
         .select("amount")
         .eq("type", "expense")
@@ -96,7 +102,7 @@ export const getExecutiveDashboardData = createServerFn({ method: "GET" })
     // 3. Financeiro: A Receber / A Pagar
     const [receivablesRes, payablesRes] = await Promise.allSettled([
       supabase.from("commissions").select("expected_amount, received_amount, due_date").in("status", ["pending", "partial"]),
-      supabase.from("payables").select("amount, due_date").in("status", ["pending", "partial"]),
+      supabase.from("payables").select("amount, due_date, financial_entries(amount, type)").in("status", ["pending", "partial"]),
     ]);
 
     const receivables = receivablesRes.status === 'fulfilled' ? (receivablesRes.value.data || []) : [];
@@ -110,11 +116,18 @@ export const getExecutiveDashboardData = createServerFn({ method: "GET" })
     const totalReceivables = (receivables || [])
       .reduce((acc: number, curr: any) => acc + (Number(curr.expected_amount) - (Number(curr.received_amount) || 0)), 0);
 
+    const payableOutstanding = (payable: any) => {
+      const paid = (payable.financial_entries || [])
+        .filter((entry: any) => entry.type === "expense")
+        .reduce((sum: number, entry: any) => sum + Math.abs(Number(entry.amount) || 0), 0);
+      return Math.max(0, (Number(payable.amount) || 0) - paid);
+    };
+
     const overduePayables = (payables || [])
       .filter((p: any) => p.due_date && todayStr && p.due_date < todayStr)
-      .reduce((acc: number, curr: any) => acc + Number(curr.amount), 0);
+      .reduce((acc: number, curr: any) => acc + payableOutstanding(curr), 0);
     
-    const totalPayables = (payables || []).reduce((acc: number, curr: any) => acc + Number(curr.amount), 0);
+    const totalPayables = (payables || []).reduce((acc: number, curr: any) => acc + payableOutstanding(curr), 0);
 
     // 4. Saldo em Contas
     const { data: accounts } = await supabase.from("bank_accounts").select("name, balance").eq("status", "active");
@@ -191,8 +204,10 @@ export const getExecutiveDashboardData = createServerFn({ method: "GET" })
       .select(`
         amount,
         commissions (
-          insurers (
-            name
+          policies (
+            insurers (
+              name
+            )
           )
         )
       `)
@@ -200,7 +215,7 @@ export const getExecutiveDashboardData = createServerFn({ method: "GET" })
       .lte("receipt_date", endStr);
     
     const ranking = (insurerRankingData || []).reduce((acc: Record<string, number>, curr: any) => {
-      const name = curr.commissions?.insurers?.name || "Outros";
+      const name = curr.commissions?.policies?.insurers?.name || "Outros";
       acc[name] = (acc[name] || 0) + (Number(curr.amount) || 0);
       return acc;
     }, {});

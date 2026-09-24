@@ -237,6 +237,7 @@ export type Database = {
           amount: number | null
           claim_number: string | null
           created_at: string | null
+          deleted_at: string | null
           description: string
           id: string
           notes: string | null
@@ -250,6 +251,7 @@ export type Database = {
           amount?: number | null
           claim_number?: string | null
           created_at?: string | null
+          deleted_at?: string | null
           description: string
           id?: string
           notes?: string | null
@@ -263,6 +265,7 @@ export type Database = {
           amount?: number | null
           claim_number?: string | null
           created_at?: string | null
+          deleted_at?: string | null
           description?: string
           id?: string
           notes?: string | null

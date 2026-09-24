@@ -58,6 +58,7 @@ function RenewalsPage() {
       let query = supabase
         .from("policies")
         .select("*, clients(full_name), insurers(name), profiles:profiles!policies_responsible_user_id_profiles_fkey(full_name)")
+        .not("status", "in", '("renewed","lost","cancelled","refused")')
         .order("end_date", { ascending: true });
 
       const today = startOfDay(new Date());
@@ -71,7 +72,9 @@ function RenewalsPage() {
       } else if (filter === "30days") {
         query = query.lte("end_date", addDays(today, 30).toISOString().split("T")[0]).gte("end_date", today.toISOString().split("T")[0]);
       } else if (filter === "expired") {
-        query = query.lt("end_date", today.toISOString().split("T")[0]).not("status", "in", '("renewed","lost","cancelled")');
+        query = query.lt("end_date", today.toISOString().split("T")[0]);
+      } else {
+        query = query.lte("end_date", addDays(today, 60).toISOString().split("T")[0]);
       }
 
       const { data, error } = await query;
@@ -440,7 +443,6 @@ function RenewalsPage() {
                   <SelectItem value="quote_in_progress">Cotação em Andamento</SelectItem>
                   <SelectItem value="quote_sent">Cotação Enviada</SelectItem>
                   <SelectItem value="negotiation">Em Negociação</SelectItem>
-                  <SelectItem value="renewed">Renovada</SelectItem>
                   <SelectItem value="lost">Perdida</SelectItem>
                 </SelectContent>
               </Select>

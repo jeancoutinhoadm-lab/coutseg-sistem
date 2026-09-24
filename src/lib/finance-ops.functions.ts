@@ -50,16 +50,12 @@ export const recordPayment = createServerFn({ method: "POST" })
   }).parse(data))
   .handler(async ({ data }) => {
     // 1. Verificar duplicidade (Idempotência/Prevenção de pagamento duplicado)
-    const { data: existingEntry } = await supabase
+    const { data: existingEntries } = await supabase
       .from("financial_entries")
-      .select("id")
+      .select("amount")
       .eq("payable_id", data.payable_id)
       .eq("type", "expense")
-      .maybeSingle();
-
-    if (existingEntry) {
-      throw new Error("Esta despesa já possui um pagamento registrado.");
-    }
+      ;
 
     const { data: payable } = await supabase
       .from("payables")
@@ -71,7 +67,15 @@ export const recordPayment = createServerFn({ method: "POST" })
     if (payable.status === 'paid') throw new Error("Esta conta já está marcada como paga.");
 
     // 2. Lógica de Pagamento Parcial vs Total
-    const isPartial = data.amount < payable.amount;
+    if (data.amount <= 0) throw new Error("O valor do pagamento deve ser maior que zero.");
+    const amountAlreadyPaid = (existingEntries || []).reduce(
+      (sum, entry) => sum + Math.abs(Number(entry.amount) || 0),
+      0,
+    );
+    const remaining = Number(payable.amount) - amountAlreadyPaid;
+    if (remaining <= 0) throw new Error("Esta conta já está totalmente paga.");
+    if (data.amount > remaining) throw new Error("O pagamento não pode exceder o saldo pendente.");
+    const isPartial = data.amount < remaining;
     const newStatus = isPartial ? "partial" : "paid";
 
     const entryData: any = {
