@@ -1,6 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { callGeminiJson } from "./gemini.server";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { consumeAiQuota, requireAnyRole, requireDocumentAccess } from "./server-security";
 
 const nullableString = { type: "string", nullable: true };
 const nullableNumber = { type: "number", nullable: true };
@@ -127,16 +129,19 @@ const extractionSchemas = {
 } as const;
 
 export const processDocumentWithIA = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .validator(
     (data: {
       image: string;
       mimeType: string;
+      documentId?: string;
       documentType: "policy" | "bill" | "commission_report" | "other";
     }) =>
       z
         .object({
-          image: z.string(),
-          mimeType: z.string(),
+          image: z.string().max(14_000_000),
+          mimeType: z.enum(["application/pdf", "image/png", "image/jpeg", "image/webp"]),
+          documentId: z.string().uuid().optional(),
           documentType: z.enum([
             "policy",
             "bill",
@@ -146,7 +151,10 @@ export const processDocumentWithIA = createServerFn({ method: "POST" })
         })
         .parse(data),
   )
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    await requireAnyRole(context.supabase, context.userId, ["admin", "gerente", "administrativo", "corretor"]);
+    if (data.documentId) await requireDocumentAccess(context.supabase, data.documentId);
+    await consumeAiQuota(context.supabase);
     const prompts = {
       policy: `
 Você é responsável pela leitura de apólices de seguros brasileiras.

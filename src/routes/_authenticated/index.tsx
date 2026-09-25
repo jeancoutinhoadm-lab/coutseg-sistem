@@ -39,11 +39,8 @@ import {
   Bot, 
   MessageSquare, 
   Send,
-  Zap,
-  Play
+  Zap
 } from "lucide-react";
-import { createPilotData, runHomologationStep29 } from "@/lib/test-data.functions";
-import { useServerFn } from "@tanstack/react-start";
 
 
 export const Route = createFileRoute("/_authenticated/")({
@@ -69,9 +66,6 @@ export const Route = createFileRoute("/_authenticated/")({
 function DashboardPage() {
   const { role } = useAuth();
   const [period, setPeriod] = useState<"month" | "7days" | "30days" | "90days" | "year">("month");
-  const runHomologation = useServerFn(runHomologationStep29);
-
-
   const { data: stats, isLoading, error } = useQuery({
     queryKey: ["executive-dashboard", period],
     queryFn: () => getExecutiveDashboardData({ data: { period } }),
@@ -133,41 +127,6 @@ function DashboardPage() {
           </div>
         </div>
         <div className="flex gap-2">
-          {role === "admin" && (
-            <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="gap-2 border-primary text-primary hover:bg-primary/5"
-                onClick={async () => {
-                  try {
-                    const res = await runHomologation();
-                    console.table(res);
-                    toast.success("Homologação executada! Verifique o console e o relatório.");
-                  } catch (e) {
-                    toast.error("Erro ao iniciar homologação.");
-                  }
-                }}
-              >
-                <Zap className="h-4 w-4" /> Homologação E29
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="gap-2"
-                onClick={async () => {
-                  try {
-                    await createPilotData();
-                    toast.success("Dados piloto gerados com sucesso!");
-                  } catch (e) {
-                    toast.error("Erro ao gerar dados piloto.");
-                  }
-                }}
-              >
-                <Play className="h-4 w-4" /> Gerar Piloto
-              </Button>
-            </div>
-          )}
           <div className="flex items-center gap-2 bg-muted p-1 rounded-lg self-start">
           {(["7days", "30days", "month", "90days", "year"] as const).map((p) => (
             <Button

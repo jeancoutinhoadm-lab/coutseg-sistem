@@ -152,6 +152,8 @@ export const createPilotData = async () => {
  */
 export const runHomologationStep29 = createServerFn({ method: "POST" })
   .handler(async () => {
+    throw new Error("A geração de dados de homologação está desativada neste ambiente.");
+    /* c8 ignore start -- legacy test scenario retained only for local reference */
     const results: any[] = [];
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("Unauthorized");
@@ -174,7 +176,7 @@ export const runHomologationStep29 = createServerFn({ method: "POST" })
         type: "INDIVIDUAL"
       } as any);
       
-      if (dup_error && dup_error.code === '23505') {
+      if (dup_error?.code === '23505') {
         results.push({ scenario: "C7", status: "PASSOU", detail: "Constraint de duplicidade de CPF funcionando." });
       } else {
         results.push({ scenario: "C7", status: "FALHOU", detail: "Permitiu CPF duplicado ou erro desconhecido." });
@@ -194,5 +196,6 @@ export const runHomologationStep29 = createServerFn({ method: "POST" })
     }
 
     return results;
+    /* c8 ignore stop */
   });
 

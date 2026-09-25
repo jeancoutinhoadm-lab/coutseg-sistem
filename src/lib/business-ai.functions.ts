@@ -2,9 +2,11 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { callGemini } from "./gemini.server";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { consumeAiQuota, requireAnyRole } from "./server-security";
 
 const askBusinessIASchema = z.object({
-  question: z.string(),
+  question: z.string().trim().min(1).max(1_000),
 });
 
 /**
@@ -13,13 +15,13 @@ const askBusinessIASchema = z.object({
 /**
  * LÓGICA CORE DA IA (READ-ONLY)
  */
-export async function processBusinessIA(data: { question: string }) {
+export async function processBusinessIA(data: { question: string }, authenticatedSupabase = supabase) {
   // 1. Coletar contexto sanitizado
   const [finances, production, claims, crm] = await Promise.all([
-    supabase.from("financial_entries").select("type, amount, entry_date").limit(100),
-    supabase.from("policies").select("type, premium, insurer_id").limit(100),
-    supabase.from("claims").select("status, deleted_at").limit(50),
-    supabase.from("opportunities").select("status, value_estimated").limit(50),
+    authenticatedSupabase.from("financial_entries").select("type, amount, entry_date").limit(100),
+    authenticatedSupabase.from("policies").select("type, premium, insurer_id").limit(100),
+    authenticatedSupabase.from("claims").select("status, deleted_at").limit(50),
+    authenticatedSupabase.from("opportunities").select("status, value_estimated").limit(50),
   ]);
 
   const context = {
@@ -62,9 +64,12 @@ export async function processBusinessIA(data: { question: string }) {
  * ASSISTENTE ANALÍTICO INTERNO (READ-ONLY)
  */
 export const askBusinessIA = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .validator((data: unknown) => askBusinessIASchema.parse(data))
-  .handler(async ({ data }) => {
-    return processBusinessIA(data);
+  .handler(async ({ data, context }) => {
+    await requireAnyRole(context.supabase, context.userId, ["admin", "gerente"]);
+    await consumeAiQuota(context.supabase);
+    return processBusinessIA(data, context.supabase);
   });
 
 /**

@@ -1,7 +1,7 @@
 const GEMINI_MODEL = "gemini-3.1-flash-lite";
 const GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta";
-const MAX_PDF_BYTES = 50 * 1024 * 1024;
-const MAX_IMAGE_BYTES = 20 * 1024 * 1024;
+const MAX_PDF_BYTES = 10 * 1024 * 1024;
+const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 const REQUEST_TIMEOUT_MS = 120_000;
 
 type GeminiPart =
@@ -42,6 +42,12 @@ export function getGeminiModel() {
   return GEMINI_MODEL;
 }
 
+function getServerEnvironment(name: string) {
+  // Indirection is intentional: build tools must not inline server secrets into
+  // browser chunks. Vercel supplies this value only at function runtime.
+  return (globalThis as typeof globalThis & { process?: NodeJS.Process }).process?.env?.[name];
+}
+
 function decodedBase64Size(base64: string) {
   const padding = base64.endsWith("==") ? 2 : base64.endsWith("=") ? 1 : 0;
   return Math.max(0, Math.floor((base64.length * 3) / 4) - padding);
@@ -69,10 +75,21 @@ function validateFile(file: NonNullable<GeminiRequest["file"]>) {
   if (size > limit) {
     throw new Error(
       file.mimeType === "application/pdf"
-        ? "O PDF excede o limite de 50 MB para análise."
-        : "A imagem excede o limite de 20 MB para análise.",
+        ? "O PDF excede o limite de 10 MB para análise."
+        : "A imagem excede o limite de 10 MB para análise.",
     );
   }
+
+  const signature = Buffer.from(file.base64.slice(0, 32), "base64");
+  const isPdf = signature.subarray(0, 5).toString("ascii") === "%PDF-";
+  const isPng = signature.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
+  const isJpeg = signature[0] === 0xff && signature[1] === 0xd8 && signature[2] === 0xff;
+  const isWebp = signature.subarray(0, 4).toString("ascii") === "RIFF" && signature.subarray(8, 12).toString("ascii") === "WEBP";
+  const matchesMime = (file.mimeType === "application/pdf" && isPdf)
+    || (file.mimeType === "image/png" && isPng)
+    || (file.mimeType === "image/jpeg" && isJpeg)
+    || (file.mimeType === "image/webp" && isWebp);
+  if (!matchesMime) throw new Error("O conteúdo do arquivo não corresponde ao tipo informado.");
 }
 
 function safeGeminiError(status: number, providerStatus?: string, providerMessage?: string) {
@@ -93,7 +110,7 @@ function safeGeminiError(status: number, providerStatus?: string, providerMessag
 }
 
 export async function callGemini(request: GeminiRequest): Promise<GeminiResult> {
-  const apiKey = process.env["GEMINI_API_KEY"];
+  const apiKey = getServerEnvironment("GEMINI_API_KEY");
   if (!apiKey) throw new Error("A chave GEMINI_API_KEY não está configurada no servidor.");
 
   if (request.file) validateFile(request.file);

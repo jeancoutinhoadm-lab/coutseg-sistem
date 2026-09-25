@@ -182,9 +182,10 @@ function CentralEntradaPage() {
           // Real extraction for policies, bills and other documents
           result = await processDocumentWithIA({
             data: {
-              image: imageBase64,
-              mimeType: iaMimeType,
-              documentType: docType
+                image: imageBase64,
+                mimeType: iaMimeType,
+                documentId: lastSavedDoc.id,
+                documentType: docType
             }
           });
         }

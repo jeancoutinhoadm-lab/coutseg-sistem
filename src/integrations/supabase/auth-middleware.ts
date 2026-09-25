@@ -10,6 +10,10 @@ function isNewSupabaseApiKey(value: string): boolean {
   return value.startsWith('sb_publishable_') || value.startsWith('sb_secret_');
 }
 
+function getServerEnvironment(name: string) {
+  return (globalThis as typeof globalThis & { process?: NodeJS.Process }).process?.env?.[name];
+}
+
 function createSupabaseFetch(supabaseKey: string): typeof fetch {
   return (input, init) => {
     const headers = new Headers(
@@ -33,8 +37,8 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
 export const requireSupabaseAuth = createMiddleware({ type: 'function' }).server(
   async ({ next }) => {
     
-    const SUPABASE_URL = process.env['SUPABASE_URL'];
-    const SUPABASE_PUBLISHABLE_KEY = process.env['SUPABASE_PUBLISHABLE_KEY'];
+    const SUPABASE_URL = getServerEnvironment('SUPABASE_URL') || getServerEnvironment('VITE_SUPABASE_URL');
+    const SUPABASE_PUBLISHABLE_KEY = getServerEnvironment('SUPABASE_PUBLISHABLE_KEY') || getServerEnvironment('VITE_SUPABASE_PUBLISHABLE_KEY');
 
     if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
       const missing = [

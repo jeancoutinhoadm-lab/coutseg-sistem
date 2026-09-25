@@ -1,6 +1,5 @@
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { Link } from "@tanstack/react-router";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -12,7 +11,6 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { toast } from "sonner";
 import { Shield, Loader2 } from "lucide-react";
-import { logAudit } from "@/utils/audit";
 
 const loginSchema = z.object({
   email: z.string().email("Digite um e-mail válido"),
@@ -54,11 +52,10 @@ function LoginPage() {
       });
       
       if (error) {
-        toast.error("Erro ao entrar", { description: error.message || "E-mail ou senha incorretos." });
+        toast.error("Não foi possível entrar", { description: "Verifique suas credenciais ou contate um administrador." });
         return;
       }
       
-      await logAudit('LOGIN', 'USER');
       toast.success("Login realizado com sucesso");
       navigate({ to: "/" });
     } catch (err) {
@@ -144,13 +141,8 @@ function LoginPage() {
             </CardContent>
           </form>
         </Form>
-        <CardFooter className="flex justify-center text-sm text-muted-foreground">
-          <span>
-            Não tem conta?{" "}
-            <Link to="/auth/register" className="font-medium text-primary hover:underline">
-              Cadastre-se
-            </Link>
-          </span>
+        <CardFooter className="justify-center text-center text-sm text-muted-foreground">
+          Solicite o acesso a um administrador da CoutSeg.
         </CardFooter>
       </Card>
     </div>

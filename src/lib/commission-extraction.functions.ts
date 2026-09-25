@@ -1,6 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { callGeminiJson } from "./gemini.server";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { consumeAiQuota, requireAnyRole, requireDocumentAccess } from "./server-security";
 
 const nullableString = { type: "string", nullable: true };
 const nullableNumber = { type: "number", nullable: true };
@@ -90,18 +92,22 @@ export interface CommissionReportData {
  * Server function para extração real de relatórios de comissão via IA
  */
 export const extractCommissionReportWithIA = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .validator((data: {
     image: string; 
     mimeType: string;
     documentId: string;
   }) => 
     z.object({
-      image: z.string(),
-      mimeType: z.string(),
+      image: z.string().max(14_000_000),
+      mimeType: z.enum(["application/pdf", "image/png", "image/jpeg", "image/webp"]),
       documentId: z.string(),
     }).parse(data)
   )
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    await requireAnyRole(context.supabase, context.userId, ["admin", "gerente", "financeiro"]);
+    await requireDocumentAccess(context.supabase, data.documentId);
+    await consumeAiQuota(context.supabase);
     const prompt = `Você é um sistema de extração de dados financeiros de seguros de ALTA PRECISÃO.
 Leia exclusivamente o documento fornecido (Relatório de Comissões).
 Extraia somente informações presentes no documento.
