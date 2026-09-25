@@ -47,6 +47,10 @@ function isH3SwallowedErrorBody(body: string): boolean {
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
+      if (new URL(request.url).pathname === "/api/webhooks/whatsapp") {
+        const { handleWhatsAppWebhook } = await import("./lib/whatsapp-webhook.server");
+        return await handleWhatsAppWebhook(request);
+      }
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       return await normalizeCatastrophicSsrResponse(response);

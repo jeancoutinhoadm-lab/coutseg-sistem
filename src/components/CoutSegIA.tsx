@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Bot, Send, User, Loader2, X } from "lucide-react";
-import { askCoutSegIA } from "@/lib/chat.functions";
+import { askAssistantGateway } from "@/lib/assistant-gateway.functions";
 
 export function CoutSegIA() {
   const [isOpen, setIsOpen] = useState(false);
@@ -20,8 +20,8 @@ export function CoutSegIA() {
     setIsLoading(true);
 
     try {
-      const result = await askCoutSegIA({ data: { message: userMsg } });
-      setMessages(prev => [...prev, { role: 'ai', text: result.text }]);
+      const result = await askAssistantGateway({ data: { question: userMsg, channel: "web" } });
+      setMessages(prev => [...prev, { role: 'ai', text: result.answer }]);
     } catch (error) {
       setMessages(prev => [...prev, {
         role: 'ai',
@@ -57,7 +57,7 @@ export function CoutSegIA() {
       <CardContent className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 && (
           <p className="text-xs text-muted-foreground text-center mt-10">
-            Olá! Como posso ajudar você hoje com a gestão da CoutSeg?
+            Consulte clientes, apólices, renovações e comissões aos quais você tem acesso.
           </p>
         )}
         {messages.map((m, i) => (
