@@ -58,7 +58,17 @@ async function maybeConfirmLink(admin: any, sender: string, text?: string) {
 }
 
 export async function handleWhatsAppWebhook(request: Request): Promise<Response> {
-  if (request.method === "GET") { const challenge = verifyWebhookHandshake(new URL(request.url), getEnv("META_WHATSAPP_VERIFY_TOKEN")); return challenge === null ? new Response("Forbidden", { status: 403 }) : new Response(challenge, { status: 200, headers: { "content-type": "text/plain" } }); }
+  if (request.method === "GET") {
+    const url = new URL(request.url), verifyToken = getEnv("META_WHATSAPP_VERIFY_TOKEN");
+    // Temporary deployment diagnosis: reports configuration facts only. It is
+    // removed immediately after the production environment is verified.
+    if (url.searchParams.get("__diagnostic") === "1") {
+      const challenge = "runtime-diagnostic-challenge";
+      const internalUrl = new URL(request.url); internalUrl.search = new URLSearchParams({ "hub.mode": "subscribe", "hub.verify_token": verifyToken ?? "", "hub.challenge": challenge }).toString();
+      return Response.json({ defined: Boolean(verifyToken), length: verifyToken?.length ?? 0, handshakeStatus: verifyWebhookHandshake(internalUrl, verifyToken) === challenge ? 200 : 403, challengeMatches: verifyWebhookHandshake(internalUrl, verifyToken) === challenge });
+    }
+    const challenge = verifyWebhookHandshake(url, verifyToken); return challenge === null ? new Response("Forbidden", { status: 403 }) : new Response(challenge, { status: 200, headers: { "content-type": "text/plain" } });
+  }
   if (request.method !== "POST") return new Response("Method Not Allowed", { status: 405 });
   const raw = await request.text();
   if (!(await verifyMetaSignature(raw, request.headers.get("x-hub-signature-256"), getEnv("META_APP_SECRET")))) return new Response("Forbidden", { status: 403 });
