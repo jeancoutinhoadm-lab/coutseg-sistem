@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Upload, FileText, Loader2, CheckCircle2, AlertCircle, RefreshCw, Eye, XCircle, Trash2, Check, MessageSquare } from "lucide-react";
+import { Upload, FileText, Loader2, CheckCircle2, AlertCircle, RefreshCw, Eye, XCircle } from "lucide-react";
 import { processDocumentWithIA } from "@/lib/ai-extraction.functions";
 import { extractCommissionReportWithIA } from "@/lib/commission-extraction.functions";
 import { logAudit } from "@/utils/audit";
@@ -166,6 +166,7 @@ function CentralEntradaPage() {
       const { base64: imageBase64, mimeType: iaMimeType } = await getFileForIA(file);
       if (!imageBase64) throw new Error("Falha ao preparar dados para IA");
 
+      let extractionPersisted = false;
       try {
         let result: any;
         
@@ -236,16 +237,32 @@ function CentralEntradaPage() {
             validation_errors: validationErrors
           } as any)
           .eq('document_id', lastSavedDoc.id);
+        extractionPersisted = true;
+
+        if (docType === 'commission_report') {
+          const { error: stagingError } = await supabase.rpc('stage_commission_report_extraction', {
+            _document_id: lastSavedDoc.id,
+            _insurer_name: result.insurer?.name ?? null,
+            _report_reference: result.report_reference ?? null,
+            _items: result.items,
+          });
+
+          if (stagingError) {
+            throw new Error(`Extração concluída, mas a fila de conciliação não pôde ser preparada: ${stagingError.message}`);
+          }
+        }
 
         setValidationData({ status: validationStatus, errors: validationErrors });
         return result;
       } catch (err: any) {
-        await supabase.from('document_processing')
-          .update({ 
-            status: 'failed',
-            error_message: err.message
-          })
-          .eq('document_id', lastSavedDoc.id);
+        if (!extractionPersisted) {
+          await supabase.from('document_processing')
+            .update({
+              status: 'failed',
+              error_message: err.message
+            })
+            .eq('document_id', lastSavedDoc.id);
+        }
         throw err;
       }
     },
@@ -276,37 +293,10 @@ function CentralEntradaPage() {
       if (!proc) throw new Error("Processamento não encontrado");
 
       if (docType === 'commission_report') {
-        // Process each approved item
-        const items = extractedData.items.filter((i: any) => i.status !== 'rejected');
-        
-        for (const item of items) {
-          const { data: result, error } = await supabase.rpc('approve_commission_report_item' as any, {
-            _document_id: lastSavedDoc.id,
-            _item: item as any
-          });
-          
-          if (error) {
-            console.error("Erro ao processar item:", error);
-            toast.error(`Erro no item ${item.policy_number}: ${error.message}`);
-          } else if (validationData?.status === 'failed' && result) {
-            const res = result as any;
-            if (res.commission_id) {
-              // Se houver divergência, registrar a reconciliação para este item
-              const diff = (Number(item.paid_commission) || 0) - (Number(item.expected_commission) || 0);
-              await supabase.rpc('reconcile_commission_authenticated' as any, {
-                _commission_id: res.commission_id,
-                _adjustment_amount: diff,
-                _reason: reconciliationReason,
-                _metadata: {
-                  document_id: lastSavedDoc.id,
-                  validation_errors: validationData.errors
-                }
-              });
-            }
-          }
-        }
-
-
+        // Financial posting is deliberately separated from AI extraction. The
+        // persisted queue only contains strict matches and requires a finance
+        // user to confirm each receipt in the Commissions module.
+        return { commissionQueue: true };
       } else {
         // Legacy approval for other types
         const { error } = await supabase.rpc('approve_document_extraction', {
@@ -325,15 +315,21 @@ function CentralEntradaPage() {
         .eq('document_id', lastSavedDoc.id);
 
       await logAudit('UPDATE', 'IA_APPROVED', lastSavedDoc.id);
+      return { commissionQueue: false };
     },
-    onSuccess: () => {
-      toast.success("Processamento aprovado e finalizado!");
+    onSuccess: (data) => {
+      if ((data as { commissionQueue?: boolean } | undefined)?.commissionQueue) {
+        toast.success("Relatório enviado para a fila segura de conciliação.");
+        navigate({ to: "/commissions" });
+      } else {
+        toast.success("Processamento aprovado e finalizado!");
+        navigate({ to: "/documents" });
+      }
       setCurrentStep('idle');
       setExtractedData(null);
       setFile(null);
       setLastSavedDoc(null);
       queryClient.invalidateQueries();
-      navigate({ to: "/documents" });
     },
     onError: (error: any) => {
       toast.error("Erro ao aprovar: " + error.message);
@@ -606,7 +602,7 @@ function CentralEntradaPage() {
                           <TableHead className="text-[10px] uppercase text-right">Previsto</TableHead>
                           <TableHead className="text-[10px] uppercase text-right">Pago</TableHead>
                           <TableHead className="text-[10px] uppercase text-right">Dif.</TableHead>
-                          <TableHead className="text-[10px] uppercase text-center w-24">Ação</TableHead>
+                          <TableHead className="text-[10px] uppercase text-center w-24">Conciliação</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -617,41 +613,16 @@ function CentralEntradaPage() {
                               <div className="text-[10px] text-muted-foreground truncate max-w-[120px]">{item.client_name || '—'}</div>
                             </TableCell>
                             <TableCell className="text-right py-2">
-                              <Input 
-                                type="number" 
-                                className="h-7 text-right text-xs p-1" 
-                                value={item.expected_commission || 0}
-                                onChange={(e) => updateItemValue(index, 'expected_commission', e.target.value)}
-                              />
+                              {Number(item.expected_commission || 0).toFixed(2)}
                             </TableCell>
                             <TableCell className="text-right py-2">
-                              <Input 
-                                type="number" 
-                                className="h-7 text-right text-xs p-1" 
-                                value={item.paid_commission || 0}
-                                onChange={(e) => updateItemValue(index, 'paid_commission', e.target.value)}
-                              />
+                              {Number(item.paid_commission || 0).toFixed(2)}
                             </TableCell>
                             <TableCell className={`text-right py-2 text-xs font-mono ${item.difference < 0 ? 'text-red-500' : item.difference > 0 ? 'text-green-500' : 'text-muted-foreground'}`}>
                               {item.difference?.toFixed(2) || '0.00'}
                             </TableCell>
                             <TableCell className="py-2">
-                              <div className="flex justify-center gap-1">
-                                {item.status === 'rejected' ? (
-                                  <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => updateItemStatus(index, 'pending_review')}>
-                                    <RefreshCw className="h-3 w-3" />
-                                  </Button>
-                                ) : (
-                                  <>
-                                    <Button size="icon" variant="ghost" className="h-7 w-7 text-green-600" onClick={() => updateItemStatus(index, 'confirmed')}>
-                                      <Check className="h-3 w-3" />
-                                    </Button>
-                                    <Button size="icon" variant="ghost" className="h-7 w-7 text-red-500" onClick={() => updateItemStatus(index, 'rejected')}>
-                                      <Trash2 className="h-3 w-3" />
-                                    </Button>
-                                  </>
-                                )}
-                              </div>
+                              <span className="text-[10px] text-muted-foreground">Na fila</span>
                             </TableCell>
                           </TableRow>
                         ))}
@@ -682,7 +653,7 @@ function CentralEntradaPage() {
                   <Button 
                     className="flex-1 bg-green-600 hover:bg-green-700 font-bold" 
                     onClick={() => {
-                      if (validationData?.status === 'failed') {
+                      if (docType !== 'commission_report' && validationData?.status === 'failed') {
                         setIsReconciliationModalOpen(true);
                       } else {
                         approveMutation.mutate();
@@ -691,7 +662,7 @@ function CentralEntradaPage() {
                     disabled={approveMutation.isPending}
                   >
                     {approveMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
-                    {validationData?.status === 'failed' ? 'CONCILIAR E APROVAR' : 'APROVAR E REGISTRAR FINANCEIRO'}
+                    {docType === 'commission_report' ? 'ABRIR FILA DE CONCILIAÇÃO' : validationData?.status === 'failed' ? 'CONCILIAR E APROVAR' : 'APROVAR E REGISTRAR FINANCEIRO'}
                   </Button>
                   <Button 
                     variant="destructive" 

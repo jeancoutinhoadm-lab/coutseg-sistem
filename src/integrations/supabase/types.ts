@@ -369,6 +369,7 @@ export type Database = {
           id: string
           notes: string | null
           receipt_date: string
+          source_report_item_id: string | null
         }
         Insert: {
           amount: number
@@ -379,6 +380,7 @@ export type Database = {
           id?: string
           notes?: string | null
           receipt_date: string
+          source_report_item_id?: string | null
         }
         Update: {
           amount?: number
@@ -389,6 +391,7 @@ export type Database = {
           id?: string
           notes?: string | null
           receipt_date?: string
+          source_report_item_id?: string | null
         }
         Relationships: [
           {
@@ -413,6 +416,78 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      commission_report_items: {
+        Row: {
+          created_at: string
+          document_id: string
+          due_date: string | null
+          expected_amount: number | null
+          id: string
+          insurer_name: string | null
+          match_status: string
+          matched_commission_id: string | null
+          matched_policy_id: string | null
+          parcel_number: string | null
+          payment_date: string | null
+          policy_number_normalized: string | null
+          posted_at: string | null
+          posted_by: string | null
+          receipt_id: string | null
+          reconciliation_reason: string | null
+          report_reference: string | null
+          reported_amount: number | null
+          source_fingerprint: string
+          source_index: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          document_id: string
+          due_date?: string | null
+          expected_amount?: number | null
+          id?: string
+          insurer_name?: string | null
+          match_status?: string
+          matched_commission_id?: string | null
+          matched_policy_id?: string | null
+          parcel_number?: string | null
+          payment_date?: string | null
+          policy_number_normalized?: string | null
+          posted_at?: string | null
+          posted_by?: string | null
+          receipt_id?: string | null
+          reconciliation_reason?: string | null
+          report_reference?: string | null
+          reported_amount?: number | null
+          source_fingerprint: string
+          source_index: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          document_id?: string
+          due_date?: string | null
+          expected_amount?: number | null
+          id?: string
+          insurer_name?: string | null
+          match_status?: string
+          matched_commission_id?: string | null
+          matched_policy_id?: string | null
+          parcel_number?: string | null
+          payment_date?: string | null
+          policy_number_normalized?: string | null
+          posted_at?: string | null
+          posted_by?: string | null
+          receipt_id?: string | null
+          reconciliation_reason?: string | null
+          report_reference?: string | null
+          reported_amount?: number | null
+          source_fingerprint?: string
+          source_index?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       commission_reconciliations: {
         Row: {
@@ -2161,6 +2236,10 @@ export type Database = {
         }
         Returns: string
       }
+      confirm_commission_report_item: {
+        Args: { _item_id: string }
+        Returns: Json
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -2171,6 +2250,15 @@ export type Database = {
       is_period_open: { Args: { check_date: string }; Returns: boolean }
       process_commission_item_approval: {
         Args: { _document_id: string; _item: Json; _user_id: string }
+        Returns: Json
+      }
+      stage_commission_report_extraction: {
+        Args: {
+          _document_id: string
+          _insurer_name: string | null
+          _items: Json
+          _report_reference: string | null
+        }
         Returns: Json
       }
       reconcile_commission:
